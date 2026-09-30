@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="KnapsackChallenge.Common/KnapsackChallenge.Common.csproj" />
+  <Project Path="KnapsackChallenge.Core/KnapsackChallenge.Core.csproj" />
+  <Project Path="KnapsackChallenge.Data/KnapsackChallenge.Data.csproj" />
+  <Project Path="KnapsackChallenge.UI/KnapsackChallenge.UI.csproj" />
+</Solution>

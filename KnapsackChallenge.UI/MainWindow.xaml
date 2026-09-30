@@ -1,0 +1,19 @@
+﻿<Window x:Class="KnapsackChallenge.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:views="clr-namespace:KnapsackChallenge.UI.Views"
+        mc:Ignorable="d"
+        Title="Knapsack Challenge" Height="600" Width="1000"
+        WindowStartupLocation="CenterScreen"
+        Background="Black">
+
+    <Grid>
+        <!-- Nơi chứa và luân chuyển các màn hình (Views) -->
+        <ContentControl x:Name="MainContent">
+            <!-- Tạm thời gán cứng LoginView vào đây để test khi khởi động -->
+            <views:LoginView />
+        </ContentControl>
+    </Grid>
+</Window>

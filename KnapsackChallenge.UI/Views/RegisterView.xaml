@@ -1,0 +1,48 @@
+﻿<UserControl x:Class="KnapsackChallenge.UI.Views.RegisterView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <!-- DataContext (RegisterViewModel) được gán từ MainWindow.xaml.cs -->
+
+    <Grid Background="#F5F5F5">
+        <Border Width="350" Padding="20" Background="White" CornerRadius="10"
+                VerticalAlignment="Center" HorizontalAlignment="Center">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="15" ShadowDepth="2" Opacity="0.1" />
+            </Border.Effect>
+
+            <StackPanel>
+                <TextBlock Text="ĐĂNG KÝ TÀI KHOẢN" FontSize="22" FontWeight="Bold"
+                           Foreground="#333" HorizontalAlignment="Center" Margin="0,0,0,25"/>
+
+                <TextBlock Text="Tài khoản:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
+                         Padding="8" Margin="0,0,0,15" FontSize="14" />
+
+                <TextBlock Text="Mật khẩu:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                <!-- PasswordChanged là sự kiện: mỗi lần gõ, hàm trong RegisterView.xaml.cs được gọi -->
+                <PasswordBox x:Name="txtPassword" PasswordChanged="Password_Changed"
+                             Padding="8" Margin="0,0,0,15" FontSize="14"/>
+
+                <TextBlock Text="Nhập lại mật khẩu:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                <PasswordBox x:Name="txtConfirmPassword" PasswordChanged="ConfirmPassword_Changed"
+                             Padding="8" Margin="0,0,0,15" FontSize="14"/>
+
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="Red"
+                           HorizontalAlignment="Center" Margin="0,0,0,15" TextWrapping="Wrap" />
+
+                <Button Content="ĐĂNG KÝ" Command="{Binding RegisterCommand}"
+                        Padding="10" Background="#4CAF50" Foreground="White"
+                        FontWeight="Bold" FontSize="14" Cursor="Hand" BorderThickness="0"/>
+
+                <Button Content="Đã có tài khoản? Quay lại đăng nhập" Command="{Binding BackToLoginCommand}"
+                        Margin="0,12,0,0" Padding="4" Background="Transparent" Foreground="#2196F3"
+                        FontSize="13" Cursor="Hand" BorderThickness="0"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>
