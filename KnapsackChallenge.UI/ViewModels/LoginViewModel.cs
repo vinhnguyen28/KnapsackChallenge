@@ -27,7 +27,7 @@ namespace KnapsackChallenge.UI.ViewModels
             set { _errorMessage = value; OnPropertyChanged(); }
         }
 
-        // Thông báo màu xanh (vd: "Đăng ký thành công!")
+        // Thông báo màu xanh
         public string InfoMessage
         {
             get => _infoMessage;
