@@ -36,10 +36,12 @@
 
                 <Button Content="ĐĂNG NHẬP" Command="{Binding LoginCommand}"
                         CommandParameter="{Binding ElementName=txtPassword}"
+                        Style="{StaticResource RoundedButton}"
                         Padding="10" Background="#2196F3" Foreground="White"
                         FontWeight="Bold" FontSize="14" Cursor="Hand" BorderThickness="0"/>
 
                 <Button Content="Chưa có tài khoản? Đăng ký" Command="{Binding RegisterCommand}"
+                        Style="{StaticResource RoundedButton}"
                         Margin="0,12,0,0" Padding="4" Background="Transparent" Foreground="#2196F3"
                         FontSize="13" Cursor="Hand" BorderThickness="0"/>
             </StackPanel>

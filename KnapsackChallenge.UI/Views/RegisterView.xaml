@@ -8,7 +8,7 @@
 
     <!-- DataContext (RegisterViewModel) được gán từ MainWindow.xaml.cs -->
 
-    <Grid Background="#F5F5F5">
+    <Grid Background="Transparent">
         <Border Width="350" Padding="20" Background="White" CornerRadius="10"
                 VerticalAlignment="Center" HorizontalAlignment="Center">
             <Border.Effect>
@@ -37,10 +37,12 @@
                            HorizontalAlignment="Center" Margin="0,0,0,15" TextWrapping="Wrap" />
 
                 <Button Content="ĐĂNG KÝ" Command="{Binding RegisterCommand}"
+                        Style="{StaticResource RoundedButton}"
                         Padding="10" Background="#4CAF50" Foreground="White"
                         FontWeight="Bold" FontSize="14" Cursor="Hand" BorderThickness="0"/>
 
                 <Button Content="Đã có tài khoản? Quay lại đăng nhập" Command="{Binding BackToLoginCommand}"
+                        Style="{StaticResource RoundedButton}"
                         Margin="0,12,0,0" Padding="4" Background="Transparent" Foreground="#2196F3"
                         FontSize="13" Cursor="Hand" BorderThickness="0"/>
             </StackPanel>
