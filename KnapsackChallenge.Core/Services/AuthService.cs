@@ -1,7 +1,4 @@
-﻿//using System;
-//using System.Collections.Generic;
-//using System.Text;
-
+﻿
 using KnapsackChallenge.Data.Entities;
 using KnapsackChallenge.Data.Repositories;
 namespace KnapsackChallenge.Core.Services
@@ -22,18 +19,21 @@ namespace KnapsackChallenge.Core.Services
             var user = _userRepository.GetUserByUsername(username);
 
             // Bước 2: Kiểm tra tài khoản có tồn tại không
-            if (user == null)
+            if (user == null || string.IsNullOrEmpty(user.PasswordHash))
             {
+                return null; // Không tồn tại -> Trả về null
+            }
+
+            try
+            {
+                // Verify tự tách salt từ chuỗi hash rồi so sánh
+                return BCrypt.Net.BCrypt.Verify(password, user.PasswordHash) ? user : null;
+            }
+            catch (BCrypt.Net.SaltParseException)
+            {
+                // Hash trong DB không đúng định dạng BCrypt (ví dụ tài khoản cũ lưu '123')
                 return null;
             }
-
-            // Bước 3: So sánh mật khẩu
-            if (user.PasswordHash == password)
-            {
-                return user; // Hợp lệ -> Trả về thông tin user
-            }
-
-            return null; // Sai mật khẩu
         }
 
         public (bool Success, string Message) Register(string username, string password)
@@ -52,7 +52,8 @@ namespace KnapsackChallenge.Core.Services
                 return (false, "Tài khoản đã tồn tại, hãy chọn tên khác!");
 
             // Bước 3: Ghi vào DB. Role luôn là "Player" để không ai tự đăng ký thành Admin được
-            bool created = _userRepository.CreateUser(username, password, "Player");
+            string hash = BCrypt.Net.BCrypt.HashPassword(password);
+            bool created = _userRepository.CreateUser(username, hash, "Player");
 
             // created = false nghĩa là có người khác vừa đăng ký trùng tên ngay giữa Bước 2 và Bước 3
             return created

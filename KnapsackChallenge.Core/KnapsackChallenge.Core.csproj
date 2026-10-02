@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\KnapsackChallenge.Common\KnapsackChallenge.Common.csproj" />
     <ProjectReference Include="..\KnapsackChallenge.Data\KnapsackChallenge.Data.csproj" />
   </ItemGroup>

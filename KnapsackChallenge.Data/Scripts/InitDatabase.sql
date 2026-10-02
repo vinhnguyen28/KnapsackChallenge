@@ -57,13 +57,6 @@ CREATE TABLE SelectedItems (
     PRIMARY KEY (SessionId, UserId, ItemId)
 );
 
-USE KnapsackChallenge
-GO
-
--- INSERT DỮ LIỆU MẪU ĐỂ TEST ĐĂNG NHẬP
-INSERT INTO Users (Username, PasswordHash, Role) VALUES ('admin', '123', 'Admin');
-INSERT INTO Users (Username, PasswordHash, Role) VALUES ('player1', '123', 'Player');
- 
 
 
  SELECT *
