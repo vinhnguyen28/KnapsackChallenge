@@ -16,7 +16,7 @@ namespace KnapsackChallenge.UI.ViewModels
 
         public MainViewModel()
         {
-            ShowLogin();
+            ShowLogin(); 
         }
 
         private void ShowLogin(string username = null, string info = null)

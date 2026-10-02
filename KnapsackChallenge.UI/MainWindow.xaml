@@ -3,11 +3,16 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:KnapsackChallenge.UI.ViewModels"
         xmlns:views="clr-namespace:KnapsackChallenge.UI.Views"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Knapsack Challenge"
+        Background="black"
+        Height="600" Width="900"
+        MinHeight="520" MinWidth="700"
+        WindowStartupLocation="CenterScreen">
+    
     <Window.DataContext>    
         <vm:MainViewModel />
     </Window.DataContext>
-
+    
     <!-- Quy tắc: ViewModel nào thì hiện View đó -->
     <Window.Resources>
         <DataTemplate DataType="{x:Type vm:LoginViewModel}">
