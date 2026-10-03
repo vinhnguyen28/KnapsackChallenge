@@ -1,6 +1,4 @@
-﻿//using System;
-//using System.Collections.Generic;
-//using System.Text;
+﻿
 using System.Data;
 using Microsoft.Data.SqlClient;
 using KnapsackChallenge.Data.Entities;
@@ -48,7 +46,7 @@ namespace KnapsackChallenge.Data.Repositories
                     }
                 }
             }
-            return null; // Trả về null nếu không tìm thấy user
+            return null;
         } 
 
         // Thêm user mới vào bảng Users.

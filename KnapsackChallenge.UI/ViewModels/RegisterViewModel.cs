@@ -80,7 +80,7 @@ namespace KnapsackChallenge.UI.ViewModels
             }
             catch (Exception)
             {
-                ErrorMessage = "Không kết nối được cơ sở dữ liệu! Kiểm tra lại connection string.";
+                ErrorMessage = "Ket noi sever that bai, ma loi -410.";
             }
         }
     }

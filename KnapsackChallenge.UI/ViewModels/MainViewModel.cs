@@ -22,7 +22,12 @@ namespace KnapsackChallenge.UI.ViewModels
         private void ShowLogin(string username = null, string info = null)
         {
             var vm = new LoginViewModel();
-            if (username != null) vm.Username = username;
+
+            if (username != null) 
+            {
+                vm.Username = username;
+            } 
+
             vm.InfoMessage = info;
 
             vm.LoginSucceeded += OnLoginSucceeded;

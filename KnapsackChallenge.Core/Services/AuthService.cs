@@ -44,7 +44,7 @@ namespace KnapsackChallenge.Core.Services
             if (username.Length < 3 || username.Length > 50)
                 return (false, "Tài khoản phải từ 3 đến 50 ký tự!");
 
-            if (string.IsNullOrEmpty(password) || password.Length < 3)
+            if (string.IsNullOrEmpty(password) || password.Length < 3) 
                 return (false, "Mật khẩu phải có ít nhất 3 ký tự!");
 
             // Bước 2: Kiểm tra tài khoản đã tồn tại chưa
