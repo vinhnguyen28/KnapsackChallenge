@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace KnapsackChallenge.Data.Entities
+﻿namespace KnapsackChallenge.Data.Entities
 {
-    internal class ItemEntity
+    // Phải là public để tầng Core và UI nhìn thấy được
+    public class ItemEntity
     {
         public int Id { get; set; }
-        public string Name { get; set; }
+        public string Name { get; set; } = "";
         public int Weight { get; set; }
         public int Value { get; set; }
     }
