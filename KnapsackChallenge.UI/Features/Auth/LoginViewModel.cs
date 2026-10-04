@@ -5,16 +5,15 @@ using KnapsackChallenge.Core.Factories;
 using KnapsackChallenge.Core.Services.Auth;
 using KnapsackChallenge.Data.Entities;
 using KnapsackChallenge.UI.Shared;
-//using KnapsackChallenge.UI.ViewModels.Base;
 
 namespace KnapsackChallenge.UI.Features.Auth
 {
     public class LoginViewModel : ViewModelBase
     {
         private readonly IAuthService _authService;
-        private string _username;
-        private string _errorMessage;
-        private string _infoMessage;
+        private string _username = "";
+        private string _errorMessage = "";
+        private string _infoMessage = "";
 
         public string Username
         {
@@ -42,8 +41,8 @@ namespace KnapsackChallenge.UI.Features.Auth
         public ICommand RegisterCommand { get; }
 
         // Sự kiện báo cho MainWindow biết để chuyển màn hình
-        public event Action<UserEntity> LoginSucceeded;
-        public event Action RegisterRequested;
+        public event Action<UserEntity>? LoginSucceeded;
+        public event Action? RegisterRequested;
 
         public LoginViewModel()
         {
@@ -54,7 +53,7 @@ namespace KnapsackChallenge.UI.Features.Auth
             RegisterCommand = new RelayCommand<object>(_ => RegisterRequested?.Invoke());
         }
 
-        private void ExecuteLogin(object parameter)
+        private void ExecuteLogin(object? parameter)
         {
             // Trong WPF, PasswordBox không hỗ trợ Binding trực tiếp vì lý do bảo mật.
             // Nên ta truyền cả UI element PasswordBox vào thông qua CommandParameter.

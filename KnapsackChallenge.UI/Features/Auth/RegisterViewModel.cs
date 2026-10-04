@@ -10,8 +10,8 @@ namespace KnapsackChallenge.UI.Features.Auth
     public class RegisterViewModel : ViewModelBase
     {
         private readonly IAuthService _authService;
-        private string _username;
-        private string _errorMessage;
+        private string _username = "";
+        private string _errorMessage = "";
 
         public string Username
         {
