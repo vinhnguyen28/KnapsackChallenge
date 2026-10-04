@@ -5,7 +5,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace KnapsackChallenge.UI.ViewModels.Base
+namespace KnapsackChallenge.UI.Shared
 {
     public class ViewModelBase : INotifyPropertyChanged
     {

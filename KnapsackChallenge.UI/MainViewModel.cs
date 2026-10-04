@@ -1,7 +1,7 @@
 ﻿using KnapsackChallenge.Data.Entities;
-using KnapsackChallenge.UI.ViewModels.Base;
+using KnapsackChallenge.UI.Shared;
 
-namespace KnapsackChallenge.UI.ViewModels
+namespace KnapsackChallenge.UI
 {
     public class MainViewModel : ViewModelBase
     {

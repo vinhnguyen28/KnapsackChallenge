@@ -1,6 +1,6 @@
 ﻿using KnapsackChallenge.Data.Entities;
 
-namespace KnapsackChallenge.Core.Services
+namespace KnapsackChallenge.Core.Services.Admin
 {
     public interface IItemService
     {

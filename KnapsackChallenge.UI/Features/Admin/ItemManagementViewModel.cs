@@ -4,11 +4,12 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using KnapsackChallenge.Core.Factories;
-using KnapsackChallenge.Core.Services;
+using KnapsackChallenge.Core.Services.Admin;
 using KnapsackChallenge.Data.Entities;
-using KnapsackChallenge.UI.ViewModels.Base;
+using KnapsackChallenge.UI.Shared;
+//using KnapsackChallenge.UI.ViewModels.Base;
 
-namespace KnapsackChallenge.UI.ViewModels
+namespace KnapsackChallenge.UI.Features.Admin
 {
     public class ItemManagementViewModel : ViewModelBase
     {
@@ -124,26 +125,38 @@ namespace KnapsackChallenge.UI.ViewModels
         private bool TryReadNumbers(out int weight, out int value)
         {
             value = 0;
+
             if (!int.TryParse(WeightText, out weight) || !int.TryParse(ValueText, out value))
             {
                 ErrorMessage = "Khối lượng và giá trị phải là số nguyên!";
                 return false;
             }
+
             return true;
         }
 
         private void ExecuteAdd()
         {
             ClearMessages();
-            if (!TryReadNumbers(out int weight, out int value)) return;
+
+            if (!TryReadNumbers(out int weight, out int value)) 
+            { 
+                return; 
+            }
 
             try
             {
                 var (success, message) = _itemService.Add(ItemName, weight, value);
-                if (!success) { ErrorMessage = message; return; }
+
+                if (!success) 
+                { 
+                    ErrorMessage = message; 
+                    return; 
+                }
 
                 LoadItems();
                 ClearForm();
+
                 InfoMessage = message;
             }
             catch (Exception)
@@ -155,12 +168,20 @@ namespace KnapsackChallenge.UI.ViewModels
         private void ExecuteUpdate()
         {
             ClearMessages();
-            if (SelectedItem == null || !TryReadNumbers(out int weight, out int value)) return;
+
+            if (SelectedItem == null || !TryReadNumbers(out int weight, out int value)) 
+            {
+                return;
+            } 
 
             try
             {
                 var (success, message) = _itemService.Update(SelectedItem.Id, ItemName, weight, value);
-                if (!success) { ErrorMessage = message; return; }
+               
+                if (!success) 
+                { 
+                    ErrorMessage = message; return; 
+                }
 
                 LoadItems();
                 ClearForm();

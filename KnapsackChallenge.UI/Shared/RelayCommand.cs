@@ -1,9 +1,7 @@
-﻿
-
-using System;
+﻿using System;
 using System.Windows.Input;
 
-namespace KnapsackChallenge.UI.ViewModels.Base
+namespace KnapsackChallenge.UI.Shared
 {
     public class RelayCommand<T> : ICommand
     {

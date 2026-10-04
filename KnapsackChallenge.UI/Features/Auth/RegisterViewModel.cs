@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Windows.Input;
 using KnapsackChallenge.Core.Factories;
-using KnapsackChallenge.Core.Services;
-using KnapsackChallenge.UI.ViewModels.Base;
+using KnapsackChallenge.Core.Services.Auth;
+using KnapsackChallenge.UI.Shared;
+//using KnapsackChallenge.UI.ViewModels.Base;
 
-namespace KnapsackChallenge.UI.ViewModels
+namespace KnapsackChallenge.UI.Features.Auth
 {
     public class RegisterViewModel : ViewModelBase
     {

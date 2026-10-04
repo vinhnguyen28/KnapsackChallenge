@@ -1,6 +1,6 @@
 ﻿using KnapsackChallenge.Data.Entities;
 
-namespace KnapsackChallenge.Core.Services
+namespace KnapsackChallenge.Core.Services.Auth
 {
     public interface IAuthService
     {

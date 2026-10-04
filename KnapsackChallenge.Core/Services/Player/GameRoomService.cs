@@ -1,9 +1,8 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace KnapsackChallenge.Core.Services
+namespace KnapsackChallenge.Core.Services.Player
 {
     internal class GameRoomService
     {

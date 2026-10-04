@@ -1,7 +1,7 @@
 ﻿using KnapsackChallenge.Data.Entities;
 using KnapsackChallenge.Data.Repositories;
 
-namespace KnapsackChallenge.Core.Services
+namespace KnapsackChallenge.Core.Services.Admin
 {
     public class ItemService : IItemService
     {
@@ -17,9 +17,14 @@ namespace KnapsackChallenge.Core.Services
         public (bool Success, string Message) Add(string name, int weight, int value)
         {
             var error = Validate(ref name, weight, value);
-            if (error != null) return (false, error);
+
+            if (error != null)
+            { 
+                return (false, error);
+            }
 
             _itemRepository.Create(name, weight, value);
+
             return (true, "Đã thêm vật phẩm mới!");
         }
 
@@ -44,9 +49,22 @@ namespace KnapsackChallenge.Core.Services
         private static string? Validate(ref string name, int weight, int value)
         {
             name = (name ?? "").Trim();
-            if (name.Length == 0 || name.Length > 100) return "Tên vật phẩm phải từ 1 đến 100 ký tự!";
-            if (weight <= 0) return "Khối lượng phải lớn hơn 0!";
-            if (value <= 0) return "Giá trị phải lớn hơn 0!";
+
+            if (name.Length == 0 || name.Length > 100) 
+            {
+                return "Tên vật phẩm phải từ 1 đến 100 ký tự!";
+            }
+
+            if (weight <= 0) 
+            {
+                return "Khối lượng phải lớn hơn 0!";
+            }
+
+            if (value <= 0) 
+            {
+                return "Giá trị phải lớn hơn 0!";
+            }
+          
             return null;
         }
     }

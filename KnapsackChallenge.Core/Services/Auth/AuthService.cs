@@ -1,7 +1,6 @@
-﻿
-using KnapsackChallenge.Data.Entities;
+﻿using KnapsackChallenge.Data.Entities;
 using KnapsackChallenge.Data.Repositories;
-namespace KnapsackChallenge.Core.Services
+namespace KnapsackChallenge.Core.Services.Auth
 {
     public class AuthService : IAuthService
     {

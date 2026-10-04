@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
-using KnapsackChallenge.UI.ViewModels;
+using KnapsackChallenge.UI.Features.Auth;
 
 namespace KnapsackChallenge.UI.Views
 {

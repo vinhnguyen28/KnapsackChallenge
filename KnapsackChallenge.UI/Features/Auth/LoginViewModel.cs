@@ -2,11 +2,12 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 using KnapsackChallenge.Core.Factories;
-using KnapsackChallenge.Core.Services;
+using KnapsackChallenge.Core.Services.Auth;
 using KnapsackChallenge.Data.Entities;
-using KnapsackChallenge.UI.ViewModels.Base;
+using KnapsackChallenge.UI.Shared;
+//using KnapsackChallenge.UI.ViewModels.Base;
 
-namespace KnapsackChallenge.UI.ViewModels
+namespace KnapsackChallenge.UI.Features.Auth
 {
     public class LoginViewModel : ViewModelBase
     {
