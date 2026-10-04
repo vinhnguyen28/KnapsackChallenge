@@ -1,30 +1,30 @@
 ﻿<Window x:Class="KnapsackChallenge.UI.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="clr-namespace:KnapsackChallenge.UI.ViewModels"
+        xmlns:vm="clr-namespace:KnapsackChallenge.UI"
+        xmlns:auth="clr-namespace:KnapsackChallenge.UI.Features.Auth"
+        xmlns:admin="clr-namespace:KnapsackChallenge.UI.Features.Admin"
+        xmlns:player="clr-namespace:KnapsackChallenge.UI.Features.Player"
         xmlns:views="clr-namespace:KnapsackChallenge.UI.Views"
         Title="Knapsack Challenge"
         Background="black"
         Height="600" Width="900"
         MinHeight="520" MinWidth="700"
         WindowStartupLocation="CenterScreen">
-    
-    <Window.DataContext>    
+
+    <Window.DataContext>
         <vm:MainViewModel />
     </Window.DataContext>
-    
-    <!-- Quy tắc: ViewModel nào thì hiện View đó -->
+
     <Window.Resources>
-        <DataTemplate DataType="{x:Type vm:LoginViewModel}">
+        <DataTemplate DataType="{x:Type auth:LoginViewModel}">
             <views:LoginView />
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:RegisterViewModel}">
+        <DataTemplate DataType="{x:Type auth:RegisterViewModel}">
             <views:RegisterView />
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:SoloGameViewModel}">
+        <DataTemplate DataType="{x:Type player:SoloGameViewModel}">
             <views:SoloGameView />
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:ItemManagementViewModel}">
+        <DataTemplate DataType="{x:Type admin:ItemManagementViewModel}">
             <views:ItemManagementView />
         </DataTemplate>
     </Window.Resources>

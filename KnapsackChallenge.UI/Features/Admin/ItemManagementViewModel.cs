@@ -7,7 +7,7 @@ using KnapsackChallenge.Core.Factories;
 using KnapsackChallenge.Core.Services.Admin;
 using KnapsackChallenge.Data.Entities;
 using KnapsackChallenge.UI.Shared;
-//using KnapsackChallenge.UI.ViewModels.Base;
+//using KnapsackChallenge.UI.Shared.Base;
 
 namespace KnapsackChallenge.UI.Features.Admin
 {
