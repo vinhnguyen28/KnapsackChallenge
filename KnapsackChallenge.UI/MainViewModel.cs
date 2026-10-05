@@ -8,7 +8,7 @@ namespace KnapsackChallenge.UI
 {
     public class MainViewModel : ViewModelBase
     {
-        private ViewModelBase _currentViewModel = null;
+        private ViewModelBase _currentViewModel = null!;
 
         // MainWindow Binding vào thuộc tính này
         public ViewModelBase CurrentViewModel
@@ -22,7 +22,7 @@ namespace KnapsackChallenge.UI
             ShowLogin(); 
         }
 
-        private void ShowLogin(string username = null, string info = null)
+        private void ShowLogin(string? username = null, string? info = null)
         {
             var vm = new LoginViewModel();
 
@@ -31,7 +31,7 @@ namespace KnapsackChallenge.UI
                 vm.Username = username;
             } 
 
-            vm.InfoMessage = info = "";
+            vm.InfoMessage = info ?? "";
 
             vm.LoginSucceeded += OnLoginSucceeded;
             vm.RegisterRequested += ShowRegister;

@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Data;
@@ -7,7 +8,6 @@ using KnapsackChallenge.Core.Factories;
 using KnapsackChallenge.Core.Services.Admin;
 using KnapsackChallenge.Data.Entities;
 using KnapsackChallenge.UI.Shared;
-//using KnapsackChallenge.UI.Shared.Base;
 
 namespace KnapsackChallenge.UI.Features.Admin
 {

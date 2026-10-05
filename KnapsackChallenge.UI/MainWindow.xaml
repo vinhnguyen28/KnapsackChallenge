@@ -18,15 +18,15 @@
 
     <Window.Resources>
         <DataTemplate DataType="{x:Type auth:LoginViewModel}">
-            <views:LoginView />
+            <auth:LoginView />
         </DataTemplate>
         
         <DataTemplate DataType="{x:Type auth:RegisterViewModel}">
-            <views:RegisterView />
+            <auth:RegisterView />
         </DataTemplate>
         
         <DataTemplate DataType="{x:Type player:SoloGameViewModel}">
-            <views:SoloGameView />
+            <player:SoloGameView />
         </DataTemplate>
         
         <DataTemplate DataType="{x:Type admin:ItemManagementViewModel}">

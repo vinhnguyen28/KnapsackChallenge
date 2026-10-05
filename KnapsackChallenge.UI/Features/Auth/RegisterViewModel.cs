@@ -42,10 +42,7 @@ namespace KnapsackChallenge.UI.Features.Auth
         {
             _authService = ServiceFactory.GetAuthService();
             
-            RegisterCommand = new RelayCommand<object>(_ => ExecuteRegister(),
-                                                       _=> !string.IsNullOrWhiteSpace(Username) 
-                                                       && !string.IsNullOrEmpty(Password) 
-                                                       && !string.IsNullOrEmpty(ConfirmPassword));
+            RegisterCommand = new RelayCommand<object>(_ => ExecuteRegister());
 
             BackToLoginCommand = new RelayCommand<object>(_ => BackRequested?.Invoke());
         }

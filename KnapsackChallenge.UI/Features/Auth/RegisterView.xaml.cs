@@ -2,7 +2,7 @@
 using System.Windows.Controls;
 using KnapsackChallenge.UI.Features.Auth;
 
-namespace KnapsackChallenge.UI.Views
+namespace KnapsackChallenge.UI.Features.Auth
 {
     public partial class RegisterView : UserControl
     {

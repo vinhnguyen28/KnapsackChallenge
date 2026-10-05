@@ -11,7 +11,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace KnapsackChallenge.UI.Views
+namespace KnapsackChallenge.UI.Features.Auth
 {
     /// <summary>
     /// Interaction logic for LoginView.xaml
