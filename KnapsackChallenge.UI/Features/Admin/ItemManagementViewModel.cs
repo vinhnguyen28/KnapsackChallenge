@@ -89,9 +89,11 @@ namespace KnapsackChallenge.UI.Features.Admin
         public ICommand DeleteCommand { get; }
         public ICommand ClearCommand { get; }
 
-        public ItemManagementViewModel()
+        private readonly IDialogService _dialog;
+        public ItemManagementViewModel(IDialogService? dialog = null)
         {
             _itemService = ServiceFactory.GetItemService();
+            _dialog = dialog ?? new WpfDialogService();
 
             // Bộ lọc tìm kiếm theo tên
             _itemsView = CollectionViewSource.GetDefaultView(Items);
@@ -198,10 +200,7 @@ namespace KnapsackChallenge.UI.Features.Admin
             ClearMessages();
             if (SelectedItem == null) return;
 
-            var confirm = MessageBox.Show(
-                $"Xóa vật phẩm \"{SelectedItem.Name}\"?", "Xác nhận xóa",
-                MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (confirm != MessageBoxResult.Yes) return;
+            if (!_dialog.Confirm($"Xóa vật phẩm \"{SelectedItem.Name}\"?", "Xác nhận xóa")) return;
 
             try
             {

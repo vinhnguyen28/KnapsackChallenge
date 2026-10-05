@@ -3,7 +3,7 @@ using System.Windows.Input;
 using KnapsackChallenge.Core.Factories;
 using KnapsackChallenge.Core.Services.Auth;
 using KnapsackChallenge.UI.Shared;
-//using KnapsackChallenge.UI.ViewModels.Base;
+using Microsoft.Data.SqlClient;
 
 namespace KnapsackChallenge.UI.Features.Auth
 {
@@ -76,7 +76,7 @@ namespace KnapsackChallenge.UI.Features.Auth
                     ErrorMessage = message;
                 }
             }
-            catch (Exception)
+            catch (SqlException)
             {
                 ErrorMessage = "Ket noi sever that bai, ma loi -410.";
             }

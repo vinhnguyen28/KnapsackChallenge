@@ -5,6 +5,7 @@ using KnapsackChallenge.Core.Factories;
 using KnapsackChallenge.Core.Services.Auth;
 using KnapsackChallenge.Data.Entities;
 using KnapsackChallenge.UI.Shared;
+using Microsoft.Data.SqlClient;
 
 namespace KnapsackChallenge.UI.Features.Auth
 {
@@ -83,7 +84,7 @@ namespace KnapsackChallenge.UI.Features.Auth
                     ErrorMessage = "Sai tài khoản hoặc mật khẩu!";
                 }
             }
-            catch (Exception)
+            catch (SqlException)
             {
                 // Lỗi kết nối SQL Server (sai Server/mật khẩu sa, chưa bật SQL...) -> báo thay vì crash app
                 ErrorMessage = "Không kết nối được cơ sở dữ liệu! Kiểm tra lại connection string.";

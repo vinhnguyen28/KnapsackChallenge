@@ -12,7 +12,7 @@ namespace KnapsackChallenge.Core.Services.Auth
             _userRepository = userRepository;
         }
 
-        public UserEntity Login(string username, string password)
+        public UserEntity? Login(string username, string password)
         {
             // Bước 1: Gọi Data lấy User theo Username
             var user = _userRepository.GetUserByUsername(username);

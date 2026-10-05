@@ -11,7 +11,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace KnapsackChallenge.UI.ViewModels.Features.Admin
+namespace KnapsackChallenge.UI.Features.Admin
 {
     /// <summary>
     /// Interaction logic for MainAdminView.xaml

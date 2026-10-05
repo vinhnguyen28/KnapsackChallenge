@@ -5,7 +5,7 @@
         xmlns:auth="clr-namespace:KnapsackChallenge.UI.Features.Auth"
         xmlns:admin="clr-namespace:KnapsackChallenge.UI.Features.Admin"
         xmlns:player="clr-namespace:KnapsackChallenge.UI.Features.Player"
-        xmlns:views="clr-namespace:KnapsackChallenge.UI.Views"
+        xmlns:views="clr-namespace:KnapsackChallenge.UI.Features.Admin"
         Title="Knapsack Challenge"
         Background="Black"
         Height="600" Width="900"

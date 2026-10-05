@@ -6,5 +6,6 @@ namespace KnapsackChallenge.Common.Enums
 {
     internal class Role
     {
+        
     }
 }

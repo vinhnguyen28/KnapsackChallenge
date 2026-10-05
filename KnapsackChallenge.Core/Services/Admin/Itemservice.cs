@@ -16,7 +16,8 @@ namespace KnapsackChallenge.Core.Services.Admin
 
         public (bool Success, string Message) Add(string name, int weight, int value)
         {
-            var error = Validate(ref name, weight, value);
+            name = (name ?? "").Trim();
+            var error = Validate(name, weight, value);
 
             if (error != null)
             { 
@@ -30,7 +31,7 @@ namespace KnapsackChallenge.Core.Services.Admin
 
         public (bool Success, string Message) Update(int id, string name, int weight, int value)
         {
-            var error = Validate(ref name, weight, value);
+            var error = Validate(name, weight, value);
             if (error != null) return (false, error);
 
             return _itemRepository.Update(id, name, weight, value)
@@ -46,9 +47,8 @@ namespace KnapsackChallenge.Core.Services.Admin
         }
 
         // Nghiệp vụ kiểm tra dữ liệu nằm ở Core, không nằm ở UI
-        private static string? Validate(ref string name, int weight, int value)
+        private static string? Validate(string name, int weight, int value)
         {
-            name = (name ?? "").Trim();
 
             if (name.Length == 0 || name.Length > 100) 
             {
