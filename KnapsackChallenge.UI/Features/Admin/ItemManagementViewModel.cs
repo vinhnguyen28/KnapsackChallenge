@@ -223,6 +223,7 @@ namespace KnapsackChallenge.UI.Features.Admin
             ItemName = "";
             WeightText = "";
             ValueText = "";
+            ClearMessages();
         }
 
         private void ClearMessages()

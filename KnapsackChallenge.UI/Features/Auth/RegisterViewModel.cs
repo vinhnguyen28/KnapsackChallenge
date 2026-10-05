@@ -34,9 +34,9 @@ namespace KnapsackChallenge.UI.Features.Auth
         public ICommand BackToLoginCommand { get; }
 
         // Đăng ký thành công -> gửi kèm Username để màn Đăng nhập điền sẵn
-        public event Action<string> RegisterSucceeded;
+        public event Action<string>? RegisterSucceeded;
         // Bấm "Quay lại đăng nhập"
-        public event Action BackRequested;
+        public event Action? BackRequested;
 
         public RegisterViewModel()
         {
@@ -78,7 +78,7 @@ namespace KnapsackChallenge.UI.Features.Auth
             }
             catch (SqlException)
             {
-                ErrorMessage = "Ket noi sever that bai, ma loi -410.";
+                ErrorMessage = "Không kết nối được cơ sở dữ liệu! Kiểm tra lại connection string.";
             }
         }
     }

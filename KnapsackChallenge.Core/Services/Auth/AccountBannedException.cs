@@ -1,10 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace KnapsackChallenge.Core.Services.Auth
 {
-    internal class AccountBannedException
+    public class AccountBannedException : Exception
     {
+        public AccountBannedException(string message) : base(message)
+        {
+        }
+        
+        public AccountBannedException(string message, Exception inner): base(message, inner)
+        {
+        }
     }
 }

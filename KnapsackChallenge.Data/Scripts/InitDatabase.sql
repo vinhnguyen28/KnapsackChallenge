@@ -56,8 +56,3 @@ CREATE TABLE SelectedItems (
     ItemId INT FOREIGN KEY REFERENCES Items(Id),
     PRIMARY KEY (SessionId, UserId, ItemId)
 );
-
-
-
- SELECT *
- FROM Users

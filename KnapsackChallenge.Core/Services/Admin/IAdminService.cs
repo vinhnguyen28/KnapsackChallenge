@@ -4,7 +4,7 @@ using System.Text;
 
 namespace KnapsackChallenge.Core.Services.Admin
 {
-    internal class IAdminService
+    public interface IAdminService
     {
     }
 }

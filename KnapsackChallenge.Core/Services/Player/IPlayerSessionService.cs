@@ -4,7 +4,7 @@ using System.Text;
 
 namespace KnapsackChallenge.Core.Services.Player
 {
-    internal class IPlayerSessionService
+    public interface IPlayerSessionService
     {
     }
 }
