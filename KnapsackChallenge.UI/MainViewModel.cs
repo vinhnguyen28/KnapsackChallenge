@@ -3,7 +3,6 @@ using KnapsackChallenge.UI.Shared;
 using KnapsackChallenge.UI.Features.Auth;
 using KnapsackChallenge.UI.Features.Admin;
 using KnapsackChallenge.UI.Features.Player;
-using KnapsackChallenge.Common.Enums;
 
 namespace KnapsackChallenge.UI
 {
@@ -11,7 +10,6 @@ namespace KnapsackChallenge.UI
     {
         private ViewModelBase _currentViewModel = null!;
 
-        // MainWindow Binding vào thuộc tính này
         public ViewModelBase CurrentViewModel
         {
             get => _currentViewModel;
@@ -20,17 +18,17 @@ namespace KnapsackChallenge.UI
 
         public MainViewModel()
         {
-            ShowLogin(); 
+            ShowLogin();
         }
 
         private void ShowLogin(string? username = null, string? info = null)
         {
             var vm = new LoginViewModel();
 
-            if (username != null) 
+            if (username != null)
             {
                 vm.Username = username;
-            } 
+            }
 
             vm.InfoMessage = info ?? "";
 
@@ -54,9 +52,15 @@ namespace KnapsackChallenge.UI
         private void OnLoginSucceeded(UserEntity user)
         {
             if (user.Role == "Admin")
-                CurrentViewModel = new ItemManagementViewModel();
+            {
+                var adminVm = new MainAdminViewModel(user);
+                adminVm.LogoutRequested += () => ShowLogin();
+                CurrentViewModel = adminVm;
+            }
             else
-                CurrentViewModel = new SoloGameViewModel();
+            {
+                CurrentViewModel = new SoloGameViewModel(user);
+            }
         }
     }
 }

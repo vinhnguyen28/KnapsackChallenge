@@ -5,7 +5,6 @@
         xmlns:auth="clr-namespace:KnapsackChallenge.UI.Features.Auth"
         xmlns:admin="clr-namespace:KnapsackChallenge.UI.Features.Admin"
         xmlns:player="clr-namespace:KnapsackChallenge.UI.Features.Player"
-        xmlns:views="clr-namespace:KnapsackChallenge.UI.Features.Admin"
         Title="Knapsack Challenge"
         Background="Black"
         Height="600" Width="900"
@@ -20,19 +19,18 @@
         <DataTemplate DataType="{x:Type auth:LoginViewModel}">
             <auth:LoginView />
         </DataTemplate>
-        
+
         <DataTemplate DataType="{x:Type auth:RegisterViewModel}">
             <auth:RegisterView />
         </DataTemplate>
-        
+
+        <DataTemplate DataType="{x:Type admin:MainAdminViewModel}">
+            <admin:MainAdminView />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type player:SoloGameViewModel}">
             <player:SoloGameView />
         </DataTemplate>
-        
-        <DataTemplate DataType="{x:Type admin:ItemManagementViewModel}">
-            <admin:ItemManagementView />
-        </DataTemplate>
-        
     </Window.Resources>
 
     <Grid>

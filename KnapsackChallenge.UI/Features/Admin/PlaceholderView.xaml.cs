@@ -2,9 +2,9 @@
 
 namespace KnapsackChallenge.UI.Features.Admin
 {
-    public partial class MainAdminView : UserControl
+    public partial class PlaceholderView : UserControl
     {
-        public MainAdminView()
+        public PlaceholderView()
         {
             InitializeComponent();
         }

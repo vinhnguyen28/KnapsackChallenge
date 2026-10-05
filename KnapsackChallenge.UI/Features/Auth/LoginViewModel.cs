@@ -63,30 +63,27 @@ namespace KnapsackChallenge.UI.Features.Auth
 
             InfoMessage = "";
 
-            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(password))
-            {
-                ErrorMessage = "Vui lòng nhập đầy đủ tài khoản và mật khẩu!";
-                return;
-            }
-
             try
             {
-                // Gọi Core xử lý logic
                 var user = _authService.Login(Username, password);
 
                 if (user != null)
                 {
                     ErrorMessage = "";
-                    LoginSucceeded?.Invoke(user); // MainWindow sẽ đổi màn hình theo user.Role
+                    LoginSucceeded?.Invoke(user);
                 }
                 else
                 {
                     ErrorMessage = "Sai tài khoản hoặc mật khẩu!";
                 }
             }
+            catch (AccountBannedException ex)
+            {
+                // AuthService đã gắn sẵn "Lý do: ..." trong Message
+                ErrorMessage = ex.Message;
+            }
             catch (SqlException)
             {
-                // Lỗi kết nối SQL Server (sai Server/mật khẩu sa, chưa bật SQL...) -> báo thay vì crash app
                 ErrorMessage = "Không kết nối được cơ sở dữ liệu! Kiểm tra lại connection string.";
             }
         }

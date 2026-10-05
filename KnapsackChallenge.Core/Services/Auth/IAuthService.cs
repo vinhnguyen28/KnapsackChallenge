@@ -4,11 +4,13 @@ namespace KnapsackChallenge.Core.Services.Auth
 {
     public interface IAuthService
     {
-        // Hàm Login nhận vào user/pass, trả về thông tin User nếu đúng, trả về null nếu sai
+        // Đăng nhập.
+        // - Trả về UserEntity nếu hợp lệ.
+        // - Trả về null nếu sai user/pass.
+        // - Ném AccountBannedException nếu tài khoản bị ban.
         UserEntity? Login(string username, string password);
 
-        // Đăng ký tài khoản mới (luôn có Role = Player).
-        // Trả về (Success, Message): Message là lý do lỗi nếu Success = false
+        // Đăng ký tài khoản mới (Role luôn = Player).
         (bool Success, string Message) Register(string username, string password);
     }
 }

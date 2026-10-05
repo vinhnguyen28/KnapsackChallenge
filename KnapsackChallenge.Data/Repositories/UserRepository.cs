@@ -1,6 +1,6 @@
-﻿
-using System.Data;
+﻿using System.Data;
 using Microsoft.Data.SqlClient;
+using KnapsackChallenge.Common.DTOs;
 using KnapsackChallenge.Data.Entities;
 
 namespace KnapsackChallenge.Data.Repositories
@@ -11,75 +11,168 @@ namespace KnapsackChallenge.Data.Repositories
 
         public UserRepository()
         {
-            // Khởi tạo helper để lấy chuỗi kết nối
             _dbHelper = new DbConnectionHelper();
         }
 
-        // Hàm tìm user theo Usernametieeps
+        // Danh sách cột dùng cho luồng Auth (có PasswordHash).
+        private const string AuthColumns =
+            "Id, Username, PasswordHash, Role, IsBanned, BanReason, BannedAt, BannedBy, CreatedAt, LastLoginAt, LastSeenAt";
+
+        private static UserEntity MapUser(IDataRecord r) => new UserEntity
+        {
+            Id = r.GetInt32(0),
+            Username = r.IsDBNull(1) ? null : r.GetString(1),
+            PasswordHash = r.IsDBNull(2) ? null : r.GetString(2),
+            Role = r.IsDBNull(3) ? null : r.GetString(3),
+            IsBanned = !r.IsDBNull(4) && r.GetBoolean(4),
+            BanReason = r.IsDBNull(5) ? null : r.GetString(5),
+            BannedAt = r.IsDBNull(6) ? null : r.GetDateTime(6),
+            BannedBy = r.IsDBNull(7) ? null : r.GetString(7),
+            CreatedAt = r.IsDBNull(8) ? default : r.GetDateTime(8),
+            LastLoginAt = r.IsDBNull(9) ? null : r.GetDateTime(9),
+            LastSeenAt = r.IsDBNull(10) ? null : r.GetDateTime(10),
+        };
+
+        // ---------- AUTH ----------
+
         public UserEntity? GetUserByUsername(string username)
         {
-            using (var connection = _dbHelper.CreateConnection())
-            {
-                connection.Open();
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "SELECT Id, Username, PasswordHash, Role FROM Users WHERE Username = @Username";
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = $"SELECT {AuthColumns} FROM Users WHERE Username = @Username";
+            AddParameter(command, "@Username", username);
+            using var reader = command.ExecuteReader();
+            return reader.Read() ? MapUser(reader) : null;
+        }
 
-                    // Tránh SQL Injection
-                    var param = command.CreateParameter();
-                    param.ParameterName = "@Username";
-                    param.Value = username;
-                    command.Parameters.Add(param);
+        public UserEntity? GetById(int id)
+        {
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = $"SELECT {AuthColumns} FROM Users WHERE Id = @Id";
+            AddParameter(command, "@Id", id);
+            using var reader = command.ExecuteReader();
+            return reader.Read() ? MapUser(reader) : null;
+        }
 
-                    using (var reader = command.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            return new UserEntity
-                            {
-                                Id = reader.GetInt32(0),
-                                Username = reader.GetString(1),
-                                PasswordHash = reader.GetString(2),
-                                Role = reader.GetString(3)
-                            };
-                        }
-                    }
-                }
-            }
-            return null;
-        } 
-
-        // Thêm user mới vào bảng Users.
-        // Trả về true nếu thêm thành công, false nếu Username đã tồn tại (vi phạm UNIQUE).
         public bool CreateUser(string username, string passwordHash, string role)
         {
-            using (var connection = _dbHelper.CreateConnection())
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText =
+                "INSERT INTO Users (Username, PasswordHash, Role) VALUES (@Username, @PasswordHash, @Role)";
+            AddParameter(command, "@Username", username);
+            AddParameter(command, "@PasswordHash", passwordHash);
+            AddParameter(command, "@Role", role);
+            try
             {
-                connection.Open();
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText =
-                        "INSERT INTO Users (Username, PasswordHash, Role) VALUES (@Username, @PasswordHash, @Role)";
-
-                    AddParameter(command, "@Username", username);
-                    AddParameter(command, "@PasswordHash", passwordHash);
-                    AddParameter(command, "@Role", role);
-
-                    try
-                    {
-                        command.ExecuteNonQuery(); // INSERT/UPDATE/DELETE dùng ExecuteNonQuery (không trả dòng dữ liệu)
-                        return true;
-                    }
-                    catch (SqlException ex) when (ex.Number == 2627 || ex.Number == 2601)
-                    {
-                        // 2627 / 2601 = lỗi trùng khóa UNIQUE -> Username đã có người dùng
-                        return false;
-                    }
-                }
+                command.ExecuteNonQuery();
+                return true;
+            }
+            catch (SqlException ex) when (ex.Number == 2627 || ex.Number == 2601)
+            {
+                // Trùng UNIQUE Username
+                return false;
             }
         }
 
-        // Hàm phụ để thêm tham số nhanh, tránh lặp code
+        // ---------- HEARTBEAT ----------
+
+        // Gọi sau khi xác thực đăng nhập thành công.
+        public void MarkLogin(int userId)
+        {
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText =
+                "UPDATE Users SET LastLoginAt = SYSUTCDATETIME(), LastSeenAt = SYSUTCDATETIME() WHERE Id = @Id";
+            AddParameter(command, "@Id", userId);
+            command.ExecuteNonQuery();
+        }
+
+        // online=true: LastSeenAt = now
+        // online=false: LastSeenAt = NULL (đăng xuất/đóng app)
+        public void UpdateLastSeen(int userId, bool online)
+        {
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = online
+                ? "UPDATE Users SET LastSeenAt = SYSUTCDATETIME() WHERE Id = @Id"
+                : "UPDATE Users SET LastSeenAt = NULL WHERE Id = @Id";
+            AddParameter(command, "@Id", userId);
+            command.ExecuteNonQuery();
+        }
+
+        // ---------- ADMIN ----------
+
+        // Ban/Unban: dùng chung 1 câu UPDATE để bảo toàn tính nguyên tử.
+        public void SetBanState(int userId, bool isBanned, string? reason, string adminUsername)
+        {
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                UPDATE Users SET
+                    IsBanned  = @IsBanned,
+                    BanReason = CASE WHEN @IsBanned = 1 THEN @Reason        ELSE NULL END,
+                    BannedAt  = CASE WHEN @IsBanned = 1 THEN SYSUTCDATETIME() ELSE NULL END,
+                    BannedBy  = CASE WHEN @IsBanned = 1 THEN @AdminUsername ELSE NULL END
+                WHERE Id = @Id";
+            AddParameter(command, "@Id", userId);
+            AddParameter(command, "@IsBanned", isBanned);
+            AddParameter(command, "@Reason", (object?)reason ?? DBNull.Value);
+            AddParameter(command, "@AdminUsername", adminUsername);
+            command.ExecuteNonQuery();
+        }
+
+        // Trả DTO, KHÔNG select PasswordHash.
+        public List<UserListItemDto> GetAllForAdmin()
+        {
+            var list = new List<UserListItemDto>();
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT Id, Username, Role, IsBanned, BanReason, BannedAt, BannedBy,
+                       CreatedAt, LastLoginAt, LastSeenAt
+                FROM Users
+                ORDER BY Id";
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                list.Add(new UserListItemDto
+                {
+                    Id = reader.GetInt32(0),
+                    Username = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                    Role = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    IsBanned = !reader.IsDBNull(3) && reader.GetBoolean(3),
+                    BanReason = reader.IsDBNull(4) ? null : reader.GetString(4),
+                    BannedAt = reader.IsDBNull(5) ? null : reader.GetDateTime(5),
+                    BannedBy = reader.IsDBNull(6) ? null : reader.GetString(6),
+                    CreatedAt = reader.IsDBNull(7) ? default : reader.GetDateTime(7),
+                    LastLoginAt = reader.IsDBNull(8) ? null : reader.GetDateTime(8),
+                    LastSeenAt = reader.IsDBNull(9) ? null : reader.GetDateTime(9),
+                });
+            }
+            return list;
+        }
+
+        public int CountTodayRegistrations()
+        {
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText =
+                "SELECT COUNT(*) FROM Users WHERE CAST(CreatedAt AS DATE) = CAST(SYSUTCDATETIME() AS DATE)";
+            return Convert.ToInt32(command.ExecuteScalar());
+        }
+
+        // ---------- helper ----------
+
         private static void AddParameter(IDbCommand command, string name, object value)
         {
             var param = command.CreateParameter();
