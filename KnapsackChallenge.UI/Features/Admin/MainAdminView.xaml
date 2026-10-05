@@ -9,7 +9,6 @@
              Background="{StaticResource AppBackgroundBrush}">
 
     <UserControl.Resources>
-
         <!-- Ánh xạ ViewModel -> View cho vùng nội dung bên phải -->
         <DataTemplate DataType="{x:Type admin:ItemManagementViewModel}">
             <admin:ItemManagementView />
@@ -21,6 +20,10 @@
         
         <DataTemplate DataType="{x:Type admin:BanLogViewModel}">
             <admin:BanLogView />
+        </DataTemplate>
+        
+        <DataTemplate DataType="{x:Type admin:SetManagementViewModel}">
+                <admin:SetManagementView />
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type admin:PlaceholderViewModel}">

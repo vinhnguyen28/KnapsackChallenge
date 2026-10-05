@@ -266,11 +266,10 @@
 
                                     <!-- Nút Ban: ẩn khi IsBanned -->
                                     <Button Content="Ban"
-                                            Style="{StaticResource MiniGridButton}"
-                                            Background="#7F1D1D"
-                                            Command="{Binding DataContext.BanCommand,
-                                                      RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                            CommandParameter="{Binding}">
+                                        Background="#7F1D1D"
+                                        Command="{Binding DataContext.BanCommand,
+                                                        RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}">
                                         <Button.Style>
                                             <Style TargetType="Button" BasedOn="{StaticResource MiniGridButton}">
                                                 <Setter Property="Visibility" Value="Visible"/>
@@ -285,11 +284,11 @@
 
                                     <!-- Nút Unban: hiện khi IsBanned -->
                                     <Button Content="Unban"
-                                            Style="{StaticResource MiniGridButton}"
-                                            Background="#059669"
-                                            Command="{Binding DataContext.UnbanCommand,
-                                                      RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                            CommandParameter="{Binding}">
+                                        Background="#059669"
+                                        Command="{Binding DataContext.UnbanCommand,
+                                                     RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        CommandParameter="{Binding}">
+                                        
                                         <Button.Style>
                                             <Style TargetType="Button" BasedOn="{StaticResource MiniGridButton}">
                                                 <Setter Property="Visibility" Value="Collapsed"/>

@@ -71,8 +71,7 @@ namespace KnapsackChallenge.UI.Features.Admin
                 "items" => new ItemManagementViewModel(_dialog),
                 "players" => new PlayerManagementViewModel(_adminUser, _dialog),
                 "banlogs" => new BanLogViewModel(),
-                "sets" => new PlaceholderViewModel("📋", "Quản lý bộ đề / màn chơi",
-                                                     "Sẽ được hiện thực ở Giai đoạn 4."),
+                "sets" => new SetManagementViewModel(),        // ← thay PlaceholderViewModel
                 _ => new PlaceholderViewModel("👥", "Quản lý người chơi",
                                                      "Không xác định được trang."),
             };

@@ -5,6 +5,12 @@
     <Application.Resources>
 
         <!-- =========================================================
+             CONVERTER DÙNG CHUNG
+             ========================================================= -->
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+        
+
+        <!-- =========================================================
              NÚT BO TRÒN (dùng ở LoginView / RegisterView)
              ========================================================= -->
         <Style x:Key="RoundedButton" TargetType="Button">
@@ -12,13 +18,13 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="8">
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="8">
                             <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              Margin="{TemplateBinding Padding}"/>
+                      VerticalAlignment="Center"
+                      Margin="{TemplateBinding Padding}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
