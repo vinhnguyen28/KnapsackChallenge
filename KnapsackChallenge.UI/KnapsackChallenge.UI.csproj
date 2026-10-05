@@ -9,13 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-  <Content Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
-  <Content Include="appsettings.Local.json" CopyToOutputDirectory="PreserveNewest"
-           Condition="Exists('appsettings.Local.json')" />
-</ItemGroup>
+    <Content Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="appsettings.Local.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('appsettings.Local.json')" />
+  </ItemGroup>
 
   <ItemGroup>
-    <Content Include="appsettings.Local.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('appsettings.Local.json')" />
+    <ProjectReference Include="..\KnapsackChallenge.Core\KnapsackChallenge.Core.csproj" />
+    <ProjectReference Include="..\KnapsackChallenge.Data\KnapsackChallenge.Data.csproj" />
   </ItemGroup>
 
 </Project>

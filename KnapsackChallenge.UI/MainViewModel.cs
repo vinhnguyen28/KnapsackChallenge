@@ -3,6 +3,7 @@ using KnapsackChallenge.UI.Shared;
 using KnapsackChallenge.UI.Features.Auth;
 using KnapsackChallenge.UI.Features.Admin;
 using KnapsackChallenge.UI.Features.Player;
+using KnapsackChallenge.Common.Enums;
 
 namespace KnapsackChallenge.UI
 {

@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace KnapsackChallenge.Common.Enums
 {
-    internal class Role
+    public enum Role
     {
-        
+        Admin,
+        Player
     }
 }
