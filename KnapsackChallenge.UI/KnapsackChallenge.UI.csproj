@@ -8,10 +8,13 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
-<ItemGroup>
-  <Content Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
-  <Content Include="appsettings.Local.json" CopyToOutputDirectory="PreserveNewest"
-           Condition="Exists('appsettings.Local.json')" />
-</ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\KnapsackChallenge.Common\KnapsackChallenge.Common.csproj" />
+    <ProjectReference Include="..\KnapsackChallenge.Core\KnapsackChallenge.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings.Local.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('appsettings.Local.json')" />
+  </ItemGroup>
 
 </Project>
