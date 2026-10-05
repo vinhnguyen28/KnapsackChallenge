@@ -1,17 +1,23 @@
-﻿using Microsoft.Data.SqlClient;
-using System.Data;
+﻿using System.Data;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 
 namespace KnapsackChallenge.Data
 {
     public class DbConnectionHelper
     {
-        // Chuỗi kết nối tới SQL Server (Sửa "localhost" thành tên server SQL của bạn nếu cần)
-        private readonly string _connectionString = @"Server=192.168.104.1;Database=KnapsackChallenge;User Id=sa;Password=Vq112113;TrustServerCertificate=True;";
+        private static readonly IConfigurationRoot _config = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: false)
+            .AddJsonFile("appsettings.Local.json", optional: true)
+            .AddEnvironmentVariables()
+            .Build();
 
-        public IDbConnection CreateConnection()
-        {
-            return new SqlConnection(_connectionString);
-        }
+        private readonly string _connectionString =
+            _config.GetConnectionString("KnapsackDb")
+            ?? throw new InvalidOperationException(
+                "Thiếu ConnectionStrings:KnapsackDb trong appsettings.json.");
+
+        public IDbConnection CreateConnection() => new SqlConnection(_connectionString);
     }
 }
-
