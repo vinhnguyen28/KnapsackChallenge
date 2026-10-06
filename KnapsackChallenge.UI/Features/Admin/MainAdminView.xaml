@@ -29,6 +29,15 @@
             <admin:SetManagementView />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type admin:StatsViewModel}">
+            <admin:StatsView />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type admin:GameModeManagementViewModel}">
+            <admin:GameModeManagementView />
+        </DataTemplate>
+        
+
         <DataTemplate DataType="{x:Type admin:PlaceholderViewModel}">
             <admin:PlaceholderView />
         </DataTemplate>
@@ -226,18 +235,30 @@
                                                         <Setter Property="Data"
                                                                 Value="{DynamicResource IconPlayers}"/>
                                                     </DataTrigger>
+                                                    
                                                     <DataTrigger Binding="{Binding Key}" Value="items">
                                                         <Setter Property="Data"
                                                                 Value="{DynamicResource IconItems}"/>
                                                     </DataTrigger>
+                                                    
                                                     <DataTrigger Binding="{Binding Key}" Value="sets">
                                                         <Setter Property="Data"
                                                                 Value="{DynamicResource IconTagStack}"/>
                                                     </DataTrigger>
+                                                    
                                                     <DataTrigger Binding="{Binding Key}" Value="banlogs">
                                                         <Setter Property="Data"
                                                                 Value="{DynamicResource IconBanLogs}"/>
                                                     </DataTrigger>
+
+                                                    <DataTrigger Binding="{Binding Key}" Value="stats">
+                                                        <Setter Property="Data" Value="{DynamicResource IconChart}"/>
+                                                    </DataTrigger>
+                                                    
+                                                    <DataTrigger Binding="{Binding Key}" Value="modes">
+                                                        <Setter Property="Data" Value="{DynamicResource IconGamepad}"/>
+                                                    </DataTrigger>
+                                                    
                                                 </Style.Triggers>
                                             </Style>
                                         </Path.Style>

@@ -7,7 +7,8 @@ namespace KnapsackChallenge.Data.Repositories
     {
         private readonly DbConnectionHelper _dbHelper = new();
 
-        // N ván gần đây nhất của 1 người chơi
+        // N ván gần đây nhất của 1 người chơi.
+        // v3: bổ sung Mode / OptimalValue / TimeSpentSeconds để tính % đạt tối ưu.
         public List<GameHistoryDto> GetRecentGames(int userId, int limit = 20)
         {
             var list = new List<GameHistoryDto>();
@@ -17,7 +18,8 @@ namespace KnapsackChallenge.Data.Repositories
             command.CommandText = @"
                 SELECT TOP (@Limit)
                     gs.Id, gs.RoomCode, ks.SetName, ks.Difficulty, ks.MaxWeight,
-                    rp.TotalScore, rp.TotalWeight, rp.IsSubmitted, gs.CreatedAt
+                    rp.TotalScore, rp.TotalWeight, rp.IsSubmitted, gs.CreatedAt,
+                    gs.Mode, gs.OptimalValue, gs.TimeSpentSeconds
                 FROM RoomPlayers rp
                 INNER JOIN GameSessions gs  ON gs.Id = rp.SessionId
                 LEFT  JOIN KnapsackSets ks  ON ks.Id = gs.SetId
@@ -40,13 +42,15 @@ namespace KnapsackChallenge.Data.Repositories
                     TotalWeight = reader.IsDBNull(6) ? 0 : reader.GetInt32(6),
                     IsSubmitted = !reader.IsDBNull(7) && reader.GetBoolean(7),
                     CreatedAt = reader.IsDBNull(8) ? null : reader.GetDateTime(8),
+                    Mode = reader.IsDBNull(9) ? "Solo" : reader.GetString(9),
+                    OptimalValue = reader.IsDBNull(10) ? null : reader.GetInt32(10),
+                    TimeSpentSeconds = reader.IsDBNull(11) ? null : reader.GetInt32(11),
                 });
             }
             return list;
         }
 
         // Tổng hợp: tổng số ván / đã nộp / điểm cao nhất / điểm TB / tổng điểm.
-        // Nếu người chơi chưa có ván nào thì tất cả = 0 (ISNULL để không phải check DBNull nhiều).
         public (int TotalGames, int SubmittedGames, int HighestScore, double AverageScore, int TotalScore)
             GetSummary(int userId)
         {

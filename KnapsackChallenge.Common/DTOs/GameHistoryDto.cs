@@ -12,5 +12,16 @@
         public int MaxWeight { get; set; }
         public bool IsSubmitted { get; set; }
         public DateTime? CreatedAt { get; set; }
+
+        // ---- Bổ sung v3 ----
+        public string Mode { get; set; } = "Solo";
+        public int? OptimalValue { get; set; }
+        public int? TimeSpentSeconds { get; set; }
+
+        // % đạt tối ưu tính sẵn để UI binding.
+        public double OptimalPercent =>
+            OptimalValue.HasValue && OptimalValue.Value > 0
+                ? (double)TotalScore / OptimalValue.Value * 100.0
+                : 0;
     }
 }

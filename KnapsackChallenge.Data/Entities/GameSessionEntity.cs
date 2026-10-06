@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace KnapsackChallenge.Data.Entities
+﻿namespace KnapsackChallenge.Data.Entities
 {
     public class GameSessionEntity
     {
@@ -10,5 +6,10 @@ namespace KnapsackChallenge.Data.Entities
         public string RoomCode { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty; // 'Waiting', 'Playing', 'Finished'
         public int SetId { get; set; }
+
+        // ---- Bổ sung v3 ----
+        public string Mode { get; set; } = "Solo"; // 'Solo' hoặc 'Multiplayer'
+        public int? OptimalValue { get; set; }      // giá trị tối ưu (server tính)
+        public int? TimeSpentSeconds { get; set; }  // thời gian hoàn thành ván
     }
 }

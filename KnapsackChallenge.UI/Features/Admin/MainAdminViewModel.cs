@@ -23,8 +23,10 @@ namespace KnapsackChallenge.UI.Features.Admin
             new() { Key = "players", Icon = "👥", Title = "Quản lý người chơi" },
             new() { Key = "items",   Icon = "🎒", Title = "Quản lý vật phẩm"   },
             new() { Key = "sets",    Icon = "📋", Title = "Quản lý bộ đề"      },
+            new() { Key = "stats",   Icon = "📊", Title = "Thống kê"           },
+            new() { Key = "modes",   Icon = "🎮", Title = "Quản lý chế độ"     },
             new() { Key = "banlogs", Icon = "🚫", Title = "Lịch sử ban"        },
-        };
+         };
 
         public string AdminUsername => _adminUser.Username ?? "";
 
@@ -71,10 +73,19 @@ namespace KnapsackChallenge.UI.Features.Admin
                 "items" => new ItemManagementViewModel(_dialog),
                 "players" => new PlayerManagementViewModel(_adminUser, _dialog),
                 "banlogs" => new BanLogViewModel(),
-                "sets" => new SetManagementViewModel(),        // ← thay PlaceholderViewModel
+                "sets" => new SetManagementViewModel(),
+                "stats" => new StatsViewModel(),
+                "modes" => CreateGameModeVm(),
                 _ => new PlaceholderViewModel("👥", "Quản lý người chơi",
                                                      "Không xác định được trang."),
             };
+        }
+
+        private GameModeManagementViewModel CreateGameModeVm()
+        {
+            var vm = new GameModeManagementViewModel();
+            vm.SetCurrentAdmin(_adminUser.Username ?? "");
+            return vm;
         }
 
         private void ExecuteLogout()

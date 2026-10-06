@@ -1,0 +1,455 @@
+﻿<UserControl x:Class="KnapsackChallenge.UI.Features.Admin.StatsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="680" d:DesignWidth="1000"
+             Background="{DynamicResource BrushBackground}">
+
+    <UserControl.Resources>
+        <Style x:Key="StatsRow" TargetType="DataGridRow"
+               BasedOn="{StaticResource GridRow}"/>
+    </UserControl.Resources>
+
+    <Grid Margin="20,16,20,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- =========================================================
+             FILTER BAR
+             ========================================================= -->
+        <Grid Grid.Row="0" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <ComboBox Grid.Column="0"
+                      Width="180"
+                      Style="{DynamicResource DarkComboBox}"
+                      ItemsSource="{Binding ModeOptions}"
+                      SelectedItem="{Binding SelectedMode, Mode=TwoWay}"
+                      DisplayMemberPath="DisplayText"/>
+
+            <ComboBox Grid.Column="2"
+                      Width="180"
+                      Style="{DynamicResource DarkComboBox}"
+                      ItemsSource="{Binding TimeOptions}"
+                      SelectedItem="{Binding SelectedTime, Mode=TwoWay}"
+                      DisplayMemberPath="DisplayText"/>
+
+            <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Đang tải..."
+                           FontFamily="{DynamicResource FontSans}"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Foreground="{DynamicResource BrushInkMuted}"
+                           VerticalAlignment="Center"
+                           Margin="0,0,12,0"
+                           Visibility="{Binding IsLoading,
+                                       Converter={StaticResource BoolToVisibility}}"/>
+                <Button Command="{Binding RefreshCommand}"
+                        Style="{DynamicResource ButtonSecondary}"
+                        Padding="12,7">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{DynamicResource IconRefresh}"
+                              Width="14" Height="14"
+                              Stroke="{Binding Foreground,
+                                       RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.5"
+                              Stretch="Uniform"
+                              VerticalAlignment="Center"
+                              Margin="0,0,8,0"/>
+                        <TextBlock Text="Làm mới" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- =========================================================
+             OVERVIEW CARDS (4 mục)
+             ========================================================= -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource BrushSurface}"
+                BorderBrush="{DynamicResource BrushRule}"
+                BorderThickness="1"
+                CornerRadius="2"
+                Margin="0,0,0,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Margin="16,10">
+                    <TextBlock Text="Tổng số ván"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeCaption}"
+                               Foreground="{DynamicResource BrushInkMuted}"/>
+                    <TextBlock Text="{Binding TotalGames}"
+                               FontFamily="{DynamicResource FontMono}"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource BrushInk}"
+                               Margin="0,2,0,0"/>
+                </StackPanel>
+
+                <Rectangle Grid.Column="1" Width="1" Fill="{DynamicResource BrushRule}" Margin="0,8"/>
+
+                <StackPanel Grid.Column="2" Margin="16,10">
+                    <TextBlock Text="Tỷ lệ đạt tối ưu"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeCaption}"
+                               Foreground="{DynamicResource BrushInkMuted}"/>
+                    <TextBlock FontFamily="{DynamicResource FontMono}"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource BrushInk}"
+                               Margin="0,2,0,0"
+                               Text="{Binding OptimalRate, StringFormat={}{0:0.0}%}"/>
+                </StackPanel>
+
+                <Rectangle Grid.Column="3" Width="1" Fill="{DynamicResource BrushRule}" Margin="0,8"/>
+
+                <StackPanel Grid.Column="4" Margin="16,10">
+                    <TextBlock Text="% tối ưu trung bình"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeCaption}"
+                               Foreground="{DynamicResource BrushInkMuted}"/>
+                    <TextBlock FontFamily="{DynamicResource FontMono}"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource BrushInk}"
+                               Margin="0,2,0,0"
+                               Text="{Binding AvgOptimalPercent, StringFormat={}{0:0.0}%}"/>
+                </StackPanel>
+
+                <Rectangle Grid.Column="5" Width="1" Fill="{DynamicResource BrushRule}" Margin="0,8"/>
+
+                <StackPanel Grid.Column="6" Margin="16,10">
+                    <TextBlock Text="Điểm cao nhất"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeCaption}"
+                               Foreground="{DynamicResource BrushInkMuted}"/>
+                    <TextBlock FontFamily="{DynamicResource FontMono}"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource BrushInk}"
+                               Margin="0,2,0,0"
+                               Text="{Binding MaxScore}"/>
+                    <TextBlock FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeCaption}"
+                               Foreground="{DynamicResource BrushInkMuted}"
+                               TextTrimming="CharacterEllipsis"
+                               Text="{Binding MaxScoreHolder, TargetNullValue='—', FallbackValue='—'}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- =========================================================
+             BAR CHART: % tối ưu trung bình theo bộ đề
+             Vẽ bằng ItemsControl + Rectangle (WPF thuần).
+             ========================================================= -->
+        <Border Grid.Row="2"
+                Background="{DynamicResource BrushSurface}"
+                BorderBrush="{DynamicResource BrushRule}"
+                BorderThickness="1"
+                CornerRadius="2"
+                Padding="16,12"
+                Margin="0,0,0,14">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0"
+                           Text="% tối ưu trung bình theo bộ đề"
+                           FontFamily="{DynamicResource FontSans}"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource BrushInkMuted}"
+                           Margin="0,0,0,10"/>
+
+                <!-- Chiều cao cố định 190px (150 cột + 40 label). -->
+                <Grid Grid.Row="1" Height="190">
+                    <ItemsControl ItemsSource="{Binding ChartBars}"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Bottom">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Width="86"
+                                            Margin="4,0"
+                                            VerticalAlignment="Bottom">
+
+                                    <!-- Con số trên đầu cột -->
+                                    <TextBlock Text="{Binding ValueText}"
+                                               FontFamily="{DynamicResource FontMono}"
+                                               FontSize="{DynamicResource FontSizeCaption}"
+                                               Foreground="{DynamicResource BrushInkMuted}"
+                                               HorizontalAlignment="Center"
+                                               Margin="0,0,0,4"/>
+
+                                    <!-- Cột -->
+                                    <Border Background="{DynamicResource BrushAccent}"
+                                            Width="44"
+                                            Height="{Binding BarHeight}"
+                                            CornerRadius="2,2,0,0"
+                                            HorizontalAlignment="Center"/>
+
+                                    <!-- Đường đáy -->
+                                    <Rectangle Height="1"
+                                               Fill="{DynamicResource BrushRule}"
+                                               HorizontalAlignment="Stretch"/>
+
+                                    <!-- Nhãn bộ đề (xuống dòng nếu dài) -->
+                                    <TextBlock Text="{Binding Label}"
+                                               FontFamily="{DynamicResource FontSans}"
+                                               FontSize="{DynamicResource FontSizeCaption}"
+                                               Foreground="{DynamicResource BrushInkMuted}"
+                                               HorizontalAlignment="Center"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap"
+                                               MaxHeight="32"
+                                               Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Empty state chart -->
+                    <TextBlock Text="Chưa có dữ liệu biểu đồ"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               Foreground="{DynamicResource BrushInkMuted}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ChartBars.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- =========================================================
+             HAI BẢNG: SET STATS + TOP PLAYERS
+             ========================================================= -->
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="380"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Bảng theo bộ đề -->
+            <Border Grid.Column="0" Style="{DynamicResource Card}" Padding="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0"
+                            BorderBrush="{DynamicResource BrushRule}"
+                            BorderThickness="0,0,0,1"
+                            Padding="12,8">
+                        <TextBlock Text="Thống kê theo bộ đề"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeCaption}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushInkMuted}"/>
+                    </Border>
+
+                    <Grid Grid.Row="1">
+                        <DataGrid ItemsSource="{Binding SetStats}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  SelectionMode="Single"
+                                  SelectionUnit="FullRow"
+                                  CanUserAddRows="False"
+                                  CanUserResizeRows="False"
+                                  CanUserResizeColumns="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="Transparent"
+                                  BorderThickness="0"
+                                  RowHeight="38"
+                                  FontSize="{DynamicResource FontSizeBody}"
+                                  Foreground="{DynamicResource BrushInk}"
+                                  ColumnHeaderStyle="{DynamicResource GridColumnHeader}"
+                                  RowStyle="{StaticResource StatsRow}"
+                                  CellStyle="{DynamicResource GridCell}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="BỘ ĐỀ"
+                                                    Binding="{Binding SetName}"
+                                                    Width="*"/>
+                                <DataGridTextColumn Header="ĐỘ KHÓ"
+                                                    Binding="{Binding Difficulty}"
+                                                    Width="80"
+                                                    ElementStyle="{StaticResource MutedCellText}"/>
+                                <DataGridTextColumn Header="LƯỢT"
+                                                    Binding="{Binding PlayCount}"
+                                                    Width="60"
+                                                    ElementStyle="{StaticResource RightCellText}"/>
+                                <DataGridTextColumn Header="% TB"
+                                                    Binding="{Binding AvgOptimalPercent, StringFormat={}{0:0.0}%}"
+                                                    Width="75"
+                                                    ElementStyle="{StaticResource RightCellText}"/>
+                                <DataGridTextColumn Header="TỶ LỆ ĐẠT"
+                                                    Binding="{Binding OptimalRate, StringFormat={}{0:0.0}%}"
+                                                    Width="90"
+                                                    ElementStyle="{StaticResource RightCellText}"/>
+                                <DataGridTextColumn Header="CAO NHẤT"
+                                                    Binding="{Binding MaxScore}"
+                                                    Width="80"
+                                                    ElementStyle="{StaticResource RightCellText}"/>
+                                <DataGridTextColumn Header="NGƯỜI GIỮ"
+                                                    Binding="{Binding RecordHolder}"
+                                                    Width="130"
+                                                    ElementStyle="{StaticResource MutedCellText}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    IsHitTestVisible="False">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SetStats.Count}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <Path Data="{DynamicResource IconChart}"
+                                  Width="36" Height="36"
+                                  Stroke="{DynamicResource BrushInkMuted}"
+                                  StrokeThickness="1.2"
+                                  Stretch="Uniform"
+                                  HorizontalAlignment="Center"
+                                  Opacity="0.5"/>
+                            <TextBlock Text="Chưa có ván nào được nộp"
+                                       FontFamily="{DynamicResource FontSans}"
+                                       FontSize="{DynamicResource FontSizeSmall}"
+                                       Foreground="{DynamicResource BrushInkMuted}"
+                                       Margin="0,10,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- Bảng Top 10 người chơi -->
+            <Border Grid.Column="2" Style="{DynamicResource Card}" Padding="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0"
+                            BorderBrush="{DynamicResource BrushRule}"
+                            BorderThickness="0,0,0,1"
+                            Padding="12,8">
+                        <StackPanel>
+                            <TextBlock Text="Top 10 người chơi"
+                                       FontFamily="{DynamicResource FontSans}"
+                                       FontSize="{DynamicResource FontSizeCaption}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource BrushInkMuted}"/>
+                            <TextBlock Text="Tiêu chí: Điểm cao nhất (BestScore)"
+                                       FontFamily="{DynamicResource FontSans}"
+                                       FontSize="{DynamicResource FontSizeCaption}"
+                                       Foreground="{DynamicResource BrushInkMuted}"
+                                       Opacity="0.75"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Grid Grid.Row="1">
+                        <DataGrid ItemsSource="{Binding TopPlayers}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  SelectionMode="Single"
+                                  SelectionUnit="FullRow"
+                                  CanUserAddRows="False"
+                                  CanUserResizeRows="False"
+                                  CanUserResizeColumns="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="Transparent"
+                                  BorderThickness="0"
+                                  RowHeight="38"
+                                  FontSize="{DynamicResource FontSizeBody}"
+                                  Foreground="{DynamicResource BrushInk}"
+                                  ColumnHeaderStyle="{DynamicResource GridColumnHeader}"
+                                  RowStyle="{StaticResource StatsRow}"
+                                  CellStyle="{DynamicResource GridCell}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="#"
+                                                    Binding="{Binding Rank}"
+                                                    Width="40"
+                                                    ElementStyle="{StaticResource RightCellText}"/>
+                                <DataGridTextColumn Header="NGƯỜI CHƠI"
+                                                    Binding="{Binding Username}"
+                                                    Width="*"/>
+                                <DataGridTextColumn Header="CAO NHẤT"
+                                                    Binding="{Binding BestScore}"
+                                                    Width="80"
+                                                    ElementStyle="{StaticResource RightCellText}"/>
+                                <DataGridTextColumn Header="% TB"
+                                                    Binding="{Binding AvgOptimalPercent, StringFormat={}{0:0.0}%}"
+                                                    Width="70"
+                                                    ElementStyle="{StaticResource RightCellText}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    IsHitTestVisible="False">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding TopPlayers.Count}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <TextBlock Text="Chưa có người chơi nào"
+                                       FontFamily="{DynamicResource FontSans}"
+                                       FontSize="{DynamicResource FontSizeSmall}"
+                                       Foreground="{DynamicResource BrushInkMuted}"/>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

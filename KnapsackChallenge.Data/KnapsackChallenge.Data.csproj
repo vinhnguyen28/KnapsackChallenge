@@ -10,15 +10,9 @@
     <ProjectReference Include="..\KnapsackChallenge.Common\KnapsackChallenge.Common.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Scripts\" />
-  </ItemGroup>
-
 <ItemGroup>
   <Content Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
-  <Content Include="appsettings.Local.json"
-           CopyToOutputDirectory="PreserveNewest"
-           Condition="Exists('appsettings.Local.json')" />
+  <Content Include="appsettings.Local.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('appsettings.Local.json')" />
 </ItemGroup>
 
   <ItemGroup>
