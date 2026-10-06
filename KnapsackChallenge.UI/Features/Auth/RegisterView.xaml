@@ -4,47 +4,134 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="600" d:DesignWidth="900">
 
-    <!-- DataContext (RegisterViewModel) được gán từ MainWindow.xaml.cs -->
+    <!-- =========================================================
+         Bố cục 2 cột — ĐỐI XỨNG với LoginView để không bị "nhảy"
+         khi điều hướng. Wordmark + illustration bên trái, form bên phải.
 
-    <Grid Background="Transparent">
-        <Border Width="350" Padding="20" Background="White" CornerRadius="10"
-                VerticalAlignment="Center" HorizontalAlignment="Center">
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="15" ShadowDepth="2" Opacity="0.1" />
-            </Border.Effect>
+         LƯU Ý QUAN TRỌNG:
+           - PasswordBox x:Name="txtPassword" và "txtConfirmPassword"
+             PHẢI giữ đúng tên + sự kiện PasswordChanged vì
+             RegisterView.xaml.cs push giá trị sang ViewModel
+             (PasswordBox không Binding trực tiếp được).
+           - RegisterViewModel KHÔNG có InfoMessage, chỉ có ErrorMessage,
+             nên chỉ dùng ErrorBanner.
+         ========================================================= -->
+    <Grid Background="{DynamicResource BrushBackground}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="440"/>
+        </Grid.ColumnDefinitions>
 
-            <StackPanel>
-                <TextBlock Text="ĐĂNG KÝ TÀI KHOẢN" FontSize="22" FontWeight="Bold"
-                           Foreground="#333" HorizontalAlignment="Center" Margin="0,0,0,25"/>
+        <!-- =========================================================
+             CỘT TRÁI — BRAND (giống LoginView để đồng bộ nhận diện)
+             ========================================================= -->
+        <StackPanel Grid.Column="0"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Left"
+                    Margin="72,0,40,0">
 
-                <TextBlock Text="Tài khoản:" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                
-                <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
-                         Padding="8" Margin="0,0,0,15" FontSize="14" />
+            <Path Data="{DynamicResource IllustrationKnapsack}"
+                  Stroke="{DynamicResource BrushInkMuted}"
+                  StrokeThickness="2"
+                  Fill="Transparent"
+                  Stretch="Uniform"
+                  Width="150" Height="150"
+                  HorizontalAlignment="Left"
+                  Margin="0,0,0,32"/>
 
-                <TextBlock Text="Mật khẩu:" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                <!-- PasswordChanged là sự kiện: mỗi lần gõ, hàm trong RegisterView.xaml.cs được gọi -->
-                <PasswordBox x:Name="txtPassword" PasswordChanged="Password_Changed"
-                             Padding="8" Margin="0,0,0,15" FontSize="14"/>
+            <TextBlock Text="KNAPSACK"
+                       FontFamily="{DynamicResource FontMono}"
+                       FontSize="32"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource BrushInk}"/>
 
-                <TextBlock Text="Nhập lại mật khẩu:" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                <PasswordBox x:Name="txtConfirmPassword" PasswordChanged="ConfirmPassword_Changed"
-                             Padding="8" Margin="0,0,0,15" FontSize="14"/>
+            <TextBlock Text="CHALLENGE"
+                       FontFamily="{DynamicResource FontMono}"
+                       FontSize="12"
+                       FontWeight="Regular"
+                       Foreground="{DynamicResource BrushInkMuted}"
+                       Margin="0,2,0,0"/>
 
-                <TextBlock Text="{Binding ErrorMessage}" Foreground="Red"
-                           HorizontalAlignment="Center" Margin="0,0,0,15" TextWrapping="Wrap" />
+            <Rectangle Height="1" Width="64"
+                       Fill="{DynamicResource BrushRule}"
+                       HorizontalAlignment="Left"
+                       Margin="0,24,0,24"/>
 
-                <Button Content="ĐĂNG KÝ" Command="{Binding RegisterCommand}"
-                        Style="{StaticResource RoundedButton}"
-                        Padding="10" Background="#4CAF50" Foreground="White"
-                        FontWeight="Bold" FontSize="14" Cursor="Hand" BorderThickness="0"/>
+            <TextBlock Text="Tạo tài khoản để bắt đầu chinh phục các bộ đề ba lô."
+                       FontFamily="{DynamicResource FontSans}"
+                       FontSize="14"
+                       Foreground="{DynamicResource BrushInkMuted}"
+                       TextWrapping="Wrap"
+                       MaxWidth="380"
+                       HorizontalAlignment="Left"/>
+        </StackPanel>
 
-                <Button Content="Đã có tài khoản? Quay lại đăng nhập" Command="{Binding BackToLoginCommand}"
-                        Style="{StaticResource RoundedButton}"
-                        Margin="0,12,0,0" Padding="4" Background="Transparent" Foreground="#2196F3"
-                        FontSize="13" Cursor="Hand" BorderThickness="0"/>
+        <!-- =========================================================
+             CỘT PHẢI — FORM ĐĂNG KÝ
+             ========================================================= -->
+        <Border Grid.Column="1"
+                Background="{DynamicResource BrushSurface}"
+                BorderBrush="{DynamicResource BrushRule}"
+                BorderThickness="1,0,0,0">
+            <StackPanel VerticalAlignment="Center" Margin="44,0">
+
+                <TextBlock Text="Đăng ký"
+                           FontFamily="{DynamicResource FontSans}"
+                           FontSize="22"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource BrushInk}"/>
+
+                <Rectangle Height="1"
+                           Fill="{DynamicResource BrushRule}"
+                           Margin="0,14,0,24"/>
+
+                <!-- Tài khoản -->
+                <TextBlock Text="Tài khoản"
+                           Style="{DynamicResource FieldLabel}"/>
+                <TextBox Style="{DynamicResource DarkTextBox}"
+                         Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
+                         Tag="username"/>
+
+                <!-- Mật khẩu — event handler Password_Changed do code-behind gắn,
+                     KHÔNG đổi tên -->
+                <TextBlock Text="Mật khẩu"
+                           Style="{DynamicResource FieldLabel}"
+                           Margin="0,14,0,6"/>
+                <PasswordBox x:Name="txtPassword"
+                             Style="{DynamicResource InputPasswordBox}"
+                             PasswordChanged="Password_Changed"/>
+
+                <!-- Nhập lại mật khẩu -->
+                <TextBlock Text="Nhập lại mật khẩu"
+                           Style="{DynamicResource FieldLabel}"
+                           Margin="0,14,0,6"/>
+                <PasswordBox x:Name="txtConfirmPassword"
+                             Style="{DynamicResource InputPasswordBox}"
+                             PasswordChanged="ConfirmPassword_Changed"/>
+
+                <!-- Chỉ có banner lỗi (RegisterViewModel không có InfoMessage) -->
+                <Border Style="{DynamicResource ErrorBanner}"
+                        Margin="0,16,0,0">
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="12"
+                               Foreground="{DynamicResource BrushDanger}"
+                               TextWrapping="Wrap"/>
+                </Border>
+
+                <!-- Hành động chính -->
+                <Button Content="Đăng ký"
+                        Command="{Binding RegisterCommand}"
+                        Style="{DynamicResource ButtonPrimary}"
+                        Margin="0,20,0,0"/>
+
+                <!-- Quay lại đăng nhập -->
+                <Button Content="Đã có tài khoản? Quay lại đăng nhập"
+                        Command="{Binding BackToLoginCommand}"
+                        Style="{DynamicResource ButtonGhost}"
+                        Margin="0,8,0,0"/>
             </StackPanel>
         </Border>
     </Grid>

@@ -1,50 +1,139 @@
-﻿
-    
-    <UserControl x:Class="KnapsackChallenge.UI.Features.Auth.LoginView"
+﻿<UserControl x:Class="KnapsackChallenge.UI.Features.Auth.LoginView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="600" d:DesignWidth="900">
 
-    <!-- DataContext (LoginViewModel) được gán từ MainWindow.xaml -->
+    <!-- =========================================================
+         Bố cục 2 cột kiểu "Cargo Manifest":
+           - Cột trái: brand panel (wordmark mono + illustration + mô tả)
+           - Cột phải: form đăng nhập trên nền Surface, viền Rule bên trái
+         DataContext (LoginViewModel) do MainWindow.xaml gán.
+         ========================================================= -->
+    <Grid Background="{DynamicResource BrushBackground}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="440"/>
+        </Grid.ColumnDefinitions>
 
-    <Grid Background="Transparent">
-        <Border Width="350" Padding="20" Background="White" CornerRadius="10"
-                VerticalAlignment="Center" HorizontalAlignment="Center">
+        <!-- =========================================================
+             CỘT TRÁI — BRAND
+             ========================================================= -->
+        <StackPanel Grid.Column="0"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Left"
+                    Margin="72,0,40,0">
 
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="15" ShadowDepth="2" Opacity="0.1" />
-            </Border.Effect>
+            <!-- Minh họa vector: balo, stroke mảnh, KHÔNG tô màu -->
+            <Path Data="{DynamicResource IllustrationKnapsack}"
+                  Stroke="{DynamicResource BrushInkMuted}"
+                  StrokeThickness="2"
+                  Fill="Transparent"
+                  Stretch="Uniform"
+                  Width="150" Height="150"
+                  HorizontalAlignment="Left"
+                  Margin="0,0,0,32"/>
 
-            <StackPanel>
-                <TextBlock Text="KNAPSACK CHALLENGE" FontSize="22" FontWeight="Bold"
-                           Foreground="#333" HorizontalAlignment="Center" Margin="0,0,0,25"/>
+            <!-- Wordmark: font mono, sentence case không, giữ IN HOA để
+                 mang tính "stamp"/"manifest" — không phải nhãn field -->
+            <TextBlock Text="KNAPSACK"
+                       FontFamily="{DynamicResource FontMono}"
+                       FontSize="32"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource BrushInk}"/>
 
-                <TextBlock Text="Tài khoản:" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
-                         Padding="8" Margin="0,0,0,15" FontSize="14" />
+            <TextBlock Text="CHALLENGE"
+                       FontFamily="{DynamicResource FontMono}"
+                       FontSize="12"
+                       FontWeight="Regular"
+                       Foreground="{DynamicResource BrushInkMuted}"
+                       Margin="0,2,0,0"/>
 
-                <TextBlock Text="Mật khẩu:" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                <PasswordBox x:Name="txtPassword" Padding="8" Margin="0,0,0,15" FontSize="14"/>
+            <!-- Rule ngang ngắn -->
+            <Rectangle Height="1" Width="64"
+                       Fill="{DynamicResource BrushRule}"
+                       HorizontalAlignment="Left"
+                       Margin="0,24,0,24"/>
 
-                <TextBlock Text="{Binding InfoMessage}" Foreground="#2E7D32"
-                           HorizontalAlignment="Center" Margin="0,0,0,10" TextWrapping="Wrap" />
+            <TextBlock Text="Bài toán ba lô kinh điển. Chọn tổ hợp vật phẩm tối ưu trong giới hạn khối lượng."
+                       FontFamily="{DynamicResource FontSans}"
+                       FontSize="14"
+                       Foreground="{DynamicResource BrushInkMuted}"
+                       TextWrapping="Wrap"
+                       MaxWidth="380"
+                       HorizontalAlignment="Left"/>
+        </StackPanel>
 
-                <TextBlock Text="{Binding ErrorMessage}" Foreground="Red"
-                           HorizontalAlignment="Center" Margin="0,0,0,15" TextWrapping="Wrap" />
+        <!-- =========================================================
+             CỘT PHẢI — FORM
+             ========================================================= -->
+        <Border Grid.Column="1"
+                Background="{DynamicResource BrushSurface}"
+                BorderBrush="{DynamicResource BrushRule}"
+                BorderThickness="1,0,0,0">
+            <StackPanel VerticalAlignment="Center" Margin="44,0">
 
-                <Button Content="ĐĂNG NHẬP" Command="{Binding LoginCommand}"
+                <TextBlock Text="Đăng nhập"
+                           FontFamily="{DynamicResource FontSans}"
+                           FontSize="22"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource BrushInk}"/>
+
+                <Rectangle Height="1"
+                           Fill="{DynamicResource BrushRule}"
+                           Margin="0,14,0,24"/>
+
+                <!-- Ô nhập tài khoản — Binding giữ nguyên -->
+                <TextBlock Text="Tài khoản"
+                           Style="{DynamicResource FieldLabel}"/>
+                <TextBox Style="{DynamicResource DarkTextBox}"
+                         Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
+                         Tag="username"/>
+
+                <!-- Ô mật khẩu — x:Name=txtPassword BẮT BUỘC giữ vì
+                     CommandParameter của LoginCommand tham chiếu qua
+                     ElementName=txtPassword (PasswordBox không Binding được) -->
+                <TextBlock Text="Mật khẩu"
+                           Style="{DynamicResource FieldLabel}"
+                           Margin="0,16,0,6"/>
+                <PasswordBox x:Name="txtPassword"
+                             Style="{DynamicResource InputPasswordBox}"/>
+
+                <!-- Banner thành công: tự ẩn khi InfoMessage rỗng/null
+                     (DataTrigger nằm trong style InfoBanner ở Themes/Layout.xaml) -->
+                <Border Style="{DynamicResource InfoBanner}"
+                        Margin="0,18,0,0">
+                    <TextBlock Text="{Binding InfoMessage}"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="12"
+                               Foreground="{DynamicResource BrushSuccess}"
+                               TextWrapping="Wrap"/>
+                </Border>
+
+                <!-- Banner lỗi: tự ẩn khi ErrorMessage rỗng/null -->
+                <Border Style="{DynamicResource ErrorBanner}"
+                        Margin="0,8,0,0">
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="12"
+                               Foreground="{DynamicResource BrushDanger}"
+                               TextWrapping="Wrap"/>
+                </Border>
+
+                <!-- Hành động chính — Accent duy nhất trên màn này -->
+                <Button Content="Đăng nhập"
+                        Command="{Binding LoginCommand}"
                         CommandParameter="{Binding ElementName=txtPassword}"
-                        Style="{StaticResource RoundedButton}"
-                        Padding="10" Background="#2196F3" Foreground="White"
-                        FontWeight="Bold" FontSize="14" Cursor="Hand" BorderThickness="0"/>
+                        Style="{DynamicResource ButtonPrimary}"
+                        Margin="0,24,0,0"/>
 
-                <Button Content="Chưa có tài khoản? Đăng ký" Command="{Binding RegisterCommand}"
-                        Style="{StaticResource RoundedButton}"
-                        Margin="0,12,0,0" Padding="4" Background="Transparent" Foreground="#2196F3"
-                        FontSize="13" Cursor="Hand" BorderThickness="0"/>
+                <!-- Chuyển sang Đăng ký -->
+                <Button Content="Chưa có tài khoản? Đăng ký"
+                        Command="{Binding RegisterCommand}"
+                        Style="{DynamicResource ButtonGhost}"
+                        Margin="0,8,0,0"/>
             </StackPanel>
         </Border>
     </Grid>

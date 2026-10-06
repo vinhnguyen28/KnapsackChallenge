@@ -9,6 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Fonts\IBMPlexMono-Regular.ttf" />
+    <None Remove="Fonts\IBMPlexMono-SemiBold.ttf" />
+    <None Remove="Fonts\IBMPlexSans-Regular.ttf" />
+    <None Remove="Fonts\IBMPlexSans-SemiBold.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="appsettings.Local.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('appsettings.Local.json')" />
   </ItemGroup>
@@ -17,5 +24,16 @@
     <ProjectReference Include="..\KnapsackChallenge.Core\KnapsackChallenge.Core.csproj" />
     <ProjectReference Include="..\KnapsackChallenge.Data\KnapsackChallenge.Data.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Fonts\IBMPlexMono-Regular.ttf" />
+    <Resource Include="Fonts\IBMPlexMono-SemiBold.ttf" />
+    <Resource Include="Fonts\IBMPlexSans-Regular.ttf" />
+    <Resource Include="Fonts\IBMPlexSans-SemiBold.ttf" />
+  </ItemGroup>
+
+<ItemGroup>
+  <Resource Include="Fonts\*.ttf" />
+</ItemGroup>
 
 </Project>
