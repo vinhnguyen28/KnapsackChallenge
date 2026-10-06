@@ -59,8 +59,8 @@ namespace KnapsackChallenge.UI
             }
             else
             {
-                // Player -> màn Solo. Wire LogoutRequested giống Admin.
-                var playerVm = new SoloGameViewModel(user);
+                // Player -> vỏ MainPlayer; gắn LogoutRequested giống cách làm với Admin.
+                var playerVm = new MainPlayerViewModel(user);
                 playerVm.LogoutRequested += () => ShowLogin();
                 CurrentViewModel = playerVm;
             }

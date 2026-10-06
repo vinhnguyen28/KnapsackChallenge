@@ -1,5 +1,4 @@
-﻿using System.Windows;
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
 namespace KnapsackChallenge.UI.Features.Player
 {
@@ -10,10 +9,6 @@ namespace KnapsackChallenge.UI.Features.Player
             InitializeComponent();
         }
 
-        // Đảm bảo LastSeenAt = NULL khi rời màn / đóng app.
-        private void UserControl_Unloaded(object sender, RoutedEventArgs e)
-        {
-            (DataContext as SoloGameViewModel)?.GoOffline();
-        }
+        // Không còn Unloaded/GoOffline: heartbeat + offline giờ do MainPlayerViewModel quản lý.
     }
 }

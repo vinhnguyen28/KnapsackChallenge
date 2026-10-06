@@ -1,0 +1,171 @@
+﻿<UserControl x:Class="KnapsackChallenge.UI.Features.Player.LeaderboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="620" d:DesignWidth="900"
+             Background="{DynamicResource BrushBackground}">
+
+    <UserControl.Resources>
+        <!-- Row style: kế thừa GridRow, top 1/2/3 đổi nền để làm nổi bật. -->
+        <Style x:Key="LbRow" TargetType="DataGridRow" BasedOn="{StaticResource GridRow}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Rank}" Value="1">
+                    <Setter Property="Background" Value="{DynamicResource BrushWarningSoft}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Rank}" Value="2">
+                    <Setter Property="Background" Value="{DynamicResource BrushSurfaceAlt}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Rank}" Value="3">
+                    <Setter Property="Background" Value="{DynamicResource BrushAccentSoft}"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="20,16,20,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Tiêu đề -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock Text="Bảng xếp hạng"
+                       FontFamily="{DynamicResource FontSans}"
+                       FontSize="{DynamicResource FontSizeTitle}"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource BrushInk}"/>
+            <TextBlock Text="Điểm cao nhất của mỗi người chơi theo từng bộ đề."
+                       FontFamily="{DynamicResource FontSans}"
+                       FontSize="{DynamicResource FontSizeSmall}"
+                       Foreground="{DynamicResource BrushInkMuted}"
+                       Margin="0,2,0,0"/>
+        </StackPanel>
+
+        <!-- Toolbar: filter + refresh -->
+        <Grid Grid.Row="1" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <ComboBox Grid.Column="0"
+                      Width="360"
+                      Style="{DynamicResource DarkComboBox}"
+                      ItemsSource="{Binding LeaderboardFilters}"
+                      SelectedItem="{Binding SelectedFilter, Mode=TwoWay}"
+                      DisplayMemberPath="DisplayText"/>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Đang tải..."
+                           FontFamily="{DynamicResource FontSans}"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Foreground="{DynamicResource BrushInkMuted}"
+                           VerticalAlignment="Center"
+                           Margin="0,0,12,0"
+                           Visibility="{Binding IsLoading,
+                                        Converter={StaticResource BoolToVisibility}}"/>
+                <Button Command="{Binding RefreshCommand}"
+                        Style="{DynamicResource ButtonSecondary}"
+                        Padding="12,7">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{DynamicResource IconRefresh}"
+                              Width="14" Height="14"
+                              Stroke="{Binding Foreground,
+                                       RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.5"
+                              Stretch="Uniform"
+                              VerticalAlignment="Center"
+                              Margin="0,0,8,0"/>
+                        <TextBlock Text="Làm mới" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- Bảng + empty state -->
+        <Border Grid.Row="2" Style="{DynamicResource Card}" Padding="0">
+            <Grid>
+                <DataGrid ItemsSource="{Binding Leaderboard}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          SelectionUnit="FullRow"
+                          CanUserAddRows="False"
+                          CanUserResizeRows="False"
+                          CanUserResizeColumns="False"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="None"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          RowHeight="38"
+                          FontSize="{DynamicResource FontSizeBody}"
+                          Foreground="{DynamicResource BrushInk}"
+                          ColumnHeaderStyle="{DynamicResource GridColumnHeader}"
+                          RowStyle="{StaticResource LbRow}"
+                          CellStyle="{DynamicResource GridCell}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="#"
+                                            Binding="{Binding Rank}"
+                                            Width="60"
+                                            ElementStyle="{StaticResource RightCellText}"/>
+                        <DataGridTextColumn Header="NGƯỜI CHƠI"
+                                            Binding="{Binding Username}"
+                                            Width="*"/>
+                        <DataGridTextColumn Header="BỘ ĐỀ"
+                                            Binding="{Binding SetName}"
+                                            Width="*"
+                                            ElementStyle="{StaticResource MutedCellText}"/>
+                        <DataGridTextColumn Header="ĐIỂM CAO NHẤT"
+                                            Binding="{Binding BestScore}"
+                                            Width="140"
+                                            ElementStyle="{StaticResource RightCellText}"/>
+                        <DataGridTextColumn Header="TỐI ƯU"
+                                            Binding="{Binding OptimalValue}"
+                                            Width="100"
+                                            ElementStyle="{StaticResource RightCellText}"/>
+                        <DataGridTextColumn Header="% TỐI ƯU"
+                                            Binding="{Binding OptimalPercent, StringFormat={}{0:0.0}%}"
+                                            Width="110"
+                                            ElementStyle="{StaticResource RightCellText}"/>
+                        <DataGridTextColumn Header="THỜI ĐIỂM"
+                                            Binding="{Binding AchievedAt, StringFormat='dd/MM/yyyy HH:mm'}"
+                                            Width="170"
+                                            ElementStyle="{StaticResource MutedCellText}"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <StackPanel HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            IsHitTestVisible="False">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Leaderboard.Count}" Value="0">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <Path Data="{DynamicResource IconTagStack}"
+                          Width="40" Height="40"
+                          Stroke="{DynamicResource BrushInkMuted}"
+                          StrokeThickness="1.2"
+                          Stretch="Uniform"
+                          HorizontalAlignment="Center"
+                          Opacity="0.5"/>
+                    <TextBlock Text="Chưa có ai lọt bảng xếp hạng"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               Foreground="{DynamicResource BrushInkMuted}"
+                               Margin="0,10,0,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

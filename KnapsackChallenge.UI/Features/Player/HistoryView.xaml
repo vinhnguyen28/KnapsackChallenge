@@ -1,0 +1,124 @@
+﻿<UserControl x:Class="KnapsackChallenge.UI.Features.Player.HistoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="620" d:DesignWidth="900"
+             Background="{DynamicResource BrushBackground}">
+
+    <Grid Margin="20,16,20,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <StackPanel>
+                <TextBlock Text="Lịch sử ván chơi"
+                           FontFamily="{DynamicResource FontSans}"
+                           FontSize="{DynamicResource FontSizeTitle}"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource BrushInk}"/>
+                <TextBlock Text="Các ván gần đây của bạn (tối đa 100 ván)."
+                           FontFamily="{DynamicResource FontSans}"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Foreground="{DynamicResource BrushInkMuted}"
+                           Margin="0,2,0,0"/>
+            </StackPanel>
+
+            <TextBlock Text="Đang tải..."
+                       FontFamily="{DynamicResource FontSans}"
+                       FontSize="{DynamicResource FontSizeSmall}"
+                       Foreground="{DynamicResource BrushInkMuted}"
+                       HorizontalAlignment="Right"
+                       VerticalAlignment="Center"
+                       Visibility="{Binding IsLoading,
+                                    Converter={StaticResource BoolToVisibility}}"/>
+        </Grid>
+
+        <Border Grid.Row="1" Style="{DynamicResource Card}" Padding="0">
+            <Grid>
+                <DataGrid ItemsSource="{Binding History}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          SelectionUnit="FullRow"
+                          CanUserAddRows="False"
+                          CanUserResizeRows="False"
+                          CanUserResizeColumns="False"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="None"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          RowHeight="38"
+                          FontSize="{DynamicResource FontSizeBody}"
+                          Foreground="{DynamicResource BrushInk}"
+                          ColumnHeaderStyle="{DynamicResource GridColumnHeader}"
+                          RowStyle="{DynamicResource GridRow}"
+                          CellStyle="{DynamicResource GridCell}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="MÃ PHÒNG"
+                                            Binding="{Binding RoomCode}"
+                                            Width="120"
+                                            ElementStyle="{StaticResource MutedCellText}"/>
+                        <DataGridTextColumn Header="BỘ ĐỀ"
+                                            Binding="{Binding SetName}"
+                                            Width="*"/>
+                        <DataGridTextColumn Header="ĐỘ KHÓ"
+                                            Binding="{Binding Difficulty}"
+                                            Width="100"
+                                            ElementStyle="{StaticResource MutedCellText}"/>
+                        <DataGridTextColumn Header="ĐIỂM"
+                                            Binding="{Binding TotalScore}"
+                                            Width="90"
+                                            ElementStyle="{StaticResource RightCellText}"/>
+                        <DataGridTextColumn Header="TỐI ƯU"
+                                            Binding="{Binding OptimalValue}"
+                                            Width="90"
+                                            ElementStyle="{StaticResource RightCellText}"/>
+                        <DataGridTextColumn Header="% TỐI ƯU"
+                                            Binding="{Binding OptimalPercent, StringFormat={}{0:0.0}%}"
+                                            Width="100"
+                                            ElementStyle="{StaticResource RightCellText}"/>
+                        <DataGridTextColumn Header="THỜI GIAN"
+                                            Binding="{Binding TimeSpentSeconds, StringFormat={}{0}s}"
+                                            Width="100"
+                                            ElementStyle="{StaticResource RightCellText}"/>
+                        <DataGridTextColumn Header="NGÀY CHƠI"
+                                            Binding="{Binding CreatedAt, StringFormat='dd/MM/yyyy HH:mm'}"
+                                            Width="170"
+                                            ElementStyle="{StaticResource MutedCellText}"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <StackPanel HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            IsHitTestVisible="False">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding History.Count}" Value="0">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <Path Data="{DynamicResource IconBanLogs}"
+                          Width="40" Height="40"
+                          Stroke="{DynamicResource BrushInkMuted}"
+                          StrokeThickness="1.2"
+                          Stretch="Uniform"
+                          HorizontalAlignment="Center"
+                          Opacity="0.5"/>
+                    <TextBlock Text="Chưa có ván chơi nào"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               Foreground="{DynamicResource BrushInkMuted}"
+                               Margin="0,10,0,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

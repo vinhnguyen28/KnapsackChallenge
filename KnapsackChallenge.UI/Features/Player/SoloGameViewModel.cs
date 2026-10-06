@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Microsoft.Data.SqlClient;
-using KnapsackChallenge.Common.Constants;
 using KnapsackChallenge.Common.DTOs;
 using KnapsackChallenge.Core.Factories;
 using KnapsackChallenge.Core.Services.Player;
@@ -45,129 +43,52 @@ namespace KnapsackChallenge.UI.Features.Player
         }
     }
 
-    // Lựa chọn filter cho leaderboard.
-    public class LeaderboardFilterOption
-    {
-        public int? SetId { get; init; }
-        public string DisplayText { get; init; } = "";
-    }
-
-    public class SoloGameViewModel : ViewModelBase
+    public class SoloGameViewModel : ViewModelBase, IPageLifecycle
     {
         private readonly UserEntity _user;
-        private readonly IPlayerSessionService _session;
         private readonly ISoloGameService _soloService;
-        private readonly DispatcherTimer _heartbeatTimer;
         private readonly DispatcherTimer _playTimer;
+        private readonly int _setId;
 
-        public string PlayerUsername => _user.Username ?? "";
-
-        // v4: trạng thái chế độ (đọc đầu phiên + cập nhật sau khi StartGame).
-        private bool _soloModeEnabled = true;
-        public bool SoloModeEnabled
+        private string _currentSetName = "";
+        public string CurrentSetName
         {
-            get => _soloModeEnabled;
-            private set
-            {
-                _soloModeEnabled = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(SoloModeDisabled));
-                OnPropertyChanged(nameof(CanStart));
-            }
+            get => _currentSetName;
+            private set { _currentSetName = value; OnPropertyChanged(); }
         }
-        public bool SoloModeDisabled => !_soloModeEnabled;
 
-        public SoloGameViewModel(UserEntity user)
+        private string _currentDifficulty = "";
+        public string CurrentDifficulty
+        {
+            get => _currentDifficulty;
+            private set { _currentDifficulty = value; OnPropertyChanged(); }
+        }
+
+        // Quay lại màn chọn mức độ.
+        public event Action? ChangeSetRequested;
+        // Về thẳng trang chủ.
+        public event Action? HomeRequested;
+
+        public SoloGameViewModel(UserEntity user, int setId)
         {
             _user = user;
-            _session = ServiceFactory.GetPlayerSessionService();
+            _setId = setId;
             _soloService = ServiceFactory.GetSoloGameService();
-
-            _heartbeatTimer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromSeconds(AppConfig.HeartbeatIntervalSeconds)
-            };
-            _heartbeatTimer.Tick += OnHeartbeat;
-            _heartbeatTimer.Start();
 
             _playTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _playTimer.Tick += OnPlayTick;
 
-            LogoutCommand = new RelayCommand<object>(_ => ExecuteLogout());
-            StartGameCommand = new RelayCommand<object>(_ => ExecuteStartGame(), _ => CanStart);
-            ToggleItemCommand = new RelayCommand<SelectableItem>(ToggleItem);
             ResetCommand = new RelayCommand<object>(_ => ExecuteReset(), _ => HasGame);
             SubmitCommand = new RelayCommand<object>(_ => ExecuteSubmit(), _ => CanSubmit);
+            ToggleItemCommand = new RelayCommand<SelectableItem>(ToggleItem);
             PlayAgainCommand = new RelayCommand<object>(_ => ExecuteReset());
             ChooseAnotherSetCommand = new RelayCommand<object>(_ => ExecuteChooseAnotherSet());
-            RefreshLeaderboardCommand = new RelayCommand<object>(_ => _ = LoadLeaderboardAsync());
+            GoHomeCommand = new RelayCommand<object>(_ => ExecuteGoHome());
 
-            _ = LoadSetsAsync();
-            _ = LoadSoloModeStatusAsync();
+            _ = InitAsync();
         }
 
-        // View gọi khi UserControl bị unload (đóng app / điều hướng đi).
-        public void GoOffline()
-        {
-            _heartbeatTimer.Stop();
-            _playTimer.Stop();
-            try { _session.GoOffline(_user.Id); }
-            catch (SqlException) { }
-            catch (InvalidOperationException) { }
-        }
-
-        private void OnHeartbeat(object? sender, EventArgs e)
-        {
-            try
-            {
-                var (banned, reason) = _session.CheckStatus(_user.Id);
-                if (banned)
-                {
-                    _heartbeatTimer.Stop();
-                    _playTimer.Stop();
-                    MessageBox.Show(
-                        $"Tài khoản của bạn đã bị khóa. Lý do: {reason ?? "(không có)"}\n" +
-                        "Bạn sẽ được đưa về màn đăng nhập.",
-                        "Tài khoản bị khóa",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
-
-                    LogoutRequested?.Invoke();
-                    return;
-                }
-                _session.Heartbeat(_user.Id);
-            }
-            catch (SqlException) { }
-            catch (InvalidOperationException) { }
-        }
-
-        // =========================================================
-        // TAB SELECTION
-        // =========================================================
-        private int _selectedTabIndex;
-        public int SelectedTabIndex
-        {
-            get => _selectedTabIndex;
-            set { _selectedTabIndex = value; OnPropertyChanged(); }
-        }
-
-        // =========================================================
-        // TAB "CHƠI"
-        // =========================================================
-        public ObservableCollection<SoloGameSetDto> AvailableSets { get; } = new();
         public ObservableCollection<SelectableItem> GameItems { get; } = new();
-
-        private SoloGameSetDto? _selectedSet;
-        public SoloGameSetDto? SelectedSet
-        {
-            get => _selectedSet;
-            set
-            {
-                if (ReferenceEquals(_selectedSet, value)) return;
-                _selectedSet = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(CanStart));
-            }
-        }
 
         private int _maxWeight;
         public int MaxWeight
@@ -176,7 +97,6 @@ namespace KnapsackChallenge.UI.Features.Player
             private set { _maxWeight = value; OnPropertyChanged(); OnPropertyChanged(nameof(CapacityText)); }
         }
 
-        // v4: giới hạn thời gian chế độ Solo (0 = không giới hạn).
         private int _timeLimitSeconds;
         public int TimeLimitSeconds
         {
@@ -232,12 +152,18 @@ namespace KnapsackChallenge.UI.Features.Player
             set { _playError = value; OnPropertyChanged(); }
         }
 
-        private bool _isLoadingSets;
-        public bool IsLoadingSets
+        private bool _soloModeEnabled = true;
+        public bool SoloModeEnabled
         {
-            get => _isLoadingSets;
-            private set { _isLoadingSets = value; OnPropertyChanged(); }
+            get => _soloModeEnabled;
+            private set
+            {
+                _soloModeEnabled = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(SoloModeDisabled));
+            }
         }
+        public bool SoloModeDisabled => !_soloModeEnabled;
 
         public int TotalSelectedWeight => GameItems.Where(i => i.IsSelected).Sum(i => i.Weight);
         public int TotalSelectedValue => GameItems.Where(i => i.IsSelected).Sum(i => i.Value);
@@ -250,127 +176,45 @@ namespace KnapsackChallenge.UI.Features.Player
         public string CapacityText =>
             $"{TotalSelectedWeight} / {MaxWeight} khối lượng  •  {TotalSelectedValue} giá trị  •  {SelectedCount} vật phẩm";
 
-        // v4: chặn StartGame khi chế độ Solo bị tắt.
-        public bool CanStart => SoloModeEnabled && SelectedSet != null && !HasGame;
-
         public bool CanSubmit =>
             HasGame && !HasResult && SelectedCount > 0 && !IsOverWeight;
 
-        // =========================================================
-        // TAB "LỊCH SỬ"
-        // =========================================================
-        public ObservableCollection<GameHistoryDto> History { get; } = new();
-
-        private bool _isLoadingHistory;
-        public bool IsLoadingHistory
-        {
-            get => _isLoadingHistory;
-            private set { _isLoadingHistory = value; OnPropertyChanged(); }
-        }
-
-        // =========================================================
-        // TAB "BẢNG XẾP HẠNG"
-        // =========================================================
-        public ObservableCollection<LeaderboardEntryDto> Leaderboard { get; } = new();
-        public ObservableCollection<LeaderboardFilterOption> LeaderboardFilters { get; } = new();
-
-        private LeaderboardFilterOption? _selectedLeaderboardFilter;
-        public LeaderboardFilterOption? SelectedLeaderboardFilter
-        {
-            get => _selectedLeaderboardFilter;
-            set
-            {
-                if (ReferenceEquals(_selectedLeaderboardFilter, value)) return;
-                _selectedLeaderboardFilter = value;
-                OnPropertyChanged();
-                _ = LoadLeaderboardAsync();
-            }
-        }
-
-        private bool _isLoadingLeaderboard;
-        public bool IsLoadingLeaderboard
-        {
-            get => _isLoadingLeaderboard;
-            private set { _isLoadingLeaderboard = value; OnPropertyChanged(); }
-        }
-
-        // =========================================================
-        // COMMANDS
-        // =========================================================
-        public ICommand LogoutCommand { get; }
-        public ICommand StartGameCommand { get; }
         public ICommand ToggleItemCommand { get; }
         public ICommand ResetCommand { get; }
         public ICommand SubmitCommand { get; }
         public ICommand PlayAgainCommand { get; }
         public ICommand ChooseAnotherSetCommand { get; }
-        public ICommand RefreshLeaderboardCommand { get; }
+        public ICommand GoHomeCommand { get; }
 
-        public event Action? LogoutRequested;
+        // Dừng timer khi vỏ điều hướng đi - tránh rò rỉ.
+        public void OnNavigatedFrom()
+        {
+            _playTimer.Stop();
+        }
 
-        // =========================================================
-        // LOGIC TAB "CHƠI"
-        // =========================================================
-
-        // v4: đọc trạng thái chế độ Solo để hiện banner.
-        private async System.Threading.Tasks.Task LoadSoloModeStatusAsync()
+        private async System.Threading.Tasks.Task InitAsync()
         {
             try
             {
                 var (enabled, timeLimit) = await System.Threading.Tasks.Task.Run(
                     () => _soloService.GetSoloModeStatus());
-
                 SoloModeEnabled = enabled;
-                TimeLimitSeconds = timeLimit; // áp dụng cho ván kế tiếp (StartGame sẽ ghi đè lại)
+                TimeLimitSeconds = timeLimit;
             }
-            catch (SqlException) { /* giữ mặc định enabled = true, để UI vẫn dùng được */ }
+            catch (SqlException) { }
             catch (InvalidOperationException) { }
+
+            StartGameWithSet(_setId);
         }
 
-        private async System.Threading.Tasks.Task LoadSetsAsync()
+        private void StartGameWithSet(int setId)
         {
-            if (IsLoadingSets) return;
-            IsLoadingSets = true;
             try
             {
-                var sets = await System.Threading.Tasks.Task.Run(() => _soloService.GetAvailableSets());
-
-                AvailableSets.Clear();
-                foreach (var s in sets) AvailableSets.Add(s);
-
-                LeaderboardFilters.Clear();
-                LeaderboardFilters.Add(new LeaderboardFilterOption
-                {
-                    SetId = null,
-                    DisplayText = "Tất cả bộ đề",
-                });
-                foreach (var s in sets)
-                {
-                    LeaderboardFilters.Add(new LeaderboardFilterOption
-                    {
-                        SetId = s.SetId,
-                        DisplayText = s.DisplayText,
-                    });
-                }
-                _selectedLeaderboardFilter = LeaderboardFilters.FirstOrDefault();
-                OnPropertyChanged(nameof(SelectedLeaderboardFilter));
-            }
-            catch (SqlException) { PlayError = "Không kết nối được cơ sở dữ liệu!"; }
-            catch (InvalidOperationException ex) { PlayError = ex.Message; }
-            finally { IsLoadingSets = false; }
-        }
-
-        private void ExecuteStartGame()
-        {
-            if (!CanStart) return;
-
-            try
-            {
-                var (ok, message, data) = _soloService.StartGame(SelectedSet!.SetId);
+                var (ok, message, data) = _soloService.StartGame(setId);
                 if (!ok || data == null)
                 {
                     PlayError = message;
-                    // Nếu lý do là chế độ đóng -> cập nhật banner ngay.
                     if (message.Contains("tạm đóng", StringComparison.OrdinalIgnoreCase))
                         SoloModeEnabled = false;
                     return;
@@ -382,6 +226,8 @@ namespace KnapsackChallenge.UI.Features.Player
 
                 MaxWeight = data.MaxWeight;
                 TimeLimitSeconds = data.TimeLimitSeconds;
+                CurrentSetName = data.SetName;
+                CurrentDifficulty = data.Difficulty;
                 Result = null;
                 PlayError = "";
                 PlayInfo = $"Đã bắt đầu bộ đề \"{data.SetName}\".";
@@ -427,16 +273,13 @@ namespace KnapsackChallenge.UI.Features.Player
         private void ExecuteChooseAnotherSet()
         {
             _playTimer.Stop();
-            GameItems.Clear();
-            Result = null;
-            MaxWeight = 0;
-            SelectedSet = null;
-            PlayInfo = "";
-            PlayError = "";
-            _elapsedSeconds = 0;
-            OnPropertyChanged(nameof(TimerText));
-            OnPropertyChanged(nameof(RemainingSeconds));
-            NotifyGameChanged();
+            ChangeSetRequested?.Invoke();
+        }
+
+        private void ExecuteGoHome()
+        {
+            _playTimer.Stop();
+            HomeRequested?.Invoke();
         }
 
         private void ExecuteSubmit()
@@ -445,7 +288,6 @@ namespace KnapsackChallenge.UI.Features.Player
             SubmitInternal(isTimeout: false);
         }
 
-        // v4: đồng hồ đếm tick 1s - xử lý đếm ngược + auto submit.
         private void OnPlayTick(object? sender, EventArgs e)
         {
             _elapsedSeconds++;
@@ -459,7 +301,6 @@ namespace KnapsackChallenge.UI.Features.Player
             }
         }
 
-        // Nộp bài chung cho cả 2 luồng (chủ động & timeout).
         private void SubmitInternal(bool isTimeout)
         {
             try
@@ -467,13 +308,13 @@ namespace KnapsackChallenge.UI.Features.Player
                 _playTimer.Stop();
                 var selectedIds = GameItems.Where(i => i.IsSelected).Select(i => i.Id).ToList();
                 var (ok, message, result) = _soloService.Submit(
-                    _user.Id, SelectedSet!.SetId, selectedIds, _elapsedSeconds, isTimeout);
+                    _user.Id, _setId, selectedIds, _elapsedSeconds, isTimeout);
 
                 if (!ok || result == null)
                 {
                     PlayError = isTimeout ? ("Hết giờ. " + message) : message;
                     if (!message.Contains("tạm đóng", StringComparison.OrdinalIgnoreCase))
-                        _playTimer.Start(); // tiếp tục đếm nếu không phải do bị tắt
+                        _playTimer.Start();
                     else
                         SoloModeEnabled = false;
                     return;
@@ -491,16 +332,6 @@ namespace KnapsackChallenge.UI.Features.Player
             catch (SqlException) { PlayError = "Lỗi cơ sở dữ liệu khi nộp bài!"; _playTimer.Start(); }
         }
 
-        private void ExecuteLogout()
-        {
-            _playTimer.Stop();
-            try { _session.GoOffline(_user.Id); }
-            catch (SqlException) { }
-            catch (InvalidOperationException) { }
-
-            LogoutRequested?.Invoke();
-        }
-
         private void NotifyGameChanged()
         {
             OnPropertyChanged(nameof(HasGame));
@@ -511,46 +342,6 @@ namespace KnapsackChallenge.UI.Features.Player
             OnPropertyChanged(nameof(CapacityPercent));
             OnPropertyChanged(nameof(CapacityText));
             OnPropertyChanged(nameof(CanSubmit));
-            OnPropertyChanged(nameof(CanStart));
-        }
-
-        // =========================================================
-        // TAB "LỊCH SỬ"
-        // =========================================================
-        public async System.Threading.Tasks.Task LoadHistoryAsync()
-        {
-            if (IsLoadingHistory) return;
-            IsLoadingHistory = true;
-            try
-            {
-                var list = await System.Threading.Tasks.Task.Run(
-                    () => _soloService.GetHistory(_user.Id, 50));
-
-                History.Clear();
-                foreach (var h in list) History.Add(h);
-            }
-            catch (SqlException) { }
-            finally { IsLoadingHistory = false; }
-        }
-
-        // =========================================================
-        // TAB "BẢNG XẾP HẠNG"
-        // =========================================================
-        private async System.Threading.Tasks.Task LoadLeaderboardAsync()
-        {
-            if (IsLoadingLeaderboard) return;
-            IsLoadingLeaderboard = true;
-            try
-            {
-                int? setId = _selectedLeaderboardFilter?.SetId;
-                var list = await System.Threading.Tasks.Task.Run(
-                    () => _soloService.GetLeaderboard(setId, 20));
-
-                Leaderboard.Clear();
-                foreach (var e in list) Leaderboard.Add(e);
-            }
-            catch (SqlException) { }
-            finally { IsLoadingLeaderboard = false; }
         }
     }
 }

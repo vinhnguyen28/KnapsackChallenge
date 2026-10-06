@@ -11,7 +11,6 @@
          BUTTONS
          ========================================================= -->
 
-    <!-- Nút chính (Accent) -->
     <Style x:Key="ButtonPrimary" TargetType="Button">
         <Setter Property="FontFamily" Value="{StaticResource FontSans}"/>
         <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
@@ -50,7 +49,6 @@
         </Setter>
     </Style>
 
-    <!-- Nút phụ (Surface + Rule border) -->
     <Style x:Key="ButtonSecondary" TargetType="Button">
         <Setter Property="FontFamily" Value="{StaticResource FontSans}"/>
         <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
@@ -107,9 +105,172 @@
         <Setter Property="Margin" Value="0,0,4,0"/>
     </Style>
 
-    <!-- Alias cũ -->
     <Style x:Key="ModernButton" TargetType="Button" BasedOn="{StaticResource ButtonSecondary}"/>
     <Style x:Key="RoundedButton" TargetType="Button" BasedOn="{StaticResource ButtonPrimary}"/>
+
+    <!-- =========================================================
+         [BƯỚC 5] GAME CARD BUTTON
+         Nút card lớn (Home + SetSelection). Có animation scale khi hover/nhấn.
+         - Dùng chung cho 2 màn; View override Min/Max + BorderThickness.
+         - RenderTransform PHẢI là ScaleTransform mới ở Setter, nếu không
+           DoubleAnimation trong Style.Triggers sẽ không chạy.
+         ========================================================= -->
+    <Style x:Key="GameCardButton" TargetType="Button">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Foreground" Value="{StaticResource BrushInk}"/>
+        <Setter Property="Background" Value="{StaticResource BrushSurface}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BrushRule}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1" ScaleY="1"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="bd"
+                            CornerRadius="10"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}">
+                        <ContentPresenter Margin="16"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bd" Property="BorderBrush"
+                                    Value="{StaticResource BrushAccent}"/>
+                            <Setter TargetName="bd" Property="Background"
+                                    Value="{StaticResource BrushAccentSoft}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="bd" Property="Opacity" Value="0.9"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="bd" Property="Opacity" Value="0.5"/>
+                            <Setter TargetName="bd" Property="Background"
+                                    Value="{StaticResource BrushSurfaceAlt}"/>
+                            <Setter TargetName="bd" Property="BorderBrush"
+                                    Value="{StaticResource BrushRule}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+
+        <Style.Triggers>
+            <!-- Hover: phóng nhẹ 4% trong 150ms. -->
+            <EventTrigger RoutedEvent="MouseEnter">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX"
+                                         To="1.04" Duration="0:0:0.15"/>
+                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY"
+                                         To="1.04" Duration="0:0:0.15"/>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+            <EventTrigger RoutedEvent="MouseLeave">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX"
+                                         To="1.0" Duration="0:0:0.15"/>
+                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY"
+                                         To="1.0" Duration="0:0:0.15"/>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+            <!-- Nhấn: thu nhẹ để có cảm giác "bấm". -->
+            <EventTrigger RoutedEvent="PreviewMouseDown">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX"
+                                         To="0.97" Duration="0:0:0.08"/>
+                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY"
+                                         To="0.97" Duration="0:0:0.08"/>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+            <!-- Nhả: trở về 1.04 (vẫn hover) - nếu rời chuột, MouseLeave sẽ đưa về 1.0. -->
+            <EventTrigger RoutedEvent="PreviewMouseUp">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX"
+                                         To="1.04" Duration="0:0:0.1"/>
+                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY"
+                                         To="1.04" Duration="0:0:0.1"/>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- =========================================================
+         [BƯỚC 5] SHORTCUT BUTTON
+         Nút dạng link (dùng ở HomePage: "Xếp hạng", "Lịch sử").
+         ========================================================= -->
+    <Style x:Key="ShortcutButton" TargetType="Button" BasedOn="{StaticResource ButtonSecondary}">
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="Margin" Value="0,0,0,8"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+    </Style>
+
+    <!-- =========================================================
+         [BƯỚC 5] GAME STAT CARD
+         Thẻ thống kê trong HomePage; có thể dùng lại ở trang khác.
+         ========================================================= -->
+    <Style x:Key="GameStatCard" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource BrushSurface}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BrushRule}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="Padding" Value="14,12"/>
+        <Setter Property="Margin" Value="0,0,0,10"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    </Style>
+
+    <!-- =========================================================
+         [BƯỚC 5] MENU POPUP ITEM
+         Item trong popup Settings của MainPlayerView.
+         ========================================================= -->
+    <Style x:Key="MenuPopupItem" TargetType="Button">
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="Padding" Value="10,8"/>
+        <Setter Property="Foreground" Value="{StaticResource BrushInk}"/>
+        <Setter Property="FontFamily" Value="{StaticResource FontSans}"/>
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="bd"
+                            Background="Transparent"
+                            CornerRadius="3"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter VerticalAlignment="Center"
+                                          HorizontalAlignment="Left"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bd" Property="Background"
+                                    Value="{StaticResource BrushSurfaceAlt}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="MenuPopupLogoutItem"
+           TargetType="Button"
+           BasedOn="{StaticResource MenuPopupItem}">
+        <Setter Property="Foreground" Value="{StaticResource BrushDanger}"/>
+    </Style>
 
     <!-- =========================================================
          TEXTBOX
@@ -159,7 +320,6 @@
 
     <Style x:Key="DarkTextBox" TargetType="TextBox" BasedOn="{StaticResource InputTextBox}"/>
 
-    <!-- TextBox nhiều dòng (dùng cho BanDialog) -->
     <Style x:Key="InputTextArea" TargetType="TextBox" BasedOn="{StaticResource InputTextBox}">
         <Setter Property="AcceptsReturn" Value="True"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
@@ -305,7 +465,6 @@
         </Setter>
     </Style>
 
-    <!-- Alias cũ -->
     <Style x:Key="DarkComboBox" TargetType="ComboBox" BasedOn="{StaticResource InputComboBox}"/>
     <Style x:Key="DarkComboBoxItem" TargetType="ComboBoxItem" BasedOn="{StaticResource InputComboBoxItem}"/>
 
@@ -348,7 +507,7 @@
     <Style x:Key="DarkListBox" TargetType="ListBox" BasedOn="{StaticResource InputListBox}"/>
 
     <!-- =========================================================
-         RADIOBUTTON — tab lọc (dùng ở PlayerManagementView)
+         RADIOBUTTON — tab lọc
          ========================================================= -->
     <Style x:Key="FilterTabRadio" TargetType="RadioButton">
         <Setter Property="FontFamily" Value="{StaticResource FontSans}"/>
@@ -381,7 +540,7 @@
     </Style>
 
     <!-- =========================================================
-         CHECKBOX (đơn giản, dùng khi cần)
+         CHECKBOX
          ========================================================= -->
     <Style x:Key="InputCheckBox" TargetType="CheckBox">
         <Setter Property="FontFamily" Value="{StaticResource FontSans}"/>
@@ -416,7 +575,7 @@
     </Style>
 
     <!-- =========================================================
-         DATAGRID — kiểu "sổ cái"
+         DATAGRID
          ========================================================= -->
     <Style x:Key="GridColumnHeader" TargetType="DataGridColumnHeader">
         <Setter Property="Background" Value="Transparent"/>
@@ -478,12 +637,10 @@
         </Setter>
     </Style>
 
-    <!-- Alias cũ -->
     <Style x:Key="DarkColumnHeader" TargetType="DataGridColumnHeader" BasedOn="{StaticResource GridColumnHeader}"/>
     <Style x:Key="DarkRow" TargetType="DataGridRow" BasedOn="{StaticResource GridRow}"/>
     <Style x:Key="DarkCell" TargetType="DataGridCell" BasedOn="{StaticResource GridCell}"/>
 
-    <!-- Text ô bảng -->
     <Style x:Key="MutedCellText" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource BrushInkMuted}"/>
         <Setter Property="FontFamily" Value="{StaticResource FontMono}"/>
@@ -497,7 +654,7 @@
     </Style>
 
     <!-- =========================================================
-         SCROLLBAR — mảnh, không nền
+         SCROLLBAR
          ========================================================= -->
     <Style TargetType="ScrollBar">
         <Setter Property="Background" Value="Transparent"/>
