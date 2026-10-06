@@ -10,8 +10,8 @@
          FONT FAMILIES — nhúng IBM Plex, fallback về Segoe UI / Consolas
          (WPF tự fallback nếu pack URI không resolve được)
          ========================================================= -->
-    <FontFamily x:Key="FontSans">pack://application:,,,/Fonts/#IBM Plex Sans</FontFamily>
-    <FontFamily x:Key="FontMono">pack://application:,,,/Fonts/#IBM Plex Mono</FontFamily>
+    <FontFamily x:Key="FontSans">Segoe UI</FontFamily>
+    <FontFamily x:Key="FontMono">Consolas</FontFamily>
 
     <!-- =========================================================
          SIZES (đơn vị px)

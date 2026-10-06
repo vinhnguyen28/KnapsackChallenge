@@ -2,59 +2,43 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- =========================================================
-         CARGO MANIFEST — Palette (định nghĩa duy nhất ở đây)
+         CARGO MANIFEST - Palette
+         Dung SolidColorBrush voi hex truc tiep, KHONG dung the <Color>
+         de tranh moi van de deferred-resource khi merge dictionary.
          ========================================================= -->
-    <Color x:Key="ColorBackground">#EFEBE3</Color>
-    <Color x:Key="ColorSurface">#F8F6F1</Color>
-    <Color x:Key="ColorSurfaceAlt">#E6E1D6</Color>
-    <Color x:Key="ColorInk">#1C1B19</Color>
-    <Color x:Key="ColorInkMuted">#6B665C</Color>
-    <Color x:Key="ColorRule">#CFC8B8</Color>
 
-    <Color x:Key="ColorAccent">#E8590C</Color>
-    <Color x:Key="ColorAccentSoft">#FBE7DA</Color>
-    <Color x:Key="ColorSuccess">#2F6B3F</Color>
-    <Color x:Key="ColorSuccessSoft">#E2EEE5</Color>
-    <Color x:Key="ColorDanger">#B3261E</Color>
-    <Color x:Key="ColorDangerSoft">#F7DEDC</Color>
-    <Color x:Key="ColorWarning">#B7791F</Color>
-    <Color x:Key="ColorWarningSoft">#F7EAD1</Color>
+    <!-- Nen / chu / duong ke -->
+    <SolidColorBrush x:Key="BrushBackground"  Color="#EFEBE3"/>
+    <SolidColorBrush x:Key="BrushSurface"     Color="#F8F6F1"/>
+    <SolidColorBrush x:Key="BrushSurfaceAlt"  Color="#E6E1D6"/>
+    <SolidColorBrush x:Key="BrushInk"         Color="#1C1B19"/>
+    <SolidColorBrush x:Key="BrushInkMuted"    Color="#6B665C"/>
+    <SolidColorBrush x:Key="BrushRule"        Color="#CFC8B8"/>
 
-    <Color x:Key="ColorOnAccent">#FFFFFF</Color>
+    <!-- Accent / trang thai -->
+    <SolidColorBrush x:Key="BrushAccent"      Color="#E8590C"/>
+    <SolidColorBrush x:Key="BrushAccentSoft"  Color="#FBE7DA"/>
+    <SolidColorBrush x:Key="BrushSuccess"     Color="#2F6B3F"/>
+    <SolidColorBrush x:Key="BrushSuccessSoft" Color="#E2EEE5"/>
+    <SolidColorBrush x:Key="BrushDanger"      Color="#B3261E"/>
+    <SolidColorBrush x:Key="BrushDangerSoft"  Color="#F7DEDC"/>
+    <SolidColorBrush x:Key="BrushWarning"     Color="#B7791F"/>
+    <SolidColorBrush x:Key="BrushWarningSoft" Color="#F7EAD1"/>
+    <SolidColorBrush x:Key="BrushOnAccent"    Color="#FFFFFF"/>
 
     <!-- =========================================================
-         Brushes
+         Legacy aliases - giu nguyen key cu de View chua viet lai
+         van chay duoc trong giai doan chuyen tiep.
          ========================================================= -->
-    <SolidColorBrush x:Key="BrushBackground"   Color="{StaticResource ColorBackground}"/>
-    <SolidColorBrush x:Key="BrushSurface"      Color="{StaticResource ColorSurface}"/>
-    <SolidColorBrush x:Key="BrushSurfaceAlt"   Color="{StaticResource ColorSurfaceAlt}"/>
-    <SolidColorBrush x:Key="BrushInk"          Color="{StaticResource ColorInk}"/>
-    <SolidColorBrush x:Key="BrushInkMuted"     Color="{StaticResource ColorInkMuted}"/>
-    <SolidColorBrush x:Key="BrushRule"         Color="{StaticResource ColorRule}"/>
-
-    <SolidColorBrush x:Key="BrushAccent"       Color="{StaticResource ColorAccent}"/>
-    <SolidColorBrush x:Key="BrushAccentSoft"   Color="{StaticResource ColorAccentSoft}"/>
-    <SolidColorBrush x:Key="BrushSuccess"      Color="{StaticResource ColorSuccess}"/>
-    <SolidColorBrush x:Key="BrushSuccessSoft"  Color="{StaticResource ColorSuccessSoft}"/>
-    <SolidColorBrush x:Key="BrushDanger"       Color="{StaticResource ColorDanger}"/>
-    <SolidColorBrush x:Key="BrushDangerSoft"   Color="{StaticResource ColorDangerSoft}"/>
-    <SolidColorBrush x:Key="BrushWarning"      Color="{StaticResource ColorWarning}"/>
-    <SolidColorBrush x:Key="BrushWarningSoft"  Color="{StaticResource ColorWarningSoft}"/>
-    <SolidColorBrush x:Key="BrushOnAccent"     Color="{StaticResource ColorOnAccent}"/>
-
-    <!-- =========================================================
-         Legacy brush aliases — để các View chưa viết lại vẫn chạy.
-         (Tên cũ, giá trị mới theo palette Cargo Manifest.)
-         ========================================================= -->
-    <SolidColorBrush x:Key="CardBg"           Color="{StaticResource ColorSurface}"/>
-    <SolidColorBrush x:Key="CardBorder"       Color="{StaticResource ColorRule}"/>
-    <SolidColorBrush x:Key="InputBg"          Color="{StaticResource ColorSurface}"/>
-    <SolidColorBrush x:Key="TextMain"         Color="{StaticResource ColorInk}"/>
-    <SolidColorBrush x:Key="TextMuted"        Color="{StaticResource ColorInkMuted}"/>
-    <SolidColorBrush x:Key="Accent"           Color="{StaticResource ColorAccent}"/>
-    <SolidColorBrush x:Key="AccentCyan"       Color="{StaticResource ColorAccent}"/>
-    <SolidColorBrush x:Key="PrimaryGradient"  Color="{StaticResource ColorAccent}"/>
-    <SolidColorBrush x:Key="SuccessGradient"  Color="{StaticResource ColorSuccess}"/>
-    <SolidColorBrush x:Key="AppBackgroundBrush" Color="{StaticResource ColorBackground}"/>
+    <SolidColorBrush x:Key="CardBg"             Color="#F8F6F1"/>
+    <SolidColorBrush x:Key="CardBorder"         Color="#CFC8B8"/>
+    <SolidColorBrush x:Key="InputBg"            Color="#F8F6F1"/>
+    <SolidColorBrush x:Key="TextMain"           Color="#1C1B19"/>
+    <SolidColorBrush x:Key="TextMuted"          Color="#6B665C"/>
+    <SolidColorBrush x:Key="Accent"             Color="#E8590C"/>
+    <SolidColorBrush x:Key="AccentCyan"         Color="#E8590C"/>
+    <SolidColorBrush x:Key="PrimaryGradient"    Color="#E8590C"/>
+    <SolidColorBrush x:Key="SuccessGradient"    Color="#2F6B3F"/>
+    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#EFEBE3"/>
 
 </ResourceDictionary>

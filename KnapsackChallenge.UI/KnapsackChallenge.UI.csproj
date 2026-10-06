@@ -32,8 +32,4 @@
     <Resource Include="Fonts\IBMPlexSans-SemiBold.ttf" />
   </ItemGroup>
 
-<ItemGroup>
-  <Resource Include="Fonts\*.ttf" />
-</ItemGroup>
-
 </Project>
