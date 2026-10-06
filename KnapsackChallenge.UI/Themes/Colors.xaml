@@ -9,6 +9,9 @@
 
     <!-- Nen / chu / duong ke -->
     <SolidColorBrush x:Key="BrushBackground"  Color="#EFEBE3"/>
+    <!-- Nen phu cho man Dang ky: cung ho be am, dam hon de phan biet
+         voi man Dang nhap khi chuyen qua lai. -->
+    <SolidColorBrush x:Key="BrushBackgroundAlt" Color="#E4DDC8"/>
     <SolidColorBrush x:Key="BrushSurface"     Color="#F8F6F1"/>
     <SolidColorBrush x:Key="BrushSurfaceAlt"  Color="#E6E1D6"/>
     <SolidColorBrush x:Key="BrushInk"         Color="#1C1B19"/>

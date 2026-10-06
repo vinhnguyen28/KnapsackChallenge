@@ -7,10 +7,10 @@
              d:DesignHeight="600" d:DesignWidth="900">
 
     <!-- =========================================================
-         Bố cục 2 cột kiểu "Cargo Manifest":
-           - Cột trái: brand panel (wordmark mono + illustration + mô tả)
-           - Cột phải: form đăng nhập trên nền Surface, viền Rule bên trái
-         DataContext (LoginViewModel) do MainWindow.xaml gán.
+         Bo cuc 2 cot kieu "Cargo Manifest":
+           - Cot trai: brand panel (wordmark mono + illustration + mo ta)
+           - Cot phai: form dang nhap tren nen Surface, vien Rule ben trai
+         DataContext (LoginViewModel) do MainWindow.xaml gan.
          ========================================================= -->
     <Grid Background="{DynamicResource BrushBackground}">
         <Grid.ColumnDefinitions>
@@ -19,14 +19,14 @@
         </Grid.ColumnDefinitions>
 
         <!-- =========================================================
-             CỘT TRÁI — BRAND
+             COT TRAI - BRAND
              ========================================================= -->
         <StackPanel Grid.Column="0"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Left"
                     Margin="72,0,40,0">
 
-            <!-- Minh họa vector: balo, stroke mảnh, KHÔNG tô màu -->
+            <!-- Minh hoa vector: balo, stroke manh, KHONG to mau -->
             <Path Data="{DynamicResource IllustrationKnapsack}"
                   Stroke="{DynamicResource BrushInkMuted}"
                   StrokeThickness="2"
@@ -36,8 +36,7 @@
                   HorizontalAlignment="Left"
                   Margin="0,0,0,32"/>
 
-            <!-- Wordmark: font mono, sentence case không, giữ IN HOA để
-                 mang tính "stamp"/"manifest" — không phải nhãn field -->
+            <!-- Wordmark: font mono, mang tinh "stamp"/"manifest" -->
             <TextBlock Text="KNAPSACK"
                        FontFamily="{DynamicResource FontMono}"
                        FontSize="32"
@@ -51,13 +50,13 @@
                        Foreground="{DynamicResource BrushInkMuted}"
                        Margin="0,2,0,0"/>
 
-            <!-- Rule ngang ngắn -->
+            <!-- Rule ngang ngan -->
             <Rectangle Height="1" Width="64"
                        Fill="{DynamicResource BrushRule}"
                        HorizontalAlignment="Left"
                        Margin="0,24,0,24"/>
 
-            <TextBlock Text="Bài toán ba lô kinh điển. Chọn tổ hợp vật phẩm tối ưu trong giới hạn khối lượng."
+            <TextBlock Text="Bai toan ba lo kinh dien. Chon to hop vat pham toi uu trong gioi han khoi luong."
                        FontFamily="{DynamicResource FontSans}"
                        FontSize="14"
                        Foreground="{DynamicResource BrushInkMuted}"
@@ -67,7 +66,7 @@
         </StackPanel>
 
         <!-- =========================================================
-             CỘT PHẢI — FORM
+             COT PHAI - FORM DANG NHAP
              ========================================================= -->
         <Border Grid.Column="1"
                 Background="{DynamicResource BrushSurface}"
@@ -75,7 +74,7 @@
                 BorderThickness="1,0,0,0">
             <StackPanel VerticalAlignment="Center" Margin="44,0">
 
-                <TextBlock Text="Đăng nhập"
+                <TextBlock Text="Dang nhap"
                            FontFamily="{DynamicResource FontSans}"
                            FontSize="22"
                            FontWeight="SemiBold"
@@ -85,52 +84,68 @@
                            Fill="{DynamicResource BrushRule}"
                            Margin="0,14,0,24"/>
 
-                <!-- Ô nhập tài khoản — Binding giữ nguyên -->
-                <TextBlock Text="Tài khoản"
+                <!-- O nhap tai khoan - Binding giu nguyen -->
+                <TextBlock Text="Tai khoan"
                            Style="{DynamicResource FieldLabel}"/>
                 <TextBox Style="{DynamicResource DarkTextBox}"
                          Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
                          Tag="username"/>
 
-                <!-- Ô mật khẩu — x:Name=txtPassword BẮT BUỘC giữ vì
-                     CommandParameter của LoginCommand tham chiếu qua
-                     ElementName=txtPassword (PasswordBox không Binding được) -->
-                <TextBlock Text="Mật khẩu"
+                <!-- O mat khau - x:Name=txtPassword BAT BUOC giu vi
+                     CommandParameter cua LoginCommand tham chieu qua
+                     ElementName=txtPassword (PasswordBox khong Binding duoc) -->
+                <TextBlock Text="Mat khau"
                            Style="{DynamicResource FieldLabel}"
                            Margin="0,16,0,6"/>
                 <PasswordBox x:Name="txtPassword"
                              Style="{DynamicResource InputPasswordBox}"/>
 
-                <!-- Banner thành công: tự ẩn khi InfoMessage rỗng/null
-                     (DataTrigger nằm trong style InfoBanner ở Themes/Layout.xaml) -->
-                <Border Style="{DynamicResource InfoBanner}"
-                        Margin="0,18,0,0">
-                    <TextBlock Text="{Binding InfoMessage}"
-                               FontFamily="{DynamicResource FontSans}"
-                               FontSize="12"
-                               Foreground="{DynamicResource BrushSuccess}"
-                               TextWrapping="Wrap"/>
-                </Border>
+                <!-- =========================================================
+                     KHU VUC THONG BAO - CHIEU CAO CO DINH
 
-                <!-- Banner lỗi: tự ẩn khi ErrorMessage rỗng/null -->
-                <Border Style="{DynamicResource ErrorBanner}"
-                        Margin="0,8,0,0">
-                    <TextBlock Text="{Binding ErrorMessage}"
-                               FontFamily="{DynamicResource FontSans}"
-                               FontSize="12"
-                               Foreground="{DynamicResource BrushDanger}"
-                               TextWrapping="Wrap"/>
-                </Border>
+                     Ly do: neu de banner tu an/hien tu nhien (Collapsed),
+                     nut "Dang nhap" ben duoi se bi day xuong moi khi co loi
+                     -> layout giat. Giai phap: boc 2 banner vao cung 1 Grid,
+                     dat MinHeight co dinh = 54px (du cho 2 dong text 12px
+                     + padding). Khi banner trong, Grid van giu 54px ->
+                     nut khong bao gio bi day.
 
-                <!-- Hành động chính — Accent duy nhất trên màn này -->
-                <Button Content="Đăng nhập"
+                     Hai banner chong len nhau trong cung o Grid, nhung
+                     LoginViewModel dam bao chi 1 trong 2 co noi dung tai
+                     mot thoi diem (ExecuteLogin luon reset InfoMessage = ""
+                     truoc khi set ErrorMessage).
+                     ========================================================= -->
+                <Grid MinHeight="54" Margin="0,18,0,0">
+                    <Border Style="{DynamicResource InfoBanner}"
+                            Margin="0"
+                            VerticalAlignment="Top">
+                        <TextBlock Text="{Binding InfoMessage}"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource BrushSuccess}"
+                                   TextWrapping="Wrap"/>
+                    </Border>
+
+                    <Border Style="{DynamicResource ErrorBanner}"
+                            Margin="0"
+                            VerticalAlignment="Top">
+                        <TextBlock Text="{Binding ErrorMessage}"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource BrushDanger}"
+                                   TextWrapping="Wrap"/>
+                    </Border>
+                </Grid>
+
+                <!-- Hanh dong chinh - Accent duy nhat tren man nay -->
+                <Button Content="Dang nhap"
                         Command="{Binding LoginCommand}"
                         CommandParameter="{Binding ElementName=txtPassword}"
                         Style="{DynamicResource ButtonPrimary}"
-                        Margin="0,24,0,0"/>
+                        Margin="0,8,0,0"/>
 
-                <!-- Chuyển sang Đăng ký -->
-                <Button Content="Chưa có tài khoản? Đăng ký"
+                <!-- Chuyen sang Dang ky -->
+                <Button Content="Chua co tai khoan? Dang ky"
                         Command="{Binding RegisterCommand}"
                         Style="{DynamicResource ButtonGhost}"
                         Margin="0,8,0,0"/>

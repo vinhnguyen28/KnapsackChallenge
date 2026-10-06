@@ -6,16 +6,60 @@
         xmlns:admin="clr-namespace:KnapsackChallenge.UI.Features.Admin"
         xmlns:player="clr-namespace:KnapsackChallenge.UI.Features.Player"
         Title="Knapsack Challenge"
-        Background="DynamicResource BrushBackground"
-        Height="600" Width="900"
-        MinHeight="520" MinWidth="700"
+        Background="{DynamicResource BrushBackground}"
         WindowStartupLocation="CenterScreen">
 
+    <!-- =========================================================
+         Window.Style: kích thước có điều kiện theo CurrentViewModel.
+
+         Cơ chế:
+           - Default = size LỚN (đủ cho màn Admin).
+           - DataTrigger match khi CurrentViewModel.AdminUsername
+             fallback về "" — tức CurrentViewModel KHÔNG phải là
+             MainAdminViewModel (vì các VM khác không có property
+             AdminUsername → binding fail → FallbackValue = "").
+             Lúc đó hạ về size GỌN cho Login / Register / SoloGame.
+
+         Khi MainViewModel.OnLoginSucceeded() đổi CurrentViewModel
+         sang MainAdminViewModel, binding AdminUsername thành công
+         (trả về tên admin, không rỗng) → trigger hết match → WPF
+         tự restore về size LỚN trong Style setter → cửa sổ tự
+         phóng to. Ngược lại khi Logout → trigger match lại → thu nhỏ.
+         ========================================================= -->
+    <Window.Style>
+        <Style TargetType="Window">
+
+            <!-- Mặc định: kích thước cho màn Admin.
+                 Rộng vừa đủ cho sidebar 200px + DataGrid 6-7 cột. -->
+            <Setter Property="Width"     Value="1200"/>
+            <Setter Property="Height"    Value="720"/>
+            <Setter Property="MinWidth"  Value="1000"/>
+            <Setter Property="MinHeight" Value="600"/>
+
+            <Style.Triggers>
+                <!-- Không phải Admin -> size gọn cho Login/Register/SoloGame -->
+                <DataTrigger Binding="{Binding CurrentViewModel.AdminUsername,
+                                      FallbackValue=''}"
+                             Value="">
+                    <Setter Property="Width"     Value="900"/>
+                    <Setter Property="Height"    Value="620"/>
+                    <Setter Property="MinWidth"  Value="760"/>
+                    <Setter Property="MinHeight" Value="540"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Style>
+
+    <!-- DataContext (MainViewModel) được gán tĩnh ở đây.
+         Điều hướng màn hình vẫn qua DataTemplate (ViewModel -> View)
+         như cũ, KHÔNG dùng code-behind. -->
     <Window.DataContext>
         <vm:MainViewModel />
     </Window.DataContext>
 
     <Window.Resources>
+        <!-- Ánh xạ ViewModel -> View cho vùng nội dung chính.
+             DataType KHÔNG được đổi vì đây là cơ chế điều hướng. -->
         <DataTemplate DataType="{x:Type auth:LoginViewModel}">
             <auth:LoginView />
         </DataTemplate>

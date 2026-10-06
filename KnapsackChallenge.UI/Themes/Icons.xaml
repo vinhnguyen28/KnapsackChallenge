@@ -2,16 +2,28 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- =========================================================
-         GEOMETRY ICONS — 16×16, không emoji, stroke-based.
-         Dùng: <Path Data="{StaticResource IconX}"
-                     Stroke="{StaticResource BrushInk}" StrokeThickness="1.5"
+         GEOMETRY ICONS — 16x16, không emoji, stroke-based.
+         Dùng: <Path Data="{DynamicResource IconX}"
+                     Stroke="{DynamicResource BrushInk}" StrokeThickness="1.5"
                      Width="16" Height="16" Stretch="Uniform"/>
          ========================================================= -->
 
     <!-- Nav -->
     <Geometry x:Key="IconPlayers">M8,3 A2.5,2.5 0 1,1 8,8 A2.5,2.5 0 1,1 8,3 M3,14 C3,11.5 5,10 8,10 C11,10 13,11.5 13,14</Geometry>
     <Geometry x:Key="IconItems">M2,5 L8,2 L14,5 L14,11 L8,14 L2,11 Z M2,5 L8,8 L14,5 M8,8 L8,14</Geometry>
+
+    <!-- IconSets (clipboard) giu lai de khong pha vo view khac, khong
+         dung cho nav "Bo de" nua. -->
     <Geometry x:Key="IconSets">M5,3 L11,3 L11,14 L5,14 Z M6.5,1.5 L9.5,1.5 L9.5,3.5 L6.5,3.5 Z M7,7 L9,7 M7,10 L9,10</Geometry>
+
+    <!-- MOI: icon cho muc "Bo de" - chong 2 the tag lech nhau.
+         The truoc (co lo tron o goc vat) + the sau nho ra phia tren/phai. -->
+    <Geometry x:Key="IconTagStack">
+        M2,4 L9,4 L12,7 L12,14 L2,14 Z
+        M9.5,5.5 A0.7,0.7 0 1,1 10.9,6.9 A0.7,0.7 0 1,1 9.5,5.5
+        M4,2 L11,2 L14,5 L14,10
+    </Geometry>
+
     <Geometry x:Key="IconBanLogs">M8,2 A6,6 0 1,1 8,14 A6,6 0 1,1 8,2 M3.8,3.8 L12.2,12.2</Geometry>
 
     <!-- Actions -->
@@ -41,12 +53,8 @@
     <Geometry x:Key="IconDot">M8,4 A4,4 0 1,1 8,12 A4,4 0 1,1 8,4</Geometry>
 
     <!-- =========================================================
-         ILLUSTRATION — minh họa lớn dùng cho màn Login/Register.
-         Canvas logic 64×64, vẽ stroke-only. Khi render:
-           <Path Data="{DynamicResource IllustrationKnapsack}"
-                 Stroke="{DynamicResource BrushInkMuted}"
-                 StrokeThickness="2" Stretch="Uniform"
-                 Width="160" Height="160"/>
+         ILLUSTRATION — minh hoa lon dung cho man Login/Register.
+         Canvas logic 64x64, ve stroke-only.
          ========================================================= -->
     <Geometry x:Key="IllustrationKnapsack">
         M32,6

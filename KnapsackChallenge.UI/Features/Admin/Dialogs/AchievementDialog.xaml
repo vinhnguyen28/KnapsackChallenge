@@ -2,121 +2,246 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Thành tích người chơi"
-        Width="760" Height="600"
-        MinWidth="600" MinHeight="480"
+        Width="780" Height="620"
+        MinWidth="640" MinHeight="500"
         ResizeMode="CanResize"
         WindowStartupLocation="CenterOwner"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent">
 
-    <Border Background="{StaticResource CardBg}" CornerRadius="14" Margin="20"
-            BorderBrush="{StaticResource CardBorder}" BorderThickness="1">
+    <Border Background="{DynamicResource BrushSurface}"
+            BorderBrush="{DynamicResource BrushRule}"
+            BorderThickness="1"
+            CornerRadius="2"
+            Margin="14">
         <Border.Effect>
-            <DropShadowEffect BlurRadius="30" ShadowDepth="4" Opacity="0.5" Color="Black"/>
+            <DropShadowEffect BlurRadius="12"
+                              ShadowDepth="2"
+                              Opacity="0.15"
+                              Color="Black"/>
         </Border.Effect>
 
-        <Grid Margin="26">
+        <Grid Margin="22,18,22,18">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Header -->
+            <!-- =========================================================
+                 HEADER: title + ten user (mono) + nut dong
+                 ========================================================= -->
             <Grid Grid.Row="0">
-                <StackPanel>
-                    <TextBlock Text="📊  Thành tích người chơi" FontSize="20" FontWeight="Bold"
-                               Foreground="{StaticResource TextMain}"/>
-                    <TextBlock x:Name="UsernameText" FontSize="14"
-                               Foreground="{StaticResource AccentCyan}"
-                               FontWeight="SemiBold" Margin="0,6,0,0"/>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Thành tích người chơi"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeTitle}"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource BrushInk}"/>
+
+                    <!-- Code-behind gan UsernameText.Text - giu nguyen -->
+                    <TextBlock x:Name="UsernameText"
+                               FontFamily="{DynamicResource FontMono}"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               Foreground="{DynamicResource BrushInkMuted}"
+                               Margin="0,4,0,0"/>
                 </StackPanel>
-                <Button Content="✕" Click="Close_Click"
-                        Style="{StaticResource ModernButton}"
-                        Background="Transparent" Foreground="{StaticResource TextMuted}"
-                        Padding="12,6" FontSize="14"
-                        HorizontalAlignment="Right" VerticalAlignment="Top"/>
+
+                <Button Grid.Column="1"
+                        Click="Close_Click"
+                        Style="{DynamicResource ButtonGhost}"
+                        Padding="8,6"
+                        VerticalAlignment="Top"
+                        ToolTip="Đóng">
+                    <Path Data="{DynamicResource IconClose}"
+                          Width="12" Height="12"
+                          Stroke="{Binding Foreground,
+                                   RelativeSource={RelativeSource AncestorType=Button}}"
+                          StrokeThickness="1.6"
+                          Stretch="Uniform"/>
+                </Button>
             </Grid>
 
-            <Border Grid.Row="0" Height="3" Width="36" CornerRadius="2" HorizontalAlignment="Left"
-                    Background="{StaticResource PrimaryGradient}" Margin="0,54,0,0" VerticalAlignment="Top"/>
-
-            <!-- Cảnh báo ban (chỉ hiện khi bị ban) -->
-            <Border x:Name="BanBanner" Grid.Row="1"
-                    Background="#2C1217" BorderBrush="#5A1F2A" BorderThickness="1"
-                    CornerRadius="8" Padding="12,9" Margin="0,18,0,6"
+            <!-- =========================================================
+                 BAN BANNER (an mac dinh, code-behind bat khi bi ban)
+                 ========================================================= -->
+            <Border x:Name="BanBanner"
+                    Grid.Row="1"
+                    Background="{DynamicResource BrushDangerSoft}"
+                    BorderBrush="{DynamicResource BrushDanger}"
+                    BorderThickness="1"
+                    CornerRadius="2"
+                    Padding="12,9"
+                    Margin="0,14,0,0"
                     Visibility="Collapsed">
                 <StackPanel>
-                    <TextBlock x:Name="BanHeaderText" FontWeight="SemiBold"
-                               Foreground="#FCA5A5" FontSize="13"/>
-                    <TextBlock x:Name="BanReasonText" Foreground="#F87171" FontSize="12"
-                               TextWrapping="Wrap" Margin="0,4,0,0"/>
+                    <TextBlock x:Name="BanHeaderText"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeBody}"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource BrushDanger}"/>
+                    <TextBlock x:Name="BanReasonText"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               Foreground="{DynamicResource BrushDanger}"
+                               TextWrapping="Wrap"
+                               Margin="0,4,0,0"/>
                 </StackPanel>
             </Border>
 
-            <!-- Thông tin chung -->
-            <TextBlock Grid.Row="2" x:Name="GeneralInfoText" FontSize="12"
-                       Foreground="{StaticResource TextMuted}" Margin="0,10,0,14" TextWrapping="Wrap"/>
+            <!-- =========================================================
+                 THONG TIN CHUNG (code-behind gan)
+                 ========================================================= -->
+            <TextBlock x:Name="GeneralInfoText"
+                       Grid.Row="2"
+                       FontFamily="{DynamicResource FontMono}"
+                       FontSize="{DynamicResource FontSizeCaption}"
+                       Foreground="{DynamicResource BrushInkMuted}"
+                       Margin="0,12,0,12"
+                       TextWrapping="Wrap"/>
 
-            <!-- Thẻ thống kê -->
-            <UniformGrid Grid.Row="3" Rows="1" Columns="5" VerticalAlignment="Top" Margin="0,0,0,14">
-                <Border Style="{StaticResource Card}" Padding="12,10" Margin="0,0,8,0">
-                    <StackPanel>
-                        <TextBlock Text="TỔNG VÁN" FontSize="10"
-                                   Foreground="{StaticResource TextMuted}" FontWeight="SemiBold"/>
-                        <TextBlock x:Name="TotalGamesText" FontSize="20" FontWeight="Bold"
-                                   Foreground="{StaticResource TextMain}" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Border>
-                <Border Style="{StaticResource Card}" Padding="12,10" Margin="4,0,4,0">
-                    <StackPanel>
-                        <TextBlock Text="ĐÃ NỘP" FontSize="10"
-                                   Foreground="{StaticResource TextMuted}" FontWeight="SemiBold"/>
-                        <TextBlock x:Name="SubmittedText" FontSize="20" FontWeight="Bold"
-                                   Foreground="{StaticResource AccentCyan}" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Border>
-                <Border Style="{StaticResource Card}" Padding="12,10" Margin="4,0,4,0">
-                    <StackPanel>
-                        <TextBlock Text="CAO NHẤT" FontSize="10"
-                                   Foreground="{StaticResource TextMuted}" FontWeight="SemiBold"/>
-                        <TextBlock x:Name="HighestText" FontSize="20" FontWeight="Bold"
-                                   Foreground="#34D399" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Border>
-                <Border Style="{StaticResource Card}" Padding="12,10" Margin="4,0,4,0">
-                    <StackPanel>
-                        <TextBlock Text="TRUNG BÌNH" FontSize="10"
-                                   Foreground="{StaticResource TextMuted}" FontWeight="SemiBold"/>
-                        <TextBlock x:Name="AverageText" FontSize="20" FontWeight="Bold"
-                                   Foreground="#FBBF24" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Border>
-                <Border Style="{StaticResource Card}" Padding="12,10" Margin="8,0,0,0">
-                    <StackPanel>
-                        <TextBlock Text="TỔNG ĐIỂM" FontSize="10"
-                                   Foreground="{StaticResource TextMuted}" FontWeight="SemiBold"/>
-                        <TextBlock x:Name="TotalScoreText" FontSize="20" FontWeight="Bold"
-                                   Foreground="{StaticResource TextMain}" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Border>
-            </UniformGrid>
+            <!-- =========================================================
+                 STAT STRIP: 5 muc ngan bang duong ke doc
+                 Thay 5 the roi. So dung mono, label sentence case.
+                 ========================================================= -->
+            <Border Grid.Row="3"
+                    Background="{DynamicResource BrushBackground}"
+                    BorderBrush="{DynamicResource BrushRule}"
+                    BorderThickness="1"
+                    CornerRadius="2"
+                    Margin="0,0,0,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-            <!-- Danh sách ván gần đây -->
-            <Border Grid.Row="4" Style="{StaticResource Card}" Padding="16">
+                    <StackPanel Grid.Column="0" Margin="12,8">
+                        <TextBlock Text="Tổng ván"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeCaption}"
+                                   Foreground="{DynamicResource BrushInkMuted}"/>
+                        <TextBlock x:Name="TotalGamesText"
+                                   FontFamily="{DynamicResource FontMono}"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushInk}"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+
+                    <Rectangle Grid.Column="1" Width="1"
+                               Fill="{DynamicResource BrushRule}"
+                               Margin="0,6"/>
+
+                    <StackPanel Grid.Column="2" Margin="12,8">
+                        <TextBlock Text="Đã nộp"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeCaption}"
+                                   Foreground="{DynamicResource BrushInkMuted}"/>
+                        <TextBlock x:Name="SubmittedText"
+                                   FontFamily="{DynamicResource FontMono}"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushInk}"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+
+                    <Rectangle Grid.Column="3" Width="1"
+                               Fill="{DynamicResource BrushRule}"
+                               Margin="0,6"/>
+
+                    <StackPanel Grid.Column="4" Margin="12,8">
+                        <TextBlock Text="Cao nhất"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeCaption}"
+                                   Foreground="{DynamicResource BrushInkMuted}"/>
+                        <TextBlock x:Name="HighestText"
+                                   FontFamily="{DynamicResource FontMono}"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushInk}"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+
+                    <Rectangle Grid.Column="5" Width="1"
+                               Fill="{DynamicResource BrushRule}"
+                               Margin="0,6"/>
+
+                    <StackPanel Grid.Column="6" Margin="12,8">
+                        <TextBlock Text="Trung bình"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeCaption}"
+                                   Foreground="{DynamicResource BrushInkMuted}"/>
+                        <TextBlock x:Name="AverageText"
+                                   FontFamily="{DynamicResource FontMono}"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushInk}"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+
+                    <Rectangle Grid.Column="7" Width="1"
+                               Fill="{DynamicResource BrushRule}"
+                               Margin="0,6"/>
+
+                    <StackPanel Grid.Column="8" Margin="12,8">
+                        <TextBlock Text="Tổng điểm"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeCaption}"
+                                   Foreground="{DynamicResource BrushInkMuted}"/>
+                        <TextBlock x:Name="TotalScoreText"
+                                   FontFamily="{DynamicResource FontMono}"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushInk}"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- =========================================================
+                 BANG VAN CHOI GAN DAY
+                 ========================================================= -->
+            <Border Grid.Row="4"
+                    Background="{DynamicResource BrushBackground}"
+                    BorderBrush="{DynamicResource BrushRule}"
+                    BorderThickness="1"
+                    CornerRadius="2"
+                    Padding="0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="VÁN CHƠI GẦN ĐÂY" FontSize="11" FontWeight="Bold"
-                               Foreground="{StaticResource TextMuted}" Margin="0,0,0,10"/>
+                    <Border Grid.Row="0"
+                            BorderBrush="{DynamicResource BrushRule}"
+                            BorderThickness="0,0,0,1"
+                            Padding="12,8">
+                        <TextBlock Text="Ván chơi gần đây"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeCaption}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushInkMuted}"/>
+                    </Border>
 
                     <Grid Grid.Row="1">
+                        <!-- x:Name + binding giu nguyen -->
                         <DataGrid x:Name="GamesGrid"
                                   AutoGenerateColumns="False"
                                   IsReadOnly="True"
@@ -127,31 +252,79 @@
                                   GridLinesVisibility="None"
                                   Background="Transparent"
                                   BorderThickness="0"
-                                  RowHeight="38"
-                                  FontSize="13"
-                                  Foreground="{StaticResource TextMain}"
-                                  ColumnHeaderStyle="{StaticResource DarkColumnHeader}"
-                                  RowStyle="{StaticResource DarkRow}"
-                                  CellStyle="{StaticResource DarkCell}">
+                                  RowHeight="34"
+                                  FontSize="{DynamicResource FontSizeBody}"
+                                  Foreground="{DynamicResource BrushInk}"
+                                  ColumnHeaderStyle="{DynamicResource GridColumnHeader}"
+                                  RowStyle="{DynamicResource GridRow}"
+                                  CellStyle="{DynamicResource GridCell}">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="MÃ PHÒNG" Binding="{Binding RoomCode}" Width="110"/>
-                                <DataGridTextColumn Header="BỘ ĐỀ" Binding="{Binding SetName}" Width="*"/>
-                                <DataGridTextColumn Header="ĐỘ KHÓ" Binding="{Binding Difficulty}" Width="90"/>
-                                <DataGridTextColumn Header="ĐIỂM" Binding="{Binding TotalScore}" Width="70"/>
-                                <DataGridTextColumn Header="CÂN NẶNG" Binding="{Binding TotalWeight}" Width="90"/>
-                                <DataGridTextColumn Header="MAX" Binding="{Binding MaxWeight}" Width="70"/>
-                                <DataGridTextColumn Header="NỘP" Binding="{Binding IsSubmitted}" Width="60"/>
+
+                                <DataGridTextColumn Header="MÃ PHÒNG"
+                                                    Binding="{Binding RoomCode}"
+                                                    Width="100">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock"
+                                               BasedOn="{StaticResource MutedCellText}">
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="BỘ ĐỀ"
+                                                    Binding="{Binding SetName}"
+                                                    Width="*"/>
+
+                                <DataGridTextColumn Header="ĐỘ KHÓ"
+                                                    Binding="{Binding Difficulty}"
+                                                    Width="80"
+                                                    ElementStyle="{StaticResource MutedCellText}"/>
+
+                                <DataGridTextColumn Header="ĐIỂM"
+                                                    Binding="{Binding TotalScore}"
+                                                    Width="60"
+                                                    ElementStyle="{StaticResource RightCellText}"/>
+
+                                <DataGridTextColumn Header="CÂN NẶNG"
+                                                    Binding="{Binding TotalWeight}"
+                                                    Width="80"
+                                                    ElementStyle="{StaticResource RightCellText}"/>
+
+                                <DataGridTextColumn Header="MAX"
+                                                    Binding="{Binding MaxWeight}"
+                                                    Width="60"
+                                                    ElementStyle="{StaticResource RightCellText}"/>
+
+                                <DataGridTextColumn Header="NỘP"
+                                                    Binding="{Binding IsSubmitted}"
+                                                    Width="60"
+                                                    ElementStyle="{StaticResource MutedCellText}"/>
+
                                 <DataGridTextColumn Header="NGÀY CHƠI"
                                                     Binding="{Binding CreatedAt, StringFormat='dd/MM/yyyy HH:mm'}"
-                                                    Width="140"/>
+                                                    Width="130"
+                                                    ElementStyle="{StaticResource MutedCellText}"/>
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <StackPanel x:Name="EmptyPanel" HorizontalAlignment="Center"
-                                    VerticalAlignment="Center" Visibility="Collapsed">
-                            <TextBlock Text="🗒" FontSize="36" HorizontalAlignment="Center" Opacity="0.5"/>
-                            <TextBlock Text="Chưa có thành tích" Foreground="{StaticResource TextMuted}"
-                                       FontSize="14" Margin="0,8,0,0"/>
+                        <!-- Empty state (code-behind bat khi RecentGames.Count == 0) -->
+                        <StackPanel x:Name="EmptyPanel"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Visibility="Collapsed"
+                                    IsHitTestVisible="False">
+                            <Path Data="{DynamicResource IconBanLogs}"
+                                  Width="36" Height="36"
+                                  Stroke="{DynamicResource BrushInkMuted}"
+                                  StrokeThickness="1.2"
+                                  Stretch="Uniform"
+                                  HorizontalAlignment="Center"
+                                  Opacity="0.5"/>
+                            <TextBlock Text="Chưa có thành tích"
+                                       FontFamily="{DynamicResource FontSans}"
+                                       FontSize="{DynamicResource FontSizeSmall}"
+                                       Foreground="{DynamicResource BrushInkMuted}"
+                                       Margin="0,10,0,0"/>
                         </StackPanel>
                     </Grid>
                 </Grid>

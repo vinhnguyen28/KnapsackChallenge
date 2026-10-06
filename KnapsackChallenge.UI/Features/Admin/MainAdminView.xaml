@@ -5,53 +5,79 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:admin="clr-namespace:KnapsackChallenge.UI.Features.Admin"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="900"
-             Background="{StaticResource AppBackgroundBrush}">
+             d:DesignHeight="680" d:DesignWidth="1040"
+             Background="{DynamicResource BrushBackground}">
 
     <UserControl.Resources>
-        <!-- Ánh xạ ViewModel -> View cho vùng nội dung bên phải -->
+        <!-- =========================================================
+             DataTemplate: ViewModel -> View cho vung noi dung ben phai.
+             DataType KHONG doi - day la co che dieu huong.
+             ========================================================= -->
         <DataTemplate DataType="{x:Type admin:ItemManagementViewModel}">
             <admin:ItemManagementView />
         </DataTemplate>
-        
+
         <DataTemplate DataType="{x:Type admin:PlayerManagementViewModel}">
             <admin:PlayerManagementView />
         </DataTemplate>
-        
+
         <DataTemplate DataType="{x:Type admin:BanLogViewModel}">
             <admin:BanLogView />
         </DataTemplate>
-        
+
         <DataTemplate DataType="{x:Type admin:SetManagementViewModel}">
-                <admin:SetManagementView />
+            <admin:SetManagementView />
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type admin:PlaceholderViewModel}">
             <admin:PlaceholderView />
         </DataTemplate>
 
-        <!-- Style cho mục navbar -->
-        <Style x:Key="NavListBoxItem" TargetType="ListBoxItem">
-            <Setter Property="Margin"  Value="8,2"/>
-            <Setter Property="Padding" Value="14,11"/>
-            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
-            <Setter Property="FontSize"   Value="13"/>
-            <Setter Property="Cursor"     Value="Hand"/>
+        <!-- =========================================================
+             Nav item style:
+               - Mac dinh: chu muted, nen trong.
+               - Hover: nen Surface, chu Ink.
+               - Selected: nen Surface + vach trai 3px Accent + chu Ink dam.
+             Vach trai nam ngoai Border nen khong bi padding cua item che.
+             ========================================================= -->
+        <Style x:Key="AdminNavItem" TargetType="ListBoxItem">
+            <Setter Property="FontFamily" Value="{DynamicResource FontSans}"/>
+            <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}"/>
+            <Setter Property="Foreground" Value="{DynamicResource BrushInkMuted}"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
-                        <Border x:Name="bd" Background="Transparent" CornerRadius="9"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter VerticalAlignment="Center"/>
-                        </Border>
+                        <Grid>
+                            <!-- Nen + content -->
+                            <Border x:Name="bd"
+                                    Background="Transparent"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </Border>
+                            <!-- Vach trai Accent khi duoc chon -->
+                            <Border x:Name="sel"
+                                    Width="3"
+                                    HorizontalAlignment="Left"
+                                    Background="Transparent"
+                                    IsHitTestVisible="False"/>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#1F2331"/>
-                                <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
+                                <Setter TargetName="bd" Property="Background"
+                                        Value="{DynamicResource BrushSurface}"/>
+                                <Setter Property="Foreground"
+                                        Value="{DynamicResource BrushInk}"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#2A2760"/>
-                                <Setter Property="Foreground" Value="White"/>
+                                <Setter TargetName="bd" Property="Background"
+                                        Value="{DynamicResource BrushSurface}"/>
+                                <Setter TargetName="sel" Property="Background"
+                                        Value="{DynamicResource BrushAccent}"/>
+                                <Setter Property="Foreground"
+                                        Value="{DynamicResource BrushInk}"/>
                                 <Setter Property="FontWeight" Value="SemiBold"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -59,7 +85,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
     </UserControl.Resources>
 
     <Grid>
@@ -68,92 +93,170 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- ==================== HEADER ==================== -->
-        <Border Grid.Row="0" Background="#0F1119" BorderBrush="{StaticResource CardBorder}"
-                BorderThickness="0,0,0,1" Padding="22,14">
-            <Grid>
+        <!-- =========================================================
+             HEADER
+             - Wordmark mono KNAPSACK + rule doc + ten trang hien tai
+               (bind SelectedNavItem.Title - tu dong doi khi chuyen muc).
+             - Ben phai: username (mono) + nut Dang xuat voi icon Path.
+             - KHONG logo gradient, KHONG glow, KHONG emoji.
+             ========================================================= -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource BrushSurface}"
+                BorderBrush="{DynamicResource BrushRule}"
+                BorderThickness="0,0,0,1"
+                Padding="20,0">
+            <Grid Height="52">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <Border Width="42" Height="42" CornerRadius="11"
-                        Background="{StaticResource PrimaryGradient}">
-                    <Border.Effect>
-                        <DropShadowEffect Color="#7C6CF5" BlurRadius="18" ShadowDepth="0" Opacity="0.5"/>
-                    </Border.Effect>
-                    <TextBlock Text="🎒" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Border>
+                <!-- Wordmark + ten trang -->
+                <StackPanel Grid.Column="0"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="KNAPSACK"
+                               FontFamily="{DynamicResource FontMono}"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource BrushInk}"
+                               VerticalAlignment="Center"/>
 
-                <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
-                    <TextBlock Text="Knapsack Admin" FontSize="18" FontWeight="Bold"
-                               Foreground="{StaticResource TextMain}"/>
-                    <TextBlock FontSize="12" Foreground="{StaticResource TextMuted}" Margin="0,2,0,0">
-                        <Run Text="Xin chào,"/>
-                        <Run Text="{Binding AdminUsername, Mode=OneWay}"
-                             Foreground="{StaticResource AccentCyan}" FontWeight="SemiBold"/>
-                        <Run Text="(Admin)"/>
-                    </TextBlock>
+                    <Rectangle Width="1" Height="18"
+                               Fill="{DynamicResource BrushRule}"
+                               Margin="14,0"
+                               VerticalAlignment="Center"/>
+
+                    <TextBlock Text="{Binding SelectedNavItem.Title}"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeBody}"
+                               Foreground="{DynamicResource BrushInkMuted}"
+                               VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <Button Grid.Column="2"
-                        Command="{Binding LogoutCommand}"
-                        Style="{StaticResource ModernButton}"
-                        Background="Transparent"
-                        BorderBrush="{StaticResource CardBorder}"
-                        BorderThickness="1"
-                        Foreground="{StaticResource TextMuted}"
-                        FontWeight="Normal"
-                        Padding="14,9">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="⎋ " FontSize="14" VerticalAlignment="Center"/>
-                        <TextBlock Text="Đăng xuất" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
+                <!-- Username + Dang xuat -->
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="{Binding AdminUsername, Mode=OneWay}"
+                               FontFamily="{DynamicResource FontMono}"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               Foreground="{DynamicResource BrushInkMuted}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,16,0"/>
+
+                    <Button Command="{Binding LogoutCommand}"
+                            Style="{DynamicResource ButtonGhost}"
+                            Padding="10,6">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{DynamicResource IconLogout}"
+                                  Width="14" Height="14"
+                                  Stroke="{DynamicResource BrushInkMuted}"
+                                  StrokeThickness="1.4"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,8,0"/>
+                            <TextBlock Text="Đăng xuất"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </Grid>
         </Border>
 
-        <!-- ==================== BODY ==================== -->
+        <!-- =========================================================
+             BODY: sidebar 200px + vung noi dung
+             ========================================================= -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="220"/>
+                <ColumnDefinition Width="200"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- ===== NAVBAR DỌC ===== -->
-            <Border Grid.Column="0" Background="#10121B"
-                    BorderBrush="{StaticResource CardBorder}" BorderThickness="0,0,1,0">
+            <!-- Sidebar nen SurfaceAlt -->
+            <Border Grid.Column="0"
+                    Background="{DynamicResource BrushSurfaceAlt}"
+                    BorderBrush="{DynamicResource BrushRule}"
+                    BorderThickness="0,0,1,0">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top"
-                               Text="ĐIỀU HƯỚNG"
-                               Foreground="#5B6376"
-                               FontSize="10" FontWeight="Bold"
-                               Margin="20,20,0,10"/>
+                               Text="Điều hướng"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource BrushInkMuted}"
+                               Margin="18,18,0,8"/>
 
                     <ListBox ItemsSource="{Binding NavItems}"
                              SelectedItem="{Binding SelectedNavItem, Mode=TwoWay}"
                              Background="Transparent"
                              BorderThickness="0"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                             ItemContainerStyle="{StaticResource NavListBoxItem}">
+                             ItemContainerStyle="{StaticResource AdminNavItem}">
+                        <!--
+                             Item template:
+                             - BO {Binding Icon} (truong nay chua emoji trong VM).
+                             - Dung DataTrigger tren {Binding Key} de chon
+                               Path.Data tuong ung trong Icons.xaml.
+                             - Icon ke thua Foreground cua ListBoxItem nen
+                               tu dong doi mau theo trang thai Selected.
+                        -->
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{Binding Icon}" FontSize="16" Width="28"
-                                               VerticalAlignment="Center"/>
-                                    <TextBlock Text="{Binding Title}" VerticalAlignment="Center"/>
-                                </StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="18"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Path Grid.Column="0"
+                                          Width="16" Height="16"
+                                          StrokeThickness="1.4"
+                                          Stretch="Uniform"
+                                          VerticalAlignment="Center"
+                                          Stroke="{Binding Foreground,
+                                                   RelativeSource={RelativeSource AncestorType=ListBoxItem}}">
+                                        <Path.Style>
+                                            <Style TargetType="Path">
+                                                <Setter Property="Data"
+                                                        Value="{DynamicResource IconDot}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Key}" Value="players">
+                                                        <Setter Property="Data"
+                                                                Value="{DynamicResource IconPlayers}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Key}" Value="items">
+                                                        <Setter Property="Data"
+                                                                Value="{DynamicResource IconItems}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Key}" Value="sets">
+                                                        <Setter Property="Data"
+                                                                Value="{DynamicResource IconTagStack}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Key}" Value="banlogs">
+                                                        <Setter Property="Data"
+                                                                Value="{DynamicResource IconBanLogs}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Path.Style>
+                                    </Path>
+
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding Title}"
+                                               VerticalAlignment="Center"
+                                               Margin="10,0,0,0"/>
+                                </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
                 </DockPanel>
             </Border>
 
-            <!-- ===== VÙNG NỘI DUNG ===== -->
+            <!-- Vung noi dung: ContentControl resolve qua DataTemplate o tren -->
             <ContentControl Grid.Column="1"
-                            Content="{Binding CurrentPage}"
-                            Margin="0"/>
+                            Content="{Binding CurrentPage}"/>
         </Grid>
     </Grid>
 </UserControl>

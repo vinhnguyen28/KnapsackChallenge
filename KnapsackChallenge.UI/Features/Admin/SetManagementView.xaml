@@ -4,184 +4,22 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="1100"
-             Background="Transparent">
+             d:DesignHeight="680" d:DesignWidth="1100"
+             Background="{DynamicResource BrushBackground}">
 
-    <UserControl.Resources>
-
-        <!-- ===== COMBOBOX dark theme ===== -->
-        <Style x:Key="DarkComboBoxItem" TargetType="ComboBoxItem">
-            <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBoxItem">
-                        <Border x:Name="bd" Background="Transparent" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#1F2331"/>
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#2A2760"/>
-                                <Setter Property="Foreground" Value="White"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="DarkComboBox" TargetType="ComboBox">
-            <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Height" Value="40"/>
-            <Setter Property="ItemContainerStyle" Value="{StaticResource DarkComboBoxItem}"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBox">
-                        <Grid>
-                            <ToggleButton x:Name="ToggleButton"
-                                          Focusable="False"
-                                          ClickMode="Press"
-                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay,
-                                                      RelativeSource={RelativeSource TemplatedParent}}">
-                                <ToggleButton.Template>
-                                    <ControlTemplate TargetType="ToggleButton">
-                                        <Border x:Name="bd" Background="{StaticResource InputBg}"
-                                                BorderBrush="{StaticResource CardBorder}"
-                                                BorderThickness="1" CornerRadius="9">
-                                            <Path HorizontalAlignment="Right" VerticalAlignment="Center"
-                                                  Margin="0,0,12,0"
-                                                  Data="M 0 0 L 4 4 L 8 0 Z"
-                                                  Fill="{StaticResource TextMuted}"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="bd" Property="BorderBrush" Value="#3A4157"/>
-                                            </Trigger>
-                                            <Trigger Property="IsChecked" Value="True">
-                                                <Setter TargetName="bd" Property="BorderBrush"
-                                                        Value="{StaticResource Accent}"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </ToggleButton.Template>
-                            </ToggleButton>
-
-                            <ContentPresenter x:Name="ContentSite"
-                                              IsHitTestVisible="False"
-                                              Content="{TemplateBinding SelectionBoxItem}"
-                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                              Margin="12,0,30,0"
-                                              VerticalAlignment="Center"
-                                              HorizontalAlignment="Left"/>
-
-                            <Popup x:Name="PART_Popup"
-                                   AllowsTransparency="True"
-                                   IsOpen="{TemplateBinding IsDropDownOpen}"
-                                   Placement="Bottom"
-                                   PopupAnimation="Slide">
-                                <Border Background="{StaticResource CardBg}"
-                                        BorderBrush="{StaticResource CardBorder}"
-                                        BorderThickness="1"
-                                        CornerRadius="9"
-                                        MinWidth="{TemplateBinding ActualWidth}"
-                                        MaxHeight="220">
-                                    <ScrollViewer>
-                                        <StackPanel IsItemsHost="True"/>
-                                    </ScrollViewer>
-                                </Border>
-                            </Popup>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.5"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- ===== LIST BOX dark ===== -->
-        <Style x:Key="DarkListBox" TargetType="ListBox">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
-            <Setter Property="ItemContainerStyle">
-                <Setter.Value>
-                    <Style TargetType="ListBoxItem">
-                        <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
-                        <Setter Property="Padding" Value="12,9"/>
-                        <Setter Property="FontSize" Value="13"/>
-                        <Setter Property="Cursor" Value="Hand"/>
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="ListBoxItem">
-                                    <Border x:Name="bd" Background="Transparent"
-                                            CornerRadius="7" Padding="{TemplateBinding Padding}">
-                                        <ContentPresenter/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="bd" Property="Background" Value="#1F2331"/>
-                                        </Trigger>
-                                        <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="bd" Property="Background" Value="#2A2760"/>
-                                            <Setter Property="Foreground" Value="White"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- ===== Nút chuyển item (>>, <<) ===== -->
-        <Style x:Key="MoveButton" TargetType="Button">
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Width" Value="42"/>
-            <Setter Property="Height" Value="34"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Margin" Value="0,0,0,8"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="8">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="bd" Property="Opacity" Value="0.3"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-    </UserControl.Resources>
-
-    <Grid Margin="24,20,24,20">
+    <Grid Margin="20,16,20,20">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="340"/>
-            <ColumnDefinition Width="22"/>
+            <ColumnDefinition Width="16"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- ============================================================
-             CỘT TRÁI: form + danh sách bộ đề
-             ============================================================ -->
-        <Border Grid.Column="0" Style="{StaticResource Card}" Padding="20">
+        <!-- =========================================================
+             COT TRAI: form CRUD + danh sach bo de
+             ========================================================= -->
+        <Border Grid.Column="0"
+                Style="{DynamicResource Card}"
+                Padding="18">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -189,76 +27,152 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- Form -->
+                <!-- ============ FORM ============ -->
                 <StackPanel Grid.Row="0">
-                    <TextBlock Text="{Binding FormTitle}" FontSize="17" FontWeight="Bold"
-                               Foreground="{StaticResource TextMain}" TextWrapping="Wrap"/>
-                    <Border Height="3" Width="36" CornerRadius="2" HorizontalAlignment="Left"
-                            Background="{StaticResource PrimaryGradient}" Margin="0,10,0,20"/>
 
-                    <TextBlock Text="TÊN BỘ ĐỀ" Style="{StaticResource FieldLabel}"/>
-                    <TextBox Style="{StaticResource DarkTextBox}" Margin="0,0,0,14"
+                    <TextBlock Text="{Binding FormTitle}"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeTitle}"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource BrushInk}"
+                               TextWrapping="Wrap"/>
+
+                    <Rectangle Height="1"
+                               Fill="{DynamicResource BrushRule}"
+                               Margin="0,10,0,14"/>
+
+                    <!-- Ten bo de -->
+                    <TextBlock Text="Tên bộ đề"
+                               Style="{DynamicResource FieldLabel}"/>
+                    <TextBox Style="{DynamicResource DarkTextBox}"
                              Tag="Ví dụ: Bộ đề dễ"
                              Text="{Binding SetName, UpdateSourceTrigger=PropertyChanged}"/>
 
-                    <Grid Margin="0,0,0,14">
+                    <!-- Max weight + Do kho -->
+                    <Grid Margin="0,12,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="10"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
+
                         <StackPanel Grid.Column="0">
-                            <TextBlock Text="MAX WEIGHT" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Style="{StaticResource DarkTextBox}" Tag="0"
+                            <TextBlock Text="Max weight"
+                                       Style="{DynamicResource FieldLabel}"/>
+                            <TextBox Style="{DynamicResource DarkTextBox}"
+                                     Tag="0"
                                      Text="{Binding MaxWeightText, UpdateSourceTrigger=PropertyChanged}"/>
                         </StackPanel>
+
                         <StackPanel Grid.Column="2">
-                            <TextBlock Text="ĐỘ KHÓ" Style="{StaticResource FieldLabel}"/>
-                            <ComboBox Style="{StaticResource DarkComboBox}"
+                            <TextBlock Text="Độ khó"
+                                       Style="{DynamicResource FieldLabel}"/>
+                            <ComboBox Style="{DynamicResource DarkComboBox}"
                                       ItemsSource="{Binding DifficultyOptions}"
                                       SelectedItem="{Binding Difficulty, Mode=TwoWay}"/>
                         </StackPanel>
                     </Grid>
 
-                    <Border Style="{StaticResource InfoBanner}">
-                        <TextBlock Text="{Binding InfoMessage}" Foreground="#34D399"
-                                   FontSize="13" TextWrapping="Wrap"/>
-                    </Border>
-                    <Border Style="{StaticResource ErrorBanner}">
-                        <TextBlock Text="{Binding ErrorMessage}" Foreground="#F87171"
-                                   FontSize="13" TextWrapping="Wrap"/>
-                    </Border>
+                    <!-- =========================================================
+                         KHU VUC THONG BAO - CHIEU CAO CO DINH (54px)
+                         ========================================================= -->
+                    <Grid MinHeight="54" Margin="0,14,0,0">
+                        <Border Style="{DynamicResource InfoBanner}"
+                                Margin="0"
+                                VerticalAlignment="Top">
+                            <TextBlock Text="{Binding InfoMessage}"
+                                       FontFamily="{DynamicResource FontSans}"
+                                       FontSize="{DynamicResource FontSizeSmall}"
+                                       Foreground="{DynamicResource BrushSuccess}"
+                                       TextWrapping="Wrap"/>
+                        </Border>
 
-                    <Button Content="＋  Thêm mới" Command="{Binding AddSetCommand}"
-                            Style="{StaticResource ModernButton}"
-                            Background="{StaticResource PrimaryGradient}"/>
-                    <Button Content="✓  Lưu thay đổi" Command="{Binding UpdateSetCommand}"
-                            Style="{StaticResource ModernButton}"
-                            Background="{StaticResource SuccessGradient}"
-                            Margin="0,10,0,0"/>
-                    <Button Content="✕  Xóa bộ đề" Command="{Binding DeleteSetCommand}"
-                            Style="{StaticResource ModernButton}"
-                            Background="#2C1217" BorderBrush="#7F2A38" BorderThickness="1"
-                            Foreground="#F87171" Margin="0,10,0,0"/>
-                    <Button Content="Làm mới form" Command="{Binding ClearSetFormCommand}"
-                            Style="{StaticResource ModernButton}"
-                            Background="Transparent"
-                            Foreground="{StaticResource TextMuted}" FontWeight="Normal"
-                            Margin="0,10,0,20" Padding="8"/>
+                        <Border Style="{DynamicResource ErrorBanner}"
+                                Margin="0"
+                                VerticalAlignment="Top">
+                            <TextBlock Text="{Binding ErrorMessage}"
+                                       FontFamily="{DynamicResource FontSans}"
+                                       FontSize="{DynamicResource FontSizeSmall}"
+                                       Foreground="{DynamicResource BrushDanger}"
+                                       TextWrapping="Wrap"/>
+                        </Border>
+                    </Grid>
+
+                    <!-- CRUD buttons -->
+                    <Button Command="{Binding AddSetCommand}"
+                            Style="{DynamicResource ButtonSecondary}"
+                            Margin="0,0,0,8">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{DynamicResource IconAdd}"
+                                  Width="14" Height="14"
+                                  Stroke="{Binding Foreground,
+                                           RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.8"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,8,0"/>
+                            <TextBlock Text="Thêm bộ đề" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding UpdateSetCommand}"
+                            Style="{DynamicResource ButtonSecondary}"
+                            Margin="0,0,0,8">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{DynamicResource IconSave}"
+                                  Width="14" Height="14"
+                                  Stroke="{Binding Foreground,
+                                           RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.5"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,8,0"/>
+                            <TextBlock Text="Lưu thay đổi" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding DeleteSetCommand}"
+                            Style="{DynamicResource ButtonDanger}"
+                            Margin="0,0,0,8">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{DynamicResource IconDelete}"
+                                  Width="14" Height="14"
+                                  Stroke="{Binding Foreground,
+                                           RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.5"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,8,0"/>
+                            <TextBlock Text="Xóa bộ đề" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Content="Làm mới form"
+                            Command="{Binding ClearSetFormCommand}"
+                            Style="{DynamicResource ButtonGhost}"
+                            Margin="0,0,0,16"/>
                 </StackPanel>
 
-                <!-- Danh sách bộ đề -->
-                <TextBlock Grid.Row="1" Text="DANH SÁCH BỘ ĐỀ"
-                           FontSize="11" FontWeight="Bold"
-                           Foreground="{StaticResource TextMuted}" Margin="0,0,0,8"/>
+                <!-- ============ LABEL DANH SACH ============ -->
+                <TextBlock Grid.Row="1"
+                           Text="Danh sách bộ đề"
+                           FontFamily="{DynamicResource FontSans}"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource BrushInkMuted}"
+                           Margin="0,0,0,8"/>
 
-                <Border Grid.Row="2" Background="{StaticResource InputBg}"
-                        BorderBrush="{StaticResource CardBorder}" BorderThickness="1"
-                        CornerRadius="10" Padding="6">
+                <!-- ============ LIST BO DE ============ -->
+                <Border Grid.Row="2"
+                        Background="{DynamicResource BrushBackground}"
+                        BorderBrush="{DynamicResource BrushRule}"
+                        BorderThickness="1"
+                        CornerRadius="2"
+                        Padding="4">
                     <Grid>
                         <ListBox ItemsSource="{Binding Sets}"
                                  SelectedItem="{Binding SelectedSet, Mode=TwoWay}"
-                                 Style="{StaticResource DarkListBox}">
+                                 Style="{DynamicResource DarkListBox}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <Grid>
@@ -266,48 +180,71 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="{Binding SetName}" FontWeight="SemiBold"/>
-                                            <TextBlock FontSize="11" Foreground="{StaticResource TextMuted}"
+
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding SetName}"
+                                                       FontFamily="{DynamicResource FontSans}"
+                                                       FontSize="{DynamicResource FontSizeBody}"
+                                                       FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"/>
+
+                                            <TextBlock FontFamily="{DynamicResource FontMono}"
+                                                       FontSize="{DynamicResource FontSizeCaption}"
+                                                       Foreground="{DynamicResource BrushInkMuted}"
                                                        Margin="0,2,0,0">
                                                 <Run Text="#"/>
                                                 <Run Text="{Binding Id}"/>
-                                                <Run Text="  •  Max "/>
+                                                <Run Text="  ·  Max "/>
                                                 <Run Text="{Binding MaxWeight}"/>
                                             </TextBlock>
                                         </StackPanel>
-                                        <Border Grid.Column="1" CornerRadius="6" Padding="7,3"
+
+                                        <!-- Stamp do kho -->
+                                        <Border Grid.Column="1"
+                                                Padding="6,2"
+                                                BorderThickness="1"
+                                                CornerRadius="2"
+                                                Background="Transparent"
                                                 VerticalAlignment="Center">
                                             <Border.Style>
                                                 <Style TargetType="Border">
-                                                    <Setter Property="Background" Value="#1F2331"/>
+                                                    <Setter Property="BorderBrush"
+                                                            Value="{DynamicResource BrushRule}"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding Difficulty}" Value="Easy">
-                                                            <Setter Property="Background" Value="#0F2A22"/>
+                                                            <Setter Property="BorderBrush"
+                                                                    Value="{DynamicResource BrushSuccess}"/>
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding Difficulty}" Value="Medium">
-                                                            <Setter Property="Background" Value="#2A2410"/>
+                                                            <Setter Property="BorderBrush"
+                                                                    Value="{DynamicResource BrushWarning}"/>
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding Difficulty}" Value="Hard">
-                                                            <Setter Property="Background" Value="#2C1217"/>
+                                                            <Setter Property="BorderBrush"
+                                                                    Value="{DynamicResource BrushDanger}"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </Border.Style>
-                                            <TextBlock Text="{Binding Difficulty}" FontSize="10"
-                                                       FontWeight="SemiBold">
+
+                                            <TextBlock Text="{Binding Difficulty}">
                                                 <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                                                    <Style TargetType="TextBlock"
+                                                           BasedOn="{StaticResource MonoCaptionTextStyle}">
+                                                        <Setter Property="Foreground"
+                                                                Value="{DynamicResource BrushInkMuted}"/>
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding Difficulty}" Value="Easy">
-                                                                <Setter Property="Foreground" Value="#34D399"/>
+                                                                <Setter Property="Foreground"
+                                                                        Value="{DynamicResource BrushSuccess}"/>
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding Difficulty}" Value="Medium">
-                                                                <Setter Property="Foreground" Value="#FBBF24"/>
+                                                                <Setter Property="Foreground"
+                                                                        Value="{DynamicResource BrushWarning}"/>
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding Difficulty}" Value="Hard">
-                                                                <Setter Property="Foreground" Value="#F87171"/>
+                                                                <Setter Property="Foreground"
+                                                                        Value="{DynamicResource BrushDanger}"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
@@ -319,7 +256,9 @@
                             </ListBox.ItemTemplate>
                         </ListBox>
 
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                        <!-- Empty state: chua co bo de nao -->
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
                                     IsHitTestVisible="False">
                             <StackPanel.Style>
                                 <Style TargetType="StackPanel">
@@ -331,19 +270,32 @@
                                     </Style.Triggers>
                                 </Style>
                             </StackPanel.Style>
-                            <TextBlock Text="📋" FontSize="32" HorizontalAlignment="Center" Opacity="0.5"/>
-                            <TextBlock Text="Chưa có bộ đề nào" Foreground="{StaticResource TextMuted}"
-                                       FontSize="13" Margin="0,6,0,0"/>
+
+                            <Path Data="{DynamicResource IconTagStack}"
+                                  Width="32" Height="32"
+                                  Stroke="{DynamicResource BrushInkMuted}"
+                                  StrokeThickness="1.2"
+                                  Stretch="Uniform"
+                                  HorizontalAlignment="Center"
+                                  Opacity="0.5"/>
+
+                            <TextBlock Text="Chưa có bộ đề nào"
+                                       FontFamily="{DynamicResource FontSans}"
+                                       FontSize="{DynamicResource FontSizeSmall}"
+                                       Foreground="{DynamicResource BrushInkMuted}"
+                                       Margin="0,10,0,0"/>
                         </StackPanel>
                     </Grid>
                 </Border>
             </Grid>
         </Border>
 
-        <!-- ============================================================
-             CỘT PHẢI: 2-list picker
-             ============================================================ -->
-        <Border Grid.Column="2" Style="{StaticResource Card}" Padding="20">
+        <!-- =========================================================
+             COT PHAI: 2-list picker + nut luu
+             ========================================================= -->
+        <Border Grid.Column="2"
+                Style="{DynamicResource Card}"
+                Padding="18">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -351,43 +303,60 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Header + stats -->
-                <StackPanel Grid.Row="0" Margin="0,0,0,14">
-                    <TextBlock Text="GÁN VẬT PHẨM CHO BỘ ĐỀ"
-                               FontSize="12" FontWeight="Bold"
-                               Foreground="{StaticResource TextMuted}"/>
+                <!-- ============ HEADER + SUMMARY ============ -->
+                <Grid Grid.Row="0" Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                    <Grid Margin="0,8,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Gán vật phẩm cho bộ đề"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushInkMuted}"/>
 
-                        <TextBlock Grid.Column="0" Text="{Binding TotalSummaryText}"
-                                   FontSize="14" Foreground="{StaticResource TextMain}"
-                                   VerticalAlignment="Center" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding TotalSummaryText}"
+                                   FontFamily="{DynamicResource FontMono}"
+                                   FontSize="{DynamicResource FontSizeBody}"
+                                   Foreground="{DynamicResource BrushInk}"
+                                   Margin="0,4,0,0"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
 
-                        <Border Grid.Column="1" CornerRadius="8" Padding="10,5"
-                                Background="#2C1217" BorderBrush="#5A1F2A" BorderThickness="1"
-                                Visibility="{Binding IsOverWeight, Converter={StaticResource BoolToVisibility}}">
-                            <TextBlock Text="⚠  Vượt max weight!" FontSize="11"
-                                       FontWeight="SemiBold" Foreground="#FCA5A5"/>
-                        </Border>
-                    </Grid>
-                </StackPanel>
+                    <!-- Badge vuot max weight - giu binding IsOverWeight + BoolToVisibility -->
+                    <Border Grid.Column="1"
+                            Padding="8,3"
+                            BorderThickness="1"
+                            CornerRadius="2"
+                            Background="{DynamicResource BrushDangerSoft}"
+                            BorderBrush="{DynamicResource BrushDanger}"
+                            VerticalAlignment="Center"
+                            Visibility="{Binding IsOverWeight,
+                                         Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="Vượt max weight"
+                                   FontFamily="{DynamicResource FontMono}"
+                                   FontSize="{DynamicResource FontSizeCaption}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushDanger}"/>
+                    </Border>
+                </Grid>
 
-                <!-- 2 list picker -->
+                <!-- ============ 2-LIST PICKER ============ -->
                 <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="70"/>
+                        <ColumnDefinition Width="56"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Kho vật phẩm -->
-                    <Border Grid.Column="0" Background="{StaticResource InputBg}"
-                            BorderBrush="{StaticResource CardBorder}" BorderThickness="1"
-                            CornerRadius="10" Padding="12">
+                    <!-- ===== KHO VAT PHAM (trai) ===== -->
+                    <Border Grid.Column="0"
+                            Background="{DynamicResource BrushBackground}"
+                            BorderBrush="{DynamicResource BrushRule}"
+                            BorderThickness="1"
+                            CornerRadius="2">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -395,18 +364,33 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Text="📦  KHO VẬT PHẨM"
-                                       FontSize="11" FontWeight="Bold"
-                                       Foreground="{StaticResource TextMuted}" Margin="0,0,0,10"/>
+                            <!-- Label -->
+                            <Border Grid.Row="0"
+                                    BorderBrush="{DynamicResource BrushRule}"
+                                    BorderThickness="0,0,0,1"
+                                    Padding="10,8">
+                                <TextBlock Text="Kho vật phẩm"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="{DynamicResource FontSizeCaption}"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource BrushInkMuted}"/>
+                            </Border>
 
-                            <TextBox Grid.Row="1" Style="{StaticResource DarkTextBox}"
-                                     Tag="🔍 Tìm..." Margin="0,0,0,10"
-                                     Text="{Binding AvailableSearch, UpdateSourceTrigger=PropertyChanged}"/>
+                            <!-- Search -->
+                            <Border Grid.Row="1"
+                                    BorderBrush="{DynamicResource BrushRule}"
+                                    BorderThickness="0,0,0,1"
+                                    Padding="8">
+                                <TextBox Style="{DynamicResource DarkTextBox}"
+                                         Tag="Tìm..."
+                                         Text="{Binding AvailableSearch, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Border>
 
+                            <!-- List -->
                             <ListBox Grid.Row="2"
                                      ItemsSource="{Binding AvailableItems}"
                                      SelectedItem="{Binding AvailableSelected, Mode=TwoWay}"
-                                     Style="{StaticResource DarkListBox}">
+                                     Style="{DynamicResource DarkListBox}">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Grid>
@@ -414,14 +398,22 @@
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="{Binding Name}"
-                                                       VerticalAlignment="Center"/>
+
+                                            <TextBlock Grid.Column="0"
+                                                       Text="{Binding Name}"
+                                                       FontFamily="{DynamicResource FontSans}"
+                                                       FontSize="{DynamicResource FontSizeBody}"
+                                                       VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"/>
+
                                             <TextBlock Grid.Column="1"
-                                                       FontSize="11"
-                                                       Foreground="{StaticResource TextMuted}"
-                                                       VerticalAlignment="Center">
+                                                       FontFamily="{DynamicResource FontMono}"
+                                                       FontSize="{DynamicResource FontSizeCaption}"
+                                                       Foreground="{DynamicResource BrushInkMuted}"
+                                                       VerticalAlignment="Center"
+                                                       Margin="8,0,0,0">
                                                 <Run Text="{Binding Weight}"/>
-                                                <Run Text="kg  •  "/>
+                                                <Run Text="kg · "/>
                                                 <Run Text="{Binding Value}"/>
                                             </TextBlock>
                                         </Grid>
@@ -431,31 +423,73 @@
                         </Grid>
                     </Border>
 
-                    <!-- Nút di chuyển -->
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center"
+                    <!-- ===== NUT DI CHUYEN (giua) ===== -->
+                    <StackPanel Grid.Column="1"
+                                VerticalAlignment="Center"
                                 HorizontalAlignment="Center">
-                        <Button Content="⟩" Command="{Binding AddItemCommand}"
-                                Style="{StaticResource MoveButton}"
-                                Background="{StaticResource PrimaryGradient}"
-                                ToolTip="Thêm vật phẩm đang chọn vào bộ đề"/>
-                        <Button Content="⟨" Command="{Binding RemoveItemCommand}"
-                                Style="{StaticResource MoveButton}"
-                                Background="#1F2331"
-                                ToolTip="Bỏ vật phẩm khỏi bộ đề"/>
-                        <Button Content="≫" Command="{Binding AddAllCommand}"
-                                Style="{StaticResource MoveButton}"
-                                Background="#1F2331"
-                                ToolTip="Thêm tất cả"/>
-                        <Button Content="≪" Command="{Binding RemoveAllCommand}"
-                                Style="{StaticResource MoveButton}"
-                                Background="#1F2331"
-                                ToolTip="Bỏ tất cả"/>
+
+                        <Button Command="{Binding AddItemCommand}"
+                                Style="{DynamicResource ButtonPrimary}"
+                                Width="38" Height="32"
+                                Padding="0"
+                                Margin="0,0,0,6"
+                                ToolTip="Thêm vật phẩm đang chọn vào bộ đề">
+                            <Path Data="{DynamicResource IconChevronRight}"
+                                  Width="14" Height="14"
+                                  Stroke="{Binding Foreground,
+                                           RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.6"
+                                  Stretch="Uniform"/>
+                        </Button>
+
+                        <Button Command="{Binding RemoveItemCommand}"
+                                Style="{DynamicResource ButtonSecondary}"
+                                Width="38" Height="32"
+                                Padding="0"
+                                Margin="0,0,0,6"
+                                ToolTip="Bỏ vật phẩm khỏi bộ đề">
+                            <Path Data="{DynamicResource IconChevronLeft}"
+                                  Width="14" Height="14"
+                                  Stroke="{Binding Foreground,
+                                           RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.6"
+                                  Stretch="Uniform"/>
+                        </Button>
+
+                        <Button Command="{Binding AddAllCommand}"
+                                Style="{DynamicResource ButtonSecondary}"
+                                Width="38" Height="32"
+                                Padding="0"
+                                Margin="0,0,0,6"
+                                ToolTip="Thêm tất cả">
+                            <Path Data="{DynamicResource IconChevronRightDouble}"
+                                  Width="14" Height="14"
+                                  Stroke="{Binding Foreground,
+                                           RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.6"
+                                  Stretch="Uniform"/>
+                        </Button>
+
+                        <Button Command="{Binding RemoveAllCommand}"
+                                Style="{DynamicResource ButtonSecondary}"
+                                Width="38" Height="32"
+                                Padding="0"
+                                ToolTip="Bỏ tất cả">
+                            <Path Data="{DynamicResource IconChevronLeftDouble}"
+                                  Width="14" Height="14"
+                                  Stroke="{Binding Foreground,
+                                           RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.6"
+                                  Stretch="Uniform"/>
+                        </Button>
                     </StackPanel>
 
-                    <!-- Vật phẩm trong bộ đề -->
-                    <Border Grid.Column="2" Background="{StaticResource InputBg}"
-                            BorderBrush="{StaticResource Accent}" BorderThickness="1"
-                            CornerRadius="10" Padding="12">
+                    <!-- ===== VAT PHAM TRONG BO DE (phai) ===== -->
+                    <Border Grid.Column="2"
+                            Background="{DynamicResource BrushBackground}"
+                            BorderBrush="{DynamicResource BrushAccent}"
+                            BorderThickness="1"
+                            CornerRadius="2">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -463,18 +497,33 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Text="✓  TRONG BỘ ĐỀ"
-                                       FontSize="11" FontWeight="Bold"
-                                       Foreground="{StaticResource AccentCyan}" Margin="0,0,0,10"/>
+                            <!-- Label -->
+                            <Border Grid.Row="0"
+                                    BorderBrush="{DynamicResource BrushRule}"
+                                    BorderThickness="0,0,0,1"
+                                    Padding="10,8">
+                                <TextBlock Text="Trong bộ đề"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="{DynamicResource FontSizeCaption}"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource BrushAccent}"/>
+                            </Border>
 
-                            <TextBox Grid.Row="1" Style="{StaticResource DarkTextBox}"
-                                     Tag="🔍 Tìm..." Margin="0,0,0,10"
-                                     Text="{Binding SelectedSearch, UpdateSourceTrigger=PropertyChanged}"/>
+                            <!-- Search -->
+                            <Border Grid.Row="1"
+                                    BorderBrush="{DynamicResource BrushRule}"
+                                    BorderThickness="0,0,0,1"
+                                    Padding="8">
+                                <TextBox Style="{DynamicResource DarkTextBox}"
+                                         Tag="Tìm..."
+                                         Text="{Binding SelectedSearch, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Border>
 
+                            <!-- List -->
                             <ListBox Grid.Row="2"
                                      ItemsSource="{Binding SelectedItems}"
                                      SelectedItem="{Binding SelectedSelected, Mode=TwoWay}"
-                                     Style="{StaticResource DarkListBox}">
+                                     Style="{DynamicResource DarkListBox}">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Grid>
@@ -482,14 +531,22 @@
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="{Binding Name}"
-                                                       VerticalAlignment="Center"/>
+
+                                            <TextBlock Grid.Column="0"
+                                                       Text="{Binding Name}"
+                                                       FontFamily="{DynamicResource FontSans}"
+                                                       FontSize="{DynamicResource FontSizeBody}"
+                                                       VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"/>
+
                                             <TextBlock Grid.Column="1"
-                                                       FontSize="11"
-                                                       Foreground="{StaticResource TextMuted}"
-                                                       VerticalAlignment="Center">
+                                                       FontFamily="{DynamicResource FontMono}"
+                                                       FontSize="{DynamicResource FontSizeCaption}"
+                                                       Foreground="{DynamicResource BrushInkMuted}"
+                                                       VerticalAlignment="Center"
+                                                       Margin="8,0,0,0">
                                                 <Run Text="{Binding Weight}"/>
-                                                <Run Text="kg  •  "/>
+                                                <Run Text="kg · "/>
                                                 <Run Text="{Binding Value}"/>
                                             </TextBlock>
                                         </Grid>
@@ -500,12 +557,25 @@
                     </Border>
                 </Grid>
 
-                <!-- Nút lưu -->
-                <Button Grid.Row="2" Content="💾  Lưu danh sách vật phẩm cho bộ đề"
+                <!-- ============ NUT LUU (action chinh cua man) ============ -->
+                <Button Grid.Row="2"
                         Command="{Binding SaveItemsCommand}"
-                        Style="{StaticResource ModernButton}"
-                        Background="{StaticResource SuccessGradient}"
-                        Margin="0,16,0,0" Padding="16,12"/>
+                        Style="{DynamicResource ButtonPrimary}"
+                        Margin="0,16,0,0"
+                        Padding="16,11">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{DynamicResource IconSave}"
+                              Width="14" Height="14"
+                              Stroke="{Binding Foreground,
+                                       RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.5"
+                              Stretch="Uniform"
+                              VerticalAlignment="Center"
+                              Margin="0,0,8,0"/>
+                        <TextBlock Text="Lưu danh sách vật phẩm cho bộ đề"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
             </Grid>
         </Border>
     </Grid>

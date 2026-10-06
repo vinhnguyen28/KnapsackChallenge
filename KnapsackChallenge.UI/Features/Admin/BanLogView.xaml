@@ -4,39 +4,81 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="1000"
-             Background="Transparent">
+             d:DesignHeight="680" d:DesignWidth="1000"
+             Background="{DynamicResource BrushBackground}">
 
-    <Grid Margin="24,20,24,20">
+    <UserControl.Resources>
+
+        <!-- Row style cho bang lich su ban. Ke thua GridRow. -->
+        <Style x:Key="BanLogRow" TargetType="DataGridRow"
+               BasedOn="{StaticResource GridRow}"/>
+
+    </UserControl.Resources>
+
+    <Grid Margin="20,16,20,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Margin="0,0,0,14">
+        <!-- =========================================================
+             TOOLBAR
+             ========================================================= -->
+        <Grid Grid.Row="0" Margin="0,0,0,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <TextBox Grid.Column="0"
-                     Style="{StaticResource DarkTextBox}"
-                     Tag="🔍  Tìm theo username..."
+                     Style="{DynamicResource DarkTextBox}"
+                     Tag="Tìm theo username..."
                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                     MaxWidth="380" HorizontalAlignment="Left"/>
+                     MaxWidth="320"
+                     HorizontalAlignment="Left"/>
 
-            <Button Grid.Column="1" Content="⟳  Làm mới"
-                    Command="{Binding RefreshCommand}"
-                    Style="{StaticResource ModernButton}"
-                    Background="#1F2331" Padding="14,9"/>
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        VerticalAlignment="Center">
+                <TextBlock Text="Đang tải..."
+                           FontFamily="{DynamicResource FontSans}"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Foreground="{DynamicResource BrushInkMuted}"
+                           VerticalAlignment="Center"
+                           Margin="0,0,12,0"
+                           Visibility="{Binding IsLoading,
+                                       Converter={StaticResource BoolToVisibility}}"/>
+
+                <Button Command="{Binding RefreshCommand}"
+                        Style="{DynamicResource ButtonSecondary}"
+                        Padding="12,7">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{DynamicResource IconRefresh}"
+                              Width="14" Height="14"
+                              Stroke="{Binding Foreground,
+                                       RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.5"
+                              Stretch="Uniform"
+                              VerticalAlignment="Center"
+                              Margin="0,0,8,0"/>
+                        <TextBlock Text="Làm mới" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
         </Grid>
 
-        <Border Grid.Row="1" Style="{StaticResource Card}" Padding="18">
+        <!-- =========================================================
+             BANG LICH SU BAN
+             ========================================================= -->
+        <Border Grid.Row="1"
+                Style="{DynamicResource Card}"
+                Padding="0">
             <Grid>
                 <DataGrid ItemsSource="{Binding Logs}"
                           AutoGenerateColumns="False"
                           IsReadOnly="True"
                           SelectionMode="Single"
+                          SelectionUnit="FullRow"
                           CanUserAddRows="False"
                           CanUserResizeRows="False"
                           CanUserResizeColumns="False"
@@ -44,39 +86,56 @@
                           GridLinesVisibility="None"
                           Background="Transparent"
                           BorderThickness="0"
-                          RowHeight="44"
-                          FontSize="13"
-                          Foreground="{StaticResource TextMain}"
-                          ColumnHeaderStyle="{StaticResource DarkColumnHeader}"
-                          RowStyle="{StaticResource DarkRow}"
-                          CellStyle="{StaticResource DarkCell}">
+                          RowHeight="38"
+                          FontSize="{DynamicResource FontSizeBody}"
+                          Foreground="{DynamicResource BrushInk}"
+                          ColumnHeaderStyle="{DynamicResource GridColumnHeader}"
+                          RowStyle="{StaticResource BanLogRow}"
+                          CellStyle="{DynamicResource GridCell}">
                     <DataGrid.Columns>
+
                         <DataGridTextColumn Header="THỜI GIAN"
                                             Binding="{Binding CreatedAt, StringFormat='dd/MM/yyyy HH:mm:ss'}"
-                                            Width="180" ElementStyle="{StaticResource MutedCellText}"/>
-                        <DataGridTextColumn Header="NGƯỜI CHƠI" Binding="{Binding TargetUsername}" Width="180"/>
+                                            Width="170"
+                                            ElementStyle="{StaticResource MutedCellText}"/>
 
-                        <DataGridTemplateColumn Header="HÀNH ĐỘNG" Width="110">
+                        <DataGridTextColumn Header="NGƯỜI CHƠI"
+                                            Binding="{Binding TargetUsername}"
+                                            Width="180"/>
+
+                        <!-- Hanh dong: stamp vien 1px, mono. Ban do, Unban xanh. -->
+                        <DataGridTemplateColumn Header="HÀNH ĐỘNG" Width="100">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Border CornerRadius="6" Padding="8,3" HorizontalAlignment="Left">
+                                    <Border HorizontalAlignment="Left"
+                                            Padding="6,2"
+                                            BorderThickness="1"
+                                            CornerRadius="2"
+                                            Background="Transparent"
+                                            VerticalAlignment="Center">
                                         <Border.Style>
                                             <Style TargetType="Border">
-                                                <Setter Property="Background" Value="#2C1217"/>
+                                                <Setter Property="BorderBrush"
+                                                        Value="{DynamicResource BrushDanger}"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding Action}" Value="Unban">
-                                                        <Setter Property="Background" Value="#0F2A22"/>
+                                                        <Setter Property="BorderBrush"
+                                                                Value="{DynamicResource BrushSuccess}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </Border.Style>
-                                        <TextBlock Text="{Binding Action}" FontWeight="SemiBold" FontSize="11">
+
+                                        <TextBlock Text="{Binding Action}">
                                             <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Foreground" Value="#F87171"/>
+                                                <Style TargetType="TextBlock"
+                                                       BasedOn="{StaticResource MonoCaptionTextStyle}">
+                                                    <Setter Property="Foreground"
+                                                            Value="{DynamicResource BrushDanger}"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding Action}" Value="Unban">
-                                                            <Setter Property="Foreground" Value="#34D399"/>
+                                                            <Setter Property="Foreground"
+                                                                    Value="{DynamicResource BrushSuccess}"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -87,12 +146,21 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTextColumn Header="LÝ DO / GHI CHÚ" Binding="{Binding Reason}" Width="*"/>
-                        <DataGridTextColumn Header="ADMIN" Binding="{Binding AdminUsername}" Width="140"/>
+                        <DataGridTextColumn Header="LÝ DO / GHI CHÚ"
+                                            Binding="{Binding Reason}"
+                                            Width="*"/>
+
+                        <DataGridTextColumn Header="ADMIN"
+                                            Binding="{Binding AdminUsername}"
+                                            Width="140"
+                                            ElementStyle="{StaticResource MutedCellText}"/>
+
                     </DataGrid.Columns>
                 </DataGrid>
 
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                <!-- Empty state -->
+                <StackPanel HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
                             IsHitTestVisible="False">
                     <StackPanel.Style>
                         <Style TargetType="StackPanel">
@@ -104,9 +172,20 @@
                             </Style.Triggers>
                         </Style>
                     </StackPanel.Style>
-                    <TextBlock Text="🚫" FontSize="40" HorizontalAlignment="Center" Opacity="0.5"/>
-                    <TextBlock Text="Chưa có lịch sử ban" Foreground="{StaticResource TextMuted}"
-                               FontSize="14" Margin="0,8,0,0"/>
+
+                    <Path Data="{DynamicResource IconBanLogs}"
+                          Width="40" Height="40"
+                          Stroke="{DynamicResource BrushInkMuted}"
+                          StrokeThickness="1.2"
+                          Stretch="Uniform"
+                          HorizontalAlignment="Center"
+                          Opacity="0.5"/>
+
+                    <TextBlock Text="Chưa có lịch sử ban"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               Foreground="{DynamicResource BrushInkMuted}"
+                               Margin="0,10,0,0"/>
                 </StackPanel>
             </Grid>
         </Border>

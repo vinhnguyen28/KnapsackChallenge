@@ -7,25 +7,29 @@
              d:DesignHeight="600" d:DesignWidth="900">
 
     <!-- =========================================================
-         Bố cục 2 cột — ĐỐI XỨNG với LoginView để không bị "nhảy"
-         khi điều hướng. Wordmark + illustration bên trái, form bên phải.
+         Bo cuc 2 cot - DOI XUNG voi LoginView de khong bi "nhay"
+         khi dieu huong. Wordmark + illustration ben trai, form ben phai.
 
-         LƯU Ý QUAN TRỌNG:
-           - PasswordBox x:Name="txtPassword" và "txtConfirmPassword"
-             PHẢI giữ đúng tên + sự kiện PasswordChanged vì
-             RegisterView.xaml.cs push giá trị sang ViewModel
-             (PasswordBox không Binding trực tiếp được).
-           - RegisterViewModel KHÔNG có InfoMessage, chỉ có ErrorMessage,
-             nên chỉ dùng ErrorBanner.
+         KHAC BIET voi LoginView:
+           - Nen ngoai dung BrushBackgroundAlt (#E4DDC8 - be dam hon)
+             de nguoi dung nhan ra ngay dang o man Dang ky chu khong
+             phai Dang nhap.
+           - Chi co ErrorBanner (RegisterViewModel khong co InfoMessage).
+
+         LUU Y QUAN TRONG:
+           - PasswordBox x:Name="txtPassword" va "txtConfirmPassword"
+             PHAI giu dung ten + su kien PasswordChanged vi
+             RegisterView.xaml.cs push gia tri sang ViewModel
+             (PasswordBox khong Binding truc tiep duoc).
          ========================================================= -->
-    <Grid Background="{DynamicResource BrushBackground}">
+    <Grid Background="{DynamicResource BrushBackgroundAlt}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="440"/>
         </Grid.ColumnDefinitions>
 
         <!-- =========================================================
-             CỘT TRÁI — BRAND (giống LoginView để đồng bộ nhận diện)
+             COT TRAI - BRAND (cung bo cuc voi LoginView)
              ========================================================= -->
         <StackPanel Grid.Column="0"
                     VerticalAlignment="Center"
@@ -59,7 +63,7 @@
                        HorizontalAlignment="Left"
                        Margin="0,24,0,24"/>
 
-            <TextBlock Text="Tạo tài khoản để bắt đầu chinh phục các bộ đề ba lô."
+            <TextBlock Text="Tao tai khoan de bat dau chinh phuc cac bo de ba lo."
                        FontFamily="{DynamicResource FontSans}"
                        FontSize="14"
                        Foreground="{DynamicResource BrushInkMuted}"
@@ -69,7 +73,7 @@
         </StackPanel>
 
         <!-- =========================================================
-             CỘT PHẢI — FORM ĐĂNG KÝ
+             COT PHAI - FORM DANG KY
              ========================================================= -->
         <Border Grid.Column="1"
                 Background="{DynamicResource BrushSurface}"
@@ -77,7 +81,7 @@
                 BorderThickness="1,0,0,0">
             <StackPanel VerticalAlignment="Center" Margin="44,0">
 
-                <TextBlock Text="Đăng ký"
+                <TextBlock Text="Dang ky"
                            FontFamily="{DynamicResource FontSans}"
                            FontSize="22"
                            FontWeight="SemiBold"
@@ -87,48 +91,56 @@
                            Fill="{DynamicResource BrushRule}"
                            Margin="0,14,0,24"/>
 
-                <!-- Tài khoản -->
-                <TextBlock Text="Tài khoản"
+                <!-- Tai khoan -->
+                <TextBlock Text="Tai khoan"
                            Style="{DynamicResource FieldLabel}"/>
                 <TextBox Style="{DynamicResource DarkTextBox}"
                          Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
                          Tag="username"/>
 
-                <!-- Mật khẩu — event handler Password_Changed do code-behind gắn,
-                     KHÔNG đổi tên -->
-                <TextBlock Text="Mật khẩu"
+                <!-- Mat khau - event handler Password_Changed do code-behind gan,
+                     KHONG doi ten -->
+                <TextBlock Text="Mat khau"
                            Style="{DynamicResource FieldLabel}"
                            Margin="0,14,0,6"/>
                 <PasswordBox x:Name="txtPassword"
                              Style="{DynamicResource InputPasswordBox}"
                              PasswordChanged="Password_Changed"/>
 
-                <!-- Nhập lại mật khẩu -->
-                <TextBlock Text="Nhập lại mật khẩu"
+                <!-- Nhap lai mat khau -->
+                <TextBlock Text="Nhap lai mat khau"
                            Style="{DynamicResource FieldLabel}"
                            Margin="0,14,0,6"/>
                 <PasswordBox x:Name="txtConfirmPassword"
                              Style="{DynamicResource InputPasswordBox}"
                              PasswordChanged="ConfirmPassword_Changed"/>
 
-                <!-- Chỉ có banner lỗi (RegisterViewModel không có InfoMessage) -->
-                <Border Style="{DynamicResource ErrorBanner}"
-                        Margin="0,16,0,0">
-                    <TextBlock Text="{Binding ErrorMessage}"
-                               FontFamily="{DynamicResource FontSans}"
-                               FontSize="12"
-                               Foreground="{DynamicResource BrushDanger}"
-                               TextWrapping="Wrap"/>
-                </Border>
+                <!-- =========================================================
+                     KHU VUC THONG BAO - CHIEU CAO CO DINH
+                     Giong LoginView: bao ve nut "Dang ky" khoi bi day
+                     khi banner xuat hien.
+                     Chi co ErrorBanner (RegisterViewModel khong co InfoMessage).
+                     ========================================================= -->
+                <Grid MinHeight="54" Margin="0,16,0,0">
+                    <Border Style="{DynamicResource ErrorBanner}"
+                            Margin="0"
+                            VerticalAlignment="Top">
+                        <TextBlock Text="{Binding ErrorMessage}"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource BrushDanger}"
+                                   TextWrapping="Wrap"/>
+                    </Border>
+                </Grid>
 
-                <!-- Hành động chính -->
-                <Button Content="Đăng ký"
+                <!-- Hanh dong chinh -->
+                <Button Content="Dang ky"
                         Command="{Binding RegisterCommand}"
                         Style="{DynamicResource ButtonPrimary}"
-                        Margin="0,20,0,0"/>
+                        Margin="0,8,0,0"/>
 
-                <!-- Quay lại đăng nhập -->
-                <Button Content="Đã có tài khoản? Quay lại đăng nhập"
+                <!-- Quay lai dang nhap -->
+                <Button Content="Da co tai khoan? Quay lai dang nhap"
                         Command="{Binding BackToLoginCommand}"
                         Style="{DynamicResource ButtonGhost}"
                         Margin="0,8,0,0"/>

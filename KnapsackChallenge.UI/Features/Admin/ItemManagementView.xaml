@@ -4,32 +4,49 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="900"
-             Background="Transparent">
+             d:DesignHeight="680" d:DesignWidth="1000"
+             Background="{DynamicResource BrushBackground}">
 
-    <!-- DataContext (ItemManagementViewModel) do MainAdminViewModel.CurrentPage cung cấp. -->
-    <!-- Style/brush dùng chung đặt trong App.xaml. -->
+    <!-- DataContext (ItemManagementViewModel) do MainAdminViewModel.CurrentPage cung cap. -->
 
-    <Grid Margin="24,20,24,20">
+    <UserControl.Resources>
+
+        <!-- Row style cho bang vat pham. Ke thua GridRow (da co vach Accent khi selected). -->
+        <Style x:Key="ItemRow" TargetType="DataGridRow"
+               BasedOn="{StaticResource GridRow}"/>
+
+    </UserControl.Resources>
+
+    <Grid Margin="20,16,20,20">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="22"/>
-            <ColumnDefinition Width="320"/>
+            <ColumnDefinition Width="16"/>
+            <ColumnDefinition Width="340"/>
         </Grid.ColumnDefinitions>
 
-        <!-- ===== DANH SÁCH ===== -->
-        <Border Grid.Column="0" Style="{StaticResource Card}" Padding="18">
+        <!-- =========================================================
+             COT TRAI: bang vat pham
+             ========================================================= -->
+        <Border Grid.Column="0"
+                Style="{DynamicResource Card}"
+                Padding="0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <TextBox Grid.Row="0" Margin="0,0,0,14"
-                         Style="{StaticResource DarkTextBox}"
-                         Tag="🔍  Tìm vật phẩm theo tên..."
-                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+                <!-- Search bar, ngan cach voi bang bang duong rule duoi -->
+                <Border Grid.Row="0"
+                        BorderBrush="{DynamicResource BrushRule}"
+                        BorderThickness="0,0,0,1"
+                        Padding="12,10">
+                    <TextBox Style="{DynamicResource DarkTextBox}"
+                             Tag="Tìm vật phẩm theo tên..."
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+                </Border>
 
+                <!-- Bang + empty state chong len nhau -->
                 <Grid Grid.Row="1">
                     <DataGrid ItemsSource="{Binding Items}"
                               SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
@@ -44,25 +61,46 @@
                               GridLinesVisibility="None"
                               Background="Transparent"
                               BorderThickness="0"
-                              RowHeight="44"
-                              FontSize="14"
-                              Foreground="{StaticResource TextMain}"
-                              ColumnHeaderStyle="{StaticResource DarkColumnHeader}"
-                              RowStyle="{StaticResource DarkRow}"
-                              CellStyle="{StaticResource DarkCell}">
+                              RowHeight="38"
+                              FontSize="{DynamicResource FontSizeBody}"
+                              Foreground="{DynamicResource BrushInk}"
+                              ColumnHeaderStyle="{DynamicResource GridColumnHeader}"
+                              RowStyle="{StaticResource ItemRow}"
+                              CellStyle="{DynamicResource GridCell}">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="70"
-                                                ElementStyle="{StaticResource MutedCellText}"/>
-                            <DataGridTextColumn Header="TÊN VẬT PHẨM" Binding="{Binding Name}" Width="*"/>
-                            <DataGridTextColumn Header="KHỐI LƯỢNG" Binding="{Binding Weight}" Width="110"
+
+                            <!-- ID: mono, can phai -->
+                            <DataGridTextColumn Header="ID"
+                                                Binding="{Binding Id}"
+                                                Width="60">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock"
+                                           BasedOn="{StaticResource MutedCellText}">
+                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="TÊN VẬT PHẨM"
+                                                Binding="{Binding Name}"
+                                                Width="*"/>
+
+                            <DataGridTextColumn Header="KHỐI LƯỢNG"
+                                                Binding="{Binding Weight}"
+                                                Width="100"
                                                 ElementStyle="{StaticResource RightCellText}"/>
-                            <DataGridTextColumn Header="GIÁ TRỊ" Binding="{Binding Value}" Width="110"
+
+                            <DataGridTextColumn Header="GIÁ TRỊ"
+                                                Binding="{Binding Value}"
+                                                Width="100"
                                                 ElementStyle="{StaticResource RightCellText}"/>
+
                         </DataGrid.Columns>
                     </DataGrid>
 
-                    <!-- Trạng thái trống -->
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                    <!-- Empty state - hien khi Items.Count == 0 -->
+                    <StackPanel HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
                                 IsHitTestVisible="False">
                         <StackPanel.Style>
                             <Style TargetType="StackPanel">
@@ -74,74 +112,158 @@
                                 </Style.Triggers>
                             </Style>
                         </StackPanel.Style>
-                        <TextBlock Text="📦" FontSize="40" HorizontalAlignment="Center" Opacity="0.5"/>
-                        <TextBlock Text="Chưa có vật phẩm nào" Foreground="{StaticResource TextMuted}"
-                                   FontSize="14" Margin="0,8,0,0"/>
+
+                        <!-- Icon hop rong ve bang Path -->
+                        <Path Data="{DynamicResource IconItems}"
+                              Width="40" Height="40"
+                              Stroke="{DynamicResource BrushInkMuted}"
+                              StrokeThickness="1.2"
+                              Stretch="Uniform"
+                              HorizontalAlignment="Center"
+                              Opacity="0.5"/>
+
+                        <TextBlock Text="Chưa có vật phẩm nào"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   Foreground="{DynamicResource BrushInkMuted}"
+                                   Margin="0,10,0,0"/>
                     </StackPanel>
                 </Grid>
             </Grid>
         </Border>
 
-        <!-- ===== FORM ===== -->
-        <Border Grid.Column="2" Style="{StaticResource Card}" Padding="22" VerticalAlignment="Top">
+        <!-- =========================================================
+             COT PHAI: form them / sua
+             ========================================================= -->
+        <Border Grid.Column="2"
+                Style="{DynamicResource Card}"
+                Padding="18"
+                VerticalAlignment="Top">
             <StackPanel>
-                <TextBlock Text="{Binding FormTitle}" FontSize="17" FontWeight="Bold"
-                           Foreground="{StaticResource TextMain}" TextWrapping="Wrap"/>
-                <Border Height="3" Width="36" CornerRadius="2" HorizontalAlignment="Left"
-                        Background="{StaticResource PrimaryGradient}" Margin="0,10,0,22"/>
 
-                <TextBlock Text="TÊN VẬT PHẨM" Style="{StaticResource FieldLabel}"/>
-                <TextBox Style="{StaticResource DarkTextBox}" Margin="0,0,0,16"
+                <!-- Title + rule manh 1px -->
+                <TextBlock Text="{Binding FormTitle}"
+                           FontFamily="{DynamicResource FontSans}"
+                           FontSize="{DynamicResource FontSizeTitle}"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource BrushInk}"
+                           TextWrapping="Wrap"/>
+
+                <Rectangle Height="1"
+                           Fill="{DynamicResource BrushRule}"
+                           Margin="0,10,0,16"/>
+
+                <!-- Ten vat pham -->
+                <TextBlock Text="Tên vật phẩm"
+                           Style="{DynamicResource FieldLabel}"/>
+                <TextBox Style="{DynamicResource DarkTextBox}"
                          Tag="Ví dụ: Kim cương"
                          Text="{Binding ItemName, UpdateSourceTrigger=PropertyChanged}"/>
 
-                <Grid Margin="0,0,0,20">
+                <!-- Weight + Value canh nhau -->
+                <Grid Margin="0,12,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="10"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
+
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="KHỐI LƯỢNG" Style="{StaticResource FieldLabel}"/>
-                        <TextBox Style="{StaticResource DarkTextBox}" Tag="0"
+                        <TextBlock Text="Khối lượng"
+                                   Style="{DynamicResource FieldLabel}"/>
+                        <TextBox Style="{DynamicResource DarkTextBox}"
+                                 Tag="0"
                                  Text="{Binding WeightText, UpdateSourceTrigger=PropertyChanged}"/>
                     </StackPanel>
+
                     <StackPanel Grid.Column="2">
-                        <TextBlock Text="GIÁ TRỊ" Style="{StaticResource FieldLabel}"/>
-                        <TextBox Style="{StaticResource DarkTextBox}" Tag="0"
+                        <TextBlock Text="Giá trị"
+                                   Style="{DynamicResource FieldLabel}"/>
+                        <TextBox Style="{DynamicResource DarkTextBox}"
+                                 Tag="0"
                                  Text="{Binding ValueText, UpdateSourceTrigger=PropertyChanged}"/>
                     </StackPanel>
                 </Grid>
 
-                <Border Style="{StaticResource InfoBanner}">
-                    <TextBlock Text="{Binding InfoMessage}" Foreground="#34D399" FontSize="13"
-                               TextWrapping="Wrap"/>
-                </Border>
+                <!-- =========================================================
+                     KHU VUC THONG BAO - CHIEU CAO CO DINH (54px)
+                     Giong Login/Register: bao ve cac nut ben duoi khoi bi day
+                     khi banner xuat hien.
+                     ========================================================= -->
+                <Grid MinHeight="54" Margin="0,14,0,0">
+                    <Border Style="{DynamicResource InfoBanner}"
+                            Margin="0"
+                            VerticalAlignment="Top">
+                        <TextBlock Text="{Binding InfoMessage}"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   Foreground="{DynamicResource BrushSuccess}"
+                                   TextWrapping="Wrap"/>
+                    </Border>
 
-                <Border Style="{StaticResource ErrorBanner}">
-                    <TextBlock Text="{Binding ErrorMessage}" Foreground="#F87171" FontSize="13"
-                               TextWrapping="Wrap"/>
-                </Border>
+                    <Border Style="{DynamicResource ErrorBanner}"
+                            Margin="0"
+                            VerticalAlignment="Top">
+                        <TextBlock Text="{Binding ErrorMessage}"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   Foreground="{DynamicResource BrushDanger}"
+                                   TextWrapping="Wrap"/>
+                    </Border>
+                </Grid>
 
-                <Button Content="＋  Thêm mới" Command="{Binding AddCommand}"
-                        Style="{StaticResource ModernButton}"
-                        Background="{StaticResource PrimaryGradient}"/>
+                <!-- HANH DONG CHINH - Accent duy nhat -->
+                <Button Command="{Binding AddCommand}"
+                        Style="{DynamicResource ButtonPrimary}"
+                        Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{DynamicResource IconAdd}"
+                              Width="14" Height="14"
+                              Stroke="{Binding Foreground,
+                                       RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.8"
+                              Stretch="Uniform"
+                              VerticalAlignment="Center"
+                              Margin="0,0,8,0"/>
+                        <TextBlock Text="Thêm mới" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
 
-                <Button Content="✓  Lưu thay đổi" Command="{Binding UpdateCommand}"
-                        Style="{StaticResource ModernButton}"
-                        Background="{StaticResource SuccessGradient}"
-                        Margin="0,10,0,0"/>
+                <Button Command="{Binding UpdateCommand}"
+                        Style="{DynamicResource ButtonSecondary}"
+                        Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{DynamicResource IconSave}"
+                              Width="14" Height="14"
+                              Stroke="{Binding Foreground,
+                                       RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.5"
+                              Stretch="Uniform"
+                              VerticalAlignment="Center"
+                              Margin="0,0,8,0"/>
+                        <TextBlock Text="Lưu thay đổi" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
 
-                <Button Content="✕  Xóa vật phẩm" Command="{Binding DeleteCommand}"
-                        Style="{StaticResource ModernButton}"
-                        Background="#2C1217" BorderBrush="#7F2A38" BorderThickness="1"
-                        Foreground="#F87171" Margin="0,10,0,0"/>
+                <Button Command="{Binding DeleteCommand}"
+                        Style="{DynamicResource ButtonDanger}">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{DynamicResource IconDelete}"
+                              Width="14" Height="14"
+                              Stroke="{Binding Foreground,
+                                       RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.5"
+                              Stretch="Uniform"
+                              VerticalAlignment="Center"
+                              Margin="0,0,8,0"/>
+                        <TextBlock Text="Xóa vật phẩm" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
 
-                <Button Content="Làm mới form" Command="{Binding ClearCommand}"
-                        Style="{StaticResource ModernButton}"
-                        Background="Transparent"
-                        Foreground="{StaticResource TextMuted}" FontWeight="Normal"
-                        Margin="0,10,0,0" Padding="8"/>
+                <Button Content="Làm mới form"
+                        Command="{Binding ClearCommand}"
+                        Style="{DynamicResource ButtonGhost}"
+                        Margin="0,8,0,0"/>
             </StackPanel>
         </Border>
     </Grid>
