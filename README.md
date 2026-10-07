@@ -212,53 +212,79 @@ Trước khi chơi, cần có sẵn:
 
 ```
 KnapsackChallenge
-├── KnapsackChallenge.Common/
+├── KnapsackChallenge.Common/          # Hằng số, DTO, enum dùng chung
 │   ├── Constants/AppConfig.cs         # Hằng số heartbeat, online timeout
-│   ├── DTOs/                          # DTO cho Auth, Admin, Player (không chứa PasswordHash)
+│   ├── DTOs/
+│   │   ├── Admin/                     # AdminStatsOverviewDto, SetStatsDto, TopPlayerDto,
+│   │   │                              #   UserListItemDto, PlayerAchievementDto
+│   │   ├── Solo/                      # ItemDto, SoloGameDataDto, SoloGameSetDto, SoloResultDto
+│   │   └── Player/                    # GameHistoryDto, LeaderboardEntryDto, PlayerStateDto
 │   └── Enums/Role.cs
 │
-├── KnapsackChallenge.Data/
+├── KnapsackChallenge.Data/            # Entity, Repository (ADO.NET thuần), script DB
 │   ├── DbConnectionHelper.cs          # Đọc connection string lazy
-│   ├── Entities/                      # Entity ánh xạ bảng DB
-│   ├── Repositories/                  # ADO.NET thuần, parameter hóa
-│   │   ├── UserRepository.cs
-│   │   ├── ItemRepository.cs
-│   │   ├── SetRepository.cs
-│   │   ├── HistoryRepository.cs
-│   │   ├── BanLogRepository.cs
-│   │   ├── GameRepository.cs          # Solo: lưu ván, leaderboard
-│   │   ├── StatsRepository.cs         # Thống kê Admin
-│   │   └── GameModeRepository.cs
+│   ├── Entities/
+│   │   ├── Users/                     # UserEntity, BanLogEntity
+│   │   ├── Catalog/                   # ItemEntity, KnapsackSetEntity, SetItemEntity
+│   │   └── Game/                      # GameSessionEntity, GameModeEntity,
+│   │                                  #   RoomPlayerEntity, SelectedItemEntity
+│   ├── Repositories/
+│   │   ├── Users/                     # UserRepository, BanLogRepository
+│   │   ├── Catalog/                   # ItemRepository, SetRepository
+│   │   ├── Game/                      # GameRepository (Solo), HistoryRepository,
+│   │   │                              #   GameModeRepository
+│   │   └── Stats/                     # StatsRepository (thống kê Admin)
 │   └── Scripts/
 │       ├── InitDatabase.sql           # Schema v1 + ALTER v2
+│       ├── UpdateDatabase_v2.sql      # Ban, heartbeat, BanLogs
 │       ├── UpdateDatabase_v3.sql      # Cột Mode/OptimalValue/TimeSpentSeconds
 │       └── UpdateDatabase_v4.sql      # Bảng GameModes
 │
-├── KnapsackChallenge.Core/
+├── KnapsackChallenge.Core/            # Nghiệp vụ: Auth, Admin, Player, thuật toán
 │   ├── Algorithms/KnapsackSolver.cs   # QHĐ 0/1 + truy vết
 │   ├── Factories/ServiceFactory.cs    # Lazy, điểm truy cập service
 │   └── Services/
-│       ├── Auth/                      # AuthService, AccountBannedException
-│       ├── Admin/                     # AdminService, ItemService, SetService,
-│       │                              # AdminStatsService, GameModeService
-│       └── Player/                    # PlayerSessionService, SoloGameService
+│       ├── Auth/                      # AuthService, IAuthService, AccountBannedException
+│       ├── Admin/
+│       │   ├── Users/                 # IAdminService, AdminService
+│       │   ├── Items/                 # IItemService, ItemService
+│       │   ├── Sets/                  # ISetService, SetService
+│       │   ├── Stats/                 # IAdminStatsService, AdminStatsService
+│       │   └── GameModes/             # IGameModeService, GameModeService
+│       └── Player/
+│           ├── Solo/                  # ISoloGameService, SoloGameService
+│           ├── Session/               # IPlayerSessionService, PlayerSessionService
+│           └── Multiplayer/           # GameRoomService (placeholder)
 │
-└── KnapsackChallenge.UI/
+└── KnapsackChallenge.UI/              # WPF (MVVM): View, ViewModel, Themes
+    ├── App.xaml(.cs), MainWindow.xaml(.cs), MainViewModel.cs
     ├── Features/
     │   ├── Auth/                      # LoginView, RegisterView
-    │   ├── Admin/                     # MainAdminView + 5 trang con + Dialogs
+    │   ├── Admin/
+    │   │   ├── AdminModels.cs
+    │   │   ├── Shell/                 # MainAdminView + NavItem + Placeholder
+    │   │   ├── PlayerManagement/      # Quản lý người chơi + ban/unban
+    │   │   ├── ItemManagement/        # CRUD vật phẩm
+    │   │   ├── SetManagement/         # CRUD bộ đề + gán vật phẩm
+    │   │   ├── Stats/                 # Thống kê (thẻ + biểu đồ + top)
+    │   │   ├── GameModes/             # Bật/tắt chế độ chơi
+    │   │   ├── BanLog/                # Lịch sử ban/unban
+    │   │   └── Dialogs/               # AchievementDialog, BanDialog, UnbanDialog
     │   └── Player/
-    │       ├── MainPlayerView         # Vỏ: header, popup settings
-    │       ├── HomePageView           # 2 nút lớn + stats + top 100
-    │       ├── SetSelectionView       # Chọn mức độ (random bộ đề)
-    │       ├── SoloGameView           # Màn chơi
-    │       ├── LeaderboardView        # Top 100 + filter
-    │       ├── HistoryView            # 100 ván gần đây
-    │       └── MultiplayerRoomView    # Placeholder (chưa phát triển)
+    │       ├── Shell/                 # MainPlayerView + NavItem + Placeholder
+    │       ├── Home/                  # 2 nút lớn + stats + top 100
+    │       ├── SetSelection/          # Chọn mức độ (random bộ đề)
+    │       ├── SoloGame/              # Màn chơi Solo
+    │       ├── Leaderboard/           # Top 100 + filter
+    │       ├── History/               # 100 ván gần đây
+    │       └── Multiplayer/           # Placeholder (chưa phát triển)
+    ├── Fonts/                         # IBM Plex Sans / Mono
     ├── Shared/                        # ViewModelBase, RelayCommand,
-    │                                  # IDialogService, IPageLifecycle
+    │                                  #   IDialogService, IPageLifecycle
     └── Themes/                        # Colors, Typography, Icons, Controls, Layout
 ```
+
+> **Quy ước namespace:** namespace trong file `.cs` và `x:Class` trong `.xaml` **giữ nguyên như trước khi refactor** — không khớp 1:1 với đường dẫn thư mục — để tránh phải sửa mọi `using` và `xmlns`. Khi thêm file mới, đặt namespace theo **feature** (ví dụ `KnapsackChallenge.UI.Features.Admin.Stats`), không theo tên thư mục con.
 
 ---
 
