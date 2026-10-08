@@ -85,18 +85,20 @@
                            Margin="0,14,0,24"/>
 
                 <!-- O nhap tai khoan - Binding giu nguyen -->
-                <TextBlock Text="Tai khoan"
+                <TextBlock Text="Account : "
                            Style="{DynamicResource FieldLabel}"/>
+                
                 <TextBox Style="{DynamicResource DarkTextBox}"
-                         Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
-                         Tag="username"/>
+                         Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"/>
 
                 <!-- O mat khau - x:Name=txtPassword BAT BUOC giu vi
                      CommandParameter cua LoginCommand tham chieu qua
                      ElementName=txtPassword (PasswordBox khong Binding duoc) -->
-                <TextBlock Text="Mat khau"
+                
+                <TextBlock Text="Password :"
                            Style="{DynamicResource FieldLabel}"
                            Margin="0,16,0,6"/>
+                
                 <PasswordBox x:Name="txtPassword"
                              Style="{DynamicResource InputPasswordBox}"/>
 

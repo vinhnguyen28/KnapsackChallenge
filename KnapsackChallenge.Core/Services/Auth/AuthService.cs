@@ -19,7 +19,10 @@ namespace KnapsackChallenge.Core.Services.Auth
         {
             var user = _userRepository.GetUserByUsername(username);
             if (user == null || string.IsNullOrEmpty(user.PasswordHash))
+            {
+
                 return null;
+            }
 
             bool passwordOk;
             try
