@@ -8,7 +8,7 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
         Task RoomUpdatedAsync(string roomCode, RoomStateDto state);
         Task GameStartedAsync(string roomCode, GameStartDto start);
         Task PlayerSubmittedAsync(string roomCode, RoomPlayerDto player);
-        Task GameEndedAsync(string roomCode, FinalRankingEntryDto ranking);
+        Task GameEndedAsync(string roomCode, FinalRankingDto ranking);   
 
         Task KickedAsync(int userId, string reason);
         Task ForceLogoutAsync(int userId, string reason);

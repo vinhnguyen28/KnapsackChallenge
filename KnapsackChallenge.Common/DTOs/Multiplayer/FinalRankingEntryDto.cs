@@ -13,5 +13,6 @@
         public bool IsSubmitted { get; set; }
         public bool IsKicked { get; set; }
         public bool IsBanned { get; set; }
+        public bool IsLeft { get; set; }   // ← thêm dòng này
     }
 }
