@@ -407,6 +407,26 @@ namespace KnapsackChallenge.Data.Repositories
         }
 
         // =========================================================
+        // 13. Đóng phiên Multiplayer treo (Status Waiting/Playing)
+        //     do server khởi động lại. Dùng Status='Abandoned' để
+        //     KHÔNG lẫn với các ván đã hoàn thành bình thường.
+        //     Trả về số dòng bị ảnh hưởng.
+        // =========================================================
+        public int CloseOrphanMultiplayerSessions()
+        {
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = @"
+                UPDATE GameSessions
+                SET Status = 'Abandoned',
+                    FinishedAt = SYSUTCDATETIME()
+                WHERE Mode = 'Multiplayer'
+                  AND Status IN ('Waiting', 'Playing')";
+            return cmd.ExecuteNonQuery();
+        }
+
+        // =========================================================
         // Helpers
         // =========================================================
 

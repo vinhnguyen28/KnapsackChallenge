@@ -34,5 +34,9 @@
         public const string SubmitItemNotInSet = "SUBMIT_ITEM_NOT_IN_SET"; // format "{0}"
         public const string SubmitOverweight = "SUBMIT_OVERWEIGHT";      // format "{0}/{1}"
         public const string SubmitTimeInvalid = "SUBMIT_TIME_INVALID";
+
+        // ---------- Hub / request validation ----------
+        // Dùng chung cho mọi hub method khi payload sai định dạng hoặc vượt giới hạn.
+        public const string RequestInvalid = "REQUEST_INVALID";
     }
 }

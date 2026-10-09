@@ -212,6 +212,8 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                 {
                     target.IsHost = false;
                     target.Leave = PlayerLeaveState.Left;
+                    // Rời phòng -> không còn khái niệm "đang chờ kết nối lại".
+                    target.DisconnectedAtUtc = null;
                 }
 
                 int activeCount = room.Players.Count(p => p.IsActive);
@@ -303,8 +305,10 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                     return HubResult<RoomStateDto>.Fail(
                         ErrorCodes.RoomWrongState, Messages.RoomWrongState);
 
-                int activeCount = room.Players.Count(p => p.IsActive);
-                if (activeCount < 2)
+                // (5) Chỉ đếm người ĐANG ONLINE cho điều kiện "cần >= 2 người".
+                //     Người offline (đang trong cửa sổ reconnect) không tính.
+                int onlineCount = room.Players.Count(p => p.IsActive && p.DisconnectedAtUtc == null);
+                if (onlineCount < 2)
                     return HubResult<RoomStateDto>.Fail(
                         ErrorCodes.RoomNotEnoughPlayers, Messages.RoomNotEnoughPlayers);
 
@@ -454,6 +458,9 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                     IsAutoSubmitted = isAutoSubmit,
                     OptimalItemIds = room.OptimalItemIds.ToList(),
                 };
+
+                // Lưu lại để GetMyResult phục vụ reconnect.
+                player.LastResult = result;
             }
 
             await SafePersist(() => _persistence.SaveSubmissionAsync(
@@ -480,6 +487,147 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                 return HubResult<RoomStateDto>.Fail(
                     ErrorCodes.RoomNotFound, Messages.RoomNotFound);
             return HubResult<RoomStateDto>.Ok(ToStateDto(room));
+        }
+
+        // =========================================================
+        // RESUME / RECONNECT (Bước 5)
+        // =========================================================
+
+        // Ghép nối lại user vào phòng khi họ mở kết nối mới trong cửa sổ reconnect.
+        // Trả về true nếu có thay đổi state (đã bật lại IsOnline).
+        public async Task<bool> MarkReconnectedAsync(int userId)
+        {
+            if (!TryGetRoomOfUser(userId, out var room, out var code))
+                return false;
+
+            bool changed = false;
+            lock (room.SyncRoot)
+            {
+                var p = room.Players.FirstOrDefault(x => x.UserId == userId && x.IsActive);
+                if (p != null && p.DisconnectedAtUtc != null)
+                {
+                    p.DisconnectedAtUtc = null;
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                var state = ToStateDto(room);
+                await _notifier.RoomUpdatedAsync(code, state);
+            }
+            return changed;
+        }
+
+        // Đánh dấu user đang offline (connection cuối cùng đã ngắt).
+        // Không xoá user khỏi phòng — chờ hết cửa sổ reconnect mới xử lý.
+        public async Task<bool> MarkDisconnectedAsync(int userId)
+        {
+            if (!TryGetRoomOfUser(userId, out var room, out var code))
+                return false;
+
+            bool changed = false;
+            lock (room.SyncRoot)
+            {
+                var p = room.Players.FirstOrDefault(x => x.UserId == userId && x.IsActive);
+                if (p != null && p.DisconnectedAtUtc == null)
+                {
+                    p.DisconnectedAtUtc = _clock.GetUtcNow().UtcDateTime;
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                var state = ToStateDto(room);
+                await _notifier.RoomUpdatedAsync(code, state);
+            }
+            return changed;
+        }
+
+        // Dữ liệu để client vẽ lại màn chơi khi reconnect giữa ván Playing.
+        // EndTimeUtc = StartedAtUtc + TimeLimitSeconds (client tự tính thời gian còn lại).
+        public HubResult<GameStartDto> GetResumeGameData(int userId)
+        {
+            if (!TryGetRoomOfUser(userId, out var room, out _))
+                return HubResult<GameStartDto>.Fail(
+                    ErrorCodes.RoomNotInRoom, Messages.RoomNotInRoom);
+
+            lock (room.SyncRoot)
+            {
+                if (room.Status != RoomStatus.Playing || !room.StartedAtUtc.HasValue)
+                    return HubResult<GameStartDto>.Fail(
+                        ErrorCodes.RoomWrongState, Messages.RoomWrongState);
+
+                DateTime? endTime = room.TimeLimitSeconds > 0
+                    ? room.StartedAtUtc.Value.AddSeconds(room.TimeLimitSeconds)
+                    : null;
+
+                return HubResult<GameStartDto>.Ok(new GameStartDto
+                {
+                    RoomCode = room.RoomCode,
+                    SessionId = room.SessionId,
+                    SetId = room.SetId,
+                    SetName = room.SetName,
+                    Difficulty = room.Difficulty,
+                    MaxWeight = room.MaxWeight,
+                    TimeLimitSeconds = room.TimeLimitSeconds,
+                    StartTimeUtc = room.StartedAtUtc.Value,
+                    EndTimeUtc = endTime,
+                    Items = room.CachedItems.ToList(),
+                });
+            }
+        }
+
+        // Bảng xếp hạng cuối ván — dùng cho reconnect trong grace 60s.
+        public HubResult<FinalRankingDto> GetFinalRanking(int userId)
+        {
+            if (!TryGetRoomOfUser(userId, out var room, out _))
+                return HubResult<FinalRankingDto>.Fail(
+                    ErrorCodes.RoomNotInRoom, Messages.RoomNotInRoom);
+
+            lock (room.SyncRoot)
+            {
+                if (room.Status != RoomStatus.Finished || room.LastRanking == null)
+                    return HubResult<FinalRankingDto>.Fail(
+                        ErrorCodes.RoomWrongState, Messages.RoomWrongState);
+
+                return HubResult<FinalRankingDto>.Ok(room.LastRanking);
+            }
+        }
+
+        // Trả kết quả user đã nộp (nếu có) — client gọi sau khi reconnect.
+        // Success=true & Data=null nghĩa là user chưa nộp.
+        public HubResult<SubmissionResultDto?> GetMyResult(int userId)
+        {
+            if (!TryGetRoomOfUser(userId, out var room, out _))
+                return HubResult<SubmissionResultDto?>.Fail(
+                    ErrorCodes.RoomNotInRoom, Messages.RoomNotInRoom);
+
+            lock (room.SyncRoot)
+            {
+                var p = room.Players.FirstOrDefault(x => x.UserId == userId && x.IsActive);
+                if (p == null)
+                    return HubResult<SubmissionResultDto?>.Fail(
+                        ErrorCodes.RoomNotInRoom, Messages.RoomNotInRoom);
+
+                if (p.LastResult == null)
+                    return HubResult<SubmissionResultDto?>.Ok(null);
+
+                // Clone tối thiểu để tránh lộ list nội bộ ra ngoài.
+                return HubResult<SubmissionResultDto?>.Ok(new SubmissionResultDto
+                {
+                    Score = p.LastResult.Score,
+                    TotalWeight = p.LastResult.TotalWeight,
+                    MaxWeight = p.LastResult.MaxWeight,
+                    OptimalValue = p.LastResult.OptimalValue,
+                    OptimalPercent = p.LastResult.OptimalPercent,
+                    Stars = p.LastResult.Stars,
+                    TimeSpentSeconds = p.LastResult.TimeSpentSeconds,
+                    IsAutoSubmitted = p.LastResult.IsAutoSubmitted,
+                    OptimalItemIds = p.LastResult.OptimalItemIds.ToList(),
+                });
+            }
         }
 
         public IReadOnlyList<RoomSummaryDto> ListActiveRooms()
@@ -534,6 +682,7 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                 {
                     target.IsHost = false;
                     target.Leave = PlayerLeaveState.Kicked;
+                    target.DisconnectedAtUtc = null;
                 }
 
                 if (wasHost && room.Players.Any(p => p.IsActive))
@@ -618,6 +767,13 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
             {
                 ct.ThrowIfCancellationRequested();
 
+                // (5) Người offline quá 30s bị xử lý như LeaveRoom.
+                if (room.Status == RoomStatus.Waiting || room.Status == RoomStatus.Playing)
+                    await HandleExpiredDisconnectsAsync(room, now);
+
+                // Phòng có thể đã bị xoá trong HandleExpiredDisconnectsAsync.
+                if (!_rooms.ContainsKey(room.RoomCode)) continue;
+
                 if (room.Status == RoomStatus.Playing)
                     await HandleTimeoutAsync(room, now);
 
@@ -636,6 +792,27 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
         // INTERNAL HELPERS
         // =========================================================
 
+        private async Task HandleExpiredDisconnectsAsync(Room room, DateTime now)
+        {
+            List<int> expired;
+            lock (room.SyncRoot)
+            {
+                expired = room.Players
+                    .Where(p => p.IsActive
+                             && p.DisconnectedAtUtc.HasValue
+                             && (now - p.DisconnectedAtUtc.Value).TotalSeconds >= ReconnectWindowSeconds)
+                    .Select(p => p.UserId)
+                    .ToList();
+            }
+
+            // Xử lý tuần tự để tránh race trên _userToRoom / _rooms.
+            foreach (var uid in expired)
+            {
+                // LeaveRoomAsync đã idempotent với user không còn ở phòng.
+                await LeaveRoomAsync(uid);
+            }
+        }
+
         private async Task MaybeFinishAsync(Room room, string reason)
         {
             bool shouldFinish;
@@ -643,6 +820,9 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
             {
                 if (room.Status != RoomStatus.Playing) return;
 
+                // (5) Người offline vẫn được tính là Active cho điều kiện
+                //     "tất cả đã nộp" — phòng sẽ đợi hết 30s rồi mới auto-submit
+                //     và kết thúc. Do đó chỉ cần IsActive + IsSubmitted.
                 var actives = room.Players.Where(p => p.IsActive).ToList();
                 shouldFinish = actives.Count == 0 || actives.All(p => p.IsSubmitted);
             }
@@ -692,6 +872,7 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                 {
                     p.IsHost = false;
                     p.Leave = PlayerLeaveState.Banned;
+                    p.DisconnectedAtUtc = null;
                 }
 
                 if (wasHost && room.Players.Any(x => x.IsActive))
@@ -810,6 +991,9 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                     FinishedAtUtc = room.FinishedAtUtc.Value,
                     Entries = entries,
                 };
+
+                // Lưu lại cho client reconnect trong grace 60s.
+                room.LastRanking = ranking;
             }
 
             await SafePersist(() => _persistence.MarkFinishedAsync(
@@ -855,7 +1039,8 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
             UserId = p.UserId,
             Username = p.Username,
             IsHost = p.IsHost,
-            IsOnline = true,
+            // (1) IsOnline phản ánh thật: false khi đang trong cửa sổ reconnect.
+            IsOnline = p.DisconnectedAtUtc == null,
             IsSubmitted = p.IsSubmitted,
             IsKicked = p.Leave == PlayerLeaveState.Kicked,
             TotalScore = p.TotalScore,
@@ -919,6 +1104,9 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
             public List<ItemDto> CachedItems { get; set; } = new();
             public int OptimalValue { get; set; }
             public List<int> OptimalItemIds { get; set; } = new();
+
+            // Lưu kết quả cuối để client reconnect trong grace 60s.
+            public FinalRankingDto? LastRanking { get; set; }
         }
 
         private sealed class RoomPlayerState
@@ -936,6 +1124,12 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
             public int? TimeSpentSeconds { get; set; }
             public List<int> SelectedItemIds { get; } = new();
             public DateTime JoinedAtUtc { get; set; }
+
+            // (1) Bước 5: dấu vết offline — null = online, set = đang trong cửa sổ reconnect.
+            public DateTime? DisconnectedAtUtc { get; set; }
+
+            // (7) Bước 5: kết quả nộp cuối — phục vụ GetMyResult.
+            public SubmissionResultDto? LastResult { get; set; }
         }
     }
 }

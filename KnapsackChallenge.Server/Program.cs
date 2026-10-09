@@ -110,6 +110,7 @@ builder.Services.AddSingleton<IGameRoomService, GameRoomService>();
 // 6. Background timer
 // =========================================================
 builder.Services.AddHostedService<MultiplayerTimerService>();
+builder.Services.AddHostedService<StartupRoomCleanupService>();
 
 // =========================================================
 // 7. MVC

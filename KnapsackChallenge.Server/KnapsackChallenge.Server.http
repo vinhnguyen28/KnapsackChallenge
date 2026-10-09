@@ -1,4 +1,4 @@
-@host = http://localhost:5000
+@host = http://localhost:5208
 @token = PASTE_TOKEN_HERE
 @roomCode = M-XXXXXX
 @targetUserId = 2

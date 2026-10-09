@@ -141,6 +141,22 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
         public Task TickAsync(CancellationToken ct = default)
             => _rooms.TickAsync(ct);
 
+        // ===== Reconnect (Bước 5) =====
+        public Task<bool> MarkDisconnectedAsync(int userId)
+            => _rooms.MarkDisconnectedAsync(userId);
+
+        public Task<bool> MarkReconnectedAsync(int userId)
+            => _rooms.MarkReconnectedAsync(userId);
+
+        public Task<HubResult<GameStartDto>> GetResumeGameDataAsync(int userId)
+            => Task.FromResult(_rooms.GetResumeGameData(userId));
+
+        public Task<HubResult<FinalRankingDto>> GetFinalRankingAsync(int userId)
+            => Task.FromResult(_rooms.GetFinalRanking(userId));
+
+        public Task<HubResult<SubmissionResultDto?>> GetMyResultAsync(int userId)
+            => Task.FromResult(_rooms.GetMyResult(userId));
+
         private string? CheckBan(int userId)
         {
             var (exists, isBanned, reason) = _banChecker.Check(userId);

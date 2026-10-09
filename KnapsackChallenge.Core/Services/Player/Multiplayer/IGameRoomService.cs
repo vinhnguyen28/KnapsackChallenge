@@ -16,6 +16,13 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
         Task<HubResult<SubmissionResultDto>> SubmitAsync(int userId, SubmitRequest req);
         Task<HubResult<RoomStateDto>> GetRoomStateAsync(int userId);
 
+        // ===== Reconnect (Bước 5) =====
+        Task<bool> MarkDisconnectedAsync(int userId);
+        Task<bool> MarkReconnectedAsync(int userId);
+        Task<HubResult<GameStartDto>> GetResumeGameDataAsync(int userId);
+        Task<HubResult<FinalRankingDto>> GetFinalRankingAsync(int userId);
+        Task<HubResult<SubmissionResultDto?>> GetMyResultAsync(int userId);
+
         // ===== Admin =====
         Task<IReadOnlyList<RoomSummaryDto>> ListRoomsAsync();
         Task<HubResult<RoomStateDto>> GetRoomStateByCodeAsync(string roomCode);

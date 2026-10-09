@@ -39,5 +39,8 @@
         public const string KickedFmt = "Bạn đã bị mời khỏi phòng. Lý do: {0}";
         public const string ForceLogoutFmt = "Tài khoản của bạn đã bị khóa. Lý do: {0}";
         public const string RoomClosed = "Phòng đã đóng.";
+
+        // ---------- Hub / request validation ----------
+        public const string RequestInvalid = "Yêu cầu không hợp lệ.";
     }
 }
