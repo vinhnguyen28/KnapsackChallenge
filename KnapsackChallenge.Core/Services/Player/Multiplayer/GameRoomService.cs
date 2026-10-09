@@ -33,10 +33,10 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
         public async Task<HubResult<CreateRoomResultDto>> CreateRoomAsync(
             int userId, string username, int setId)
         {
-            var banCheck = CheckBan(userId);
-            if (banCheck != null)
+            var banMsg = CheckBan(userId);
+            if (banMsg != null)
                 return HubResult<CreateRoomResultDto>.Fail(
-                    ErrorCodes.AuthAccountBanned, banCheck);
+                    ErrorCodes.AuthAccountBanned, banMsg);
 
             var mode = _gameModes.GetByKey("Multiplayer");
             if (mode == null || !mode.IsEnabled)
@@ -58,10 +58,10 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
         public async Task<HubResult<JoinRoomResultDto>> JoinRoomAsync(
             int userId, string username, string roomCode)
         {
-            var banCheck = CheckBan(userId);
-            if (banCheck != null)
+            var banMsg = CheckBan(userId);
+            if (banMsg != null)
                 return HubResult<JoinRoomResultDto>.Fail(
-                    ErrorCodes.AuthAccountBanned, banCheck);
+                    ErrorCodes.AuthAccountBanned, banMsg);
 
             var mode = _gameModes.GetByKey("Multiplayer");
             if (mode == null || !mode.IsEnabled)
@@ -86,10 +86,10 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
 
         public async Task<HubResult<RoomStateDto>> StartGameAsync(int userId)
         {
-            var banCheck = CheckBan(userId);
-            if (banCheck != null)
+            var banMsg = CheckBan(userId);
+            if (banMsg != null)
                 return HubResult<RoomStateDto>.Fail(
-                    ErrorCodes.AuthAccountBanned, banCheck);
+                    ErrorCodes.AuthAccountBanned, banMsg);
 
             var mode = _gameModes.GetByKey("Multiplayer");
             if (mode == null || !mode.IsEnabled)
@@ -102,16 +102,17 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
             return await _rooms.StartGameAsync(userId, maxPlayers, mode.TimeLimitSeconds);
         }
 
+        // (6) Client gửi TimeSpentSeconds trong SubmitRequest nhưng server bỏ qua.
         public async Task<HubResult<SubmissionResultDto>> SubmitAsync(
             int userId, SubmitRequest req)
         {
-            var banCheck = CheckBan(userId);
-            if (banCheck != null)
+            var banMsg = CheckBan(userId);
+            if (banMsg != null)
                 return HubResult<SubmissionResultDto>.Fail(
-                    ErrorCodes.AuthAccountBanned, banCheck);
+                    ErrorCodes.AuthAccountBanned, banMsg);
 
             return await _rooms.SubmitAsync(
-                userId, req.SelectedItemIds, req.TimeSpentSeconds, isAutoSubmit: false);
+                userId, req.SelectedItemIds, isAutoSubmit: false);
         }
 
         public Task<HubResult<RoomStateDto>> GetRoomStateAsync(int userId)

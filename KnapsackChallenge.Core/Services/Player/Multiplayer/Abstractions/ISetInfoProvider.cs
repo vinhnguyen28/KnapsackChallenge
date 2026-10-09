@@ -1,12 +1,15 @@
-﻿namespace KnapsackChallenge.Core.Services.Player.Multiplayer
+﻿using KnapsackChallenge.Common.DTOs;
+
+namespace KnapsackChallenge.Core.Services.Player.Multiplayer
 {
     // Thông tin bộ đề + vật phẩm mà RoomManager cần khi start/score.
+    // Items là ItemDto có Name để đẩy vào GameStartDto.
     public sealed record SetInfo(
         int SetId,
         string SetName,
         string Difficulty,
         int MaxWeight,
-        IReadOnlyList<(int Id, int Weight, int Value)> Items);
+        IReadOnlyList<ItemDto> Items);
 
     // Cổng nạp set info. Implement ở Server bằng GameRepository/SetRepository.
     public interface ISetInfoProvider

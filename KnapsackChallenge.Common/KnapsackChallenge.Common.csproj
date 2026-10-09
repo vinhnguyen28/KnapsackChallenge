@@ -6,9 +6,4 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="DTOs\Multiplayer\" />
-    <Folder Include="DTOs\Auth\" />
-  </ItemGroup>
-
 </Project>

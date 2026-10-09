@@ -1,6 +1,53 @@
-@KnapsackChallenge.Server_HostAddress = http://localhost:5208
+@host = http://localhost:5000
+@token = PASTE_TOKEN_HERE
+@roomCode = M-XXXXXX
+@targetUserId = 2
 
-GET {{KnapsackChallenge.Server_HostAddress}}/weatherforecast/
-Accept: application/json
+### 1. Health
+GET {{host}}/health
 
-###
+### 2. Login (đổi username/password cho khớp DB)
+# @name login
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "adminpass"
+}
+
+### 3. Login thất bại — phải trả 401
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "khong_ton_tai",
+  "password": "sai"
+}
+
+### 4. Login tài khoản bị ban — phải trả 403 kèm reason
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "user_bi_ban",
+  "password": "matkhau"
+}
+
+### 5. Admin: list phòng đang chạy
+GET {{host}}/api/admin/rooms
+Authorization: Bearer {{token}}
+
+### 6. Admin: xem chi tiết 1 phòng
+GET {{host}}/api/admin/rooms/{{roomCode}}
+Authorization: Bearer {{token}}
+
+### 7. Admin: kick 1 người khỏi phòng
+POST {{host}}/api/admin/rooms/{{roomCode}}/kick
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": {{targetUserId}},
+  "reason": "Vi phạm quy tắc phòng."
+}
