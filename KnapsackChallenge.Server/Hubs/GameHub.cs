@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using KnapsackChallenge.Common.Constants;
 using KnapsackChallenge.Common.DTOs;
 using KnapsackChallenge.Core.Services.Player.Multiplayer;
 using KnapsackChallenge.Data.Repositories;
@@ -14,14 +15,17 @@ namespace KnapsackChallenge.Server.Hubs
     {
         private readonly IGameRoomService _rooms;
         private readonly UserRepository _users;
+        private readonly ConnectionTracker _tracker;
         private readonly ILogger<GameHub> _log;
 
         public GameHub(IGameRoomService rooms,
                        UserRepository users,
+                       ConnectionTracker tracker,
                        ILogger<GameHub> log)
         {
             _rooms = rooms;
             _users = users;
+            _tracker = tracker;
             _log = log;
         }
 
@@ -33,13 +37,17 @@ namespace KnapsackChallenge.Server.Hubs
         {
             var userId = GetUserIdOrThrow();
 
+            // Đăng ký connection vào tracker (chưa biết phòng).
+            _tracker.Track(userId, Context.ConnectionId, roomCode: null);
+
             // Nếu user đang ở trong phòng → add lại vào group để nhận sự kiện.
             var state = await _rooms.GetRoomStateAsync(userId);
             if (state.Success && state.Data != null)
             {
-                await Groups.AddToGroupAsync(
-                    Context.ConnectionId,
-                    SignalRRoomNotifier.GroupOf(state.Data.RoomCode));
+                var code = state.Data.RoomCode;
+                await Groups.AddToGroupAsync(Context.ConnectionId,
+                    SignalRRoomNotifier.GroupOf(code));
+                _tracker.SetRoom(Context.ConnectionId, code);
             }
 
             _log.LogInformation("Hub connected: user={UserId} conn={Conn}",
@@ -49,9 +57,9 @@ namespace KnapsackChallenge.Server.Hubs
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
+            _tracker.Untrack(Context.ConnectionId);
             _log.LogInformation("Hub disconnected: conn={Conn} ex={Ex}",
                 Context.ConnectionId, exception?.Message);
-            // Xử lý reconnect window chi tiết ở Bước 5.
             await base.OnDisconnectedAsync(exception);
         }
 
@@ -59,32 +67,76 @@ namespace KnapsackChallenge.Server.Hubs
         // CLIENT → SERVER
         // =========================================================
 
-        public Task<HubResult<CreateRoomResultDto>> CreateRoom(CreateRoomRequest req)
+        public async Task<HubResult<CreateRoomResultDto>> CreateRoom(CreateRoomRequest req)
         {
             var userId = GetUserIdOrThrow();
-            var username = GetUsername(userId);
-            return _rooms.CreateRoomAsync(userId, username, req.SetId);
+
+            var user = _users.GetById(userId);
+            if (user == null || string.IsNullOrWhiteSpace(user.Username))
+                return HubResult<CreateRoomResultDto>.Fail(
+                    ErrorCodes.AuthAccountBanned,
+                    string.Format(Messages.AuthAccountBannedFmt, "(không có)"));
+
+            var result = await _rooms.CreateRoomAsync(userId, user.Username!, req.SetId);
+
+            // Chỉ add group khi tạo phòng THÀNH CÔNG — nếu Fail, client không ở trong group nào.
+            if (result.Success && result.Data != null)
+            {
+                var code = result.Data.RoomCode;
+                await Groups.AddToGroupAsync(Context.ConnectionId,
+                    SignalRRoomNotifier.GroupOf(code));
+                _tracker.SetRoom(Context.ConnectionId, code);
+            }
+
+            return result;
         }
 
-        public Task<HubResult<JoinRoomResultDto>> JoinRoom(string roomCode)
+        public async Task<HubResult<JoinRoomResultDto>> JoinRoom(string roomCode)
         {
             var userId = GetUserIdOrThrow();
-            var username = GetUsername(userId);
-            return _rooms.JoinRoomAsync(userId, username, roomCode);
+
+            var user = _users.GetById(userId);
+            if (user == null || string.IsNullOrWhiteSpace(user.Username))
+                return HubResult<JoinRoomResultDto>.Fail(
+                    ErrorCodes.AuthAccountBanned,
+                    string.Format(Messages.AuthAccountBannedFmt, "(không có)"));
+
+            var result = await _rooms.JoinRoomAsync(userId, user.Username!, roomCode ?? "");
+
+            if (result.Success && result.Data?.State != null)
+            {
+                var code = result.Data.State.RoomCode;
+                await Groups.AddToGroupAsync(Context.ConnectionId,
+                    SignalRRoomNotifier.GroupOf(code));
+                _tracker.SetRoom(Context.ConnectionId, code);
+            }
+
+            return result;
         }
 
         public async Task<HubResult<RoomStateDto>> LeaveRoom()
         {
             var userId = GetUserIdOrThrow();
+
+            // Lấy roomCode TỪ TRACKER trước khi rời để chắc chắn gỡ được group
+            // ngay cả khi _rooms.LeaveRoomAsync thất bại (vd: user không ở phòng nào).
+            var roomCodeFromTracker = _tracker.GetRoom(Context.ConnectionId);
+
             var result = await _rooms.LeaveRoomAsync(userId);
 
-            // Rời group dù thành công hay không (đảm bảo không nhận event cũ).
-            if (result.Success && result.Data != null)
+            var roomCode = roomCodeFromTracker;
+            if (string.IsNullOrEmpty(roomCode) && result.Success && result.Data != null)
+                roomCode = result.Data.RoomCode;
+
+            if (!string.IsNullOrEmpty(roomCode))
             {
-                await Groups.RemoveFromGroupAsync(
-                    Context.ConnectionId,
-                    SignalRRoomNotifier.GroupOf(result.Data.RoomCode));
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId,
+                    SignalRRoomNotifier.GroupOf(roomCode));
             }
+
+            // Xoá liên kết connection <-> room, vẫn giữ user <-> connection.
+            _tracker.ClearRoom(Context.ConnectionId);
+
             return result;
         }
 
@@ -123,9 +175,5 @@ namespace KnapsackChallenge.Server.Hubs
                 throw new HubException("Unauthorized");
             return userId;
         }
-
-        // Username không có trong JWT (chỉ sub + role). Query 1 lần cho CreateRoom/JoinRoom.
-        private string GetUsername(int userId)
-            => _users.GetById(userId)?.Username ?? "unknown";
     }
 }

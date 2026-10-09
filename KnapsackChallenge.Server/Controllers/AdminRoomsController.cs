@@ -4,7 +4,6 @@ using KnapsackChallenge.Core.Services.Player.Multiplayer;
 
 namespace KnapsackChallenge.Server.Controllers
 {
-    // Body cho POST /api/admin/rooms/{code}/kick.
     public sealed class AdminKickRequest
     {
         public int UserId { get; set; }
@@ -32,6 +31,9 @@ namespace KnapsackChallenge.Server.Controllers
         [HttpGet("{code}")]
         public async Task<IActionResult> Get(string code)
         {
+            // (4) Chuẩn hoá mã phòng trước khi tra cứu.
+            code = (code ?? "").Trim().ToUpperInvariant();
+
             var result = await _rooms.GetRoomStateByCodeAsync(code);
             if (!result.Success)
                 return NotFound(new { code = result.ErrorCode, message = result.Message });
@@ -44,6 +46,9 @@ namespace KnapsackChallenge.Server.Controllers
         {
             if (req == null || req.UserId <= 0)
                 return BadRequest(new { message = "userId không hợp lệ." });
+
+            // (4) Chuẩn hoá mã phòng.
+            code = (code ?? "").Trim().ToUpperInvariant();
 
             var result = await _rooms.KickAsync(code, req.UserId, req.Reason ?? "");
             if (!result.Success)

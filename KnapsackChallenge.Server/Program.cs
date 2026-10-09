@@ -30,13 +30,11 @@ builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 // =========================================================
 builder.Services.AddSingleton(TimeProvider.System);
 
-// Repositories (Singleton — chỉ giữ connection string lazily).
 builder.Services.AddSingleton<UserRepository>();
 builder.Services.AddSingleton<GameRepository>();
 builder.Services.AddSingleton<GameModeRepository>();
 builder.Services.AddSingleton<MultiplayerRepository>();
 
-// Core services từ tầng Core.
 builder.Services.AddSingleton<IAuthService>(sp =>
     new AuthService(sp.GetRequiredService<UserRepository>()));
 
@@ -44,8 +42,9 @@ builder.Services.AddSingleton<IGameModeService>(sp =>
     new GameModeService(sp.GetRequiredService<GameModeRepository>()));
 
 // =========================================================
-// 3. Cổng cho RoomManager
+// 3. Cổng cho RoomManager + ConnectionTracker
 // =========================================================
+builder.Services.AddSingleton<ConnectionTracker>();
 builder.Services.AddSingleton<IRoomPersistence, SqlRoomPersistence>();
 builder.Services.AddSingleton<IRoomNotifier, SignalRRoomNotifier>();
 builder.Services.AddSingleton<IUserBanChecker, RepositoryUserBanChecker>();
@@ -60,7 +59,6 @@ builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        // Giữ nguyên claim gốc: sub / role (không remap sang URI dài).
         options.MapInboundClaims = false;
 
         options.TokenValidationParameters = new TokenValidationParameters
@@ -80,8 +78,6 @@ builder.Services
 
         options.Events = new JwtBearerEvents
         {
-            // Cho phép WebSocket gửi token qua query ?access_token=...
-            // CHỈ áp dụng cho đường dẫn /hubs/game.
             OnMessageReceived = ctx =>
             {
                 var accessToken = ctx.Request.Query["access_token"];
@@ -132,7 +128,6 @@ app.MapControllers();
 
 app.MapHub<GameHub>("/hubs/game").RequireAuthorization();
 
-// Health check — Azure App Service có thể poll.
 app.MapGet("/health", () => Results.Ok(new
 {
     status = "ok",

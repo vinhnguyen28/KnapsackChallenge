@@ -4,11 +4,6 @@ using KnapsackChallenge.Core.Services.Admin;
 
 namespace KnapsackChallenge.Core.Services.Player.Multiplayer
 {
-    // Facade mỏng cho Server. Trách nhiệm:
-    //   - Kiểm tra IsBanned ở CreateRoom/JoinRoom/Start/Submit (Q4).
-    //   - Nạp set info + items (dùng ISetInfoProvider).
-    //   - Đọc GameModes để lấy MaxPlayers + TimeLimit (tôn trọng IsEnabled).
-    //   - Delegate state machine xuống RoomManager.
     public sealed class GameRoomService : IGameRoomService
     {
         private const int MinMultiplayers = 2;
@@ -68,6 +63,9 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                 return HubResult<JoinRoomResultDto>.Fail(
                     ErrorCodes.RoomModeDisabled, Messages.RoomModeDisabled);
 
+            // (4) Chuẩn hoá mã phòng: trim + uppercase để khớp code đã sinh ra.
+            roomCode = (roomCode ?? "").Trim().ToUpperInvariant();
+
             return await _rooms.JoinRoomAsync(userId, username, roomCode);
         }
 
@@ -102,7 +100,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
             return await _rooms.StartGameAsync(userId, maxPlayers, mode.TimeLimitSeconds);
         }
 
-        // (6) Client gửi TimeSpentSeconds trong SubmitRequest nhưng server bỏ qua.
         public async Task<HubResult<SubmissionResultDto>> SubmitAsync(
             int userId, SubmitRequest req)
         {
@@ -122,7 +119,11 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
             => Task.FromResult(_rooms.ListActiveRooms());
 
         public Task<HubResult<RoomStateDto>> GetRoomStateByCodeAsync(string roomCode)
-            => Task.FromResult(_rooms.GetRoomStateByCode(roomCode));
+        {
+            // (4) Chuẩn hoá mã phòng.
+            roomCode = (roomCode ?? "").Trim().ToUpperInvariant();
+            return Task.FromResult(_rooms.GetRoomStateByCode(roomCode));
+        }
 
         public Task<HubResult<bool>> KickAsync(string roomCode, int targetUserId, string reason)
         {
@@ -130,6 +131,9 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
             if (reason.Length < 5 || reason.Length > 500)
                 return Task.FromResult(HubResult<bool>.Fail(
                     ErrorCodes.RoomKickReasonInvalid, Messages.RoomKickReasonInvalid));
+
+            // (4) Chuẩn hoá mã phòng.
+            roomCode = (roomCode ?? "").Trim().ToUpperInvariant();
 
             return _rooms.KickAsync(roomCode, targetUserId, reason);
         }

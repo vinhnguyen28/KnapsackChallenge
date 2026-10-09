@@ -11,16 +11,9 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
     // Không đụng tới SqlClient/SignalR — chỉ dùng interface trừu tượng.
     public sealed class RoomManager
     {
-        // Dung sai thời gian khi server tự nộp (giây).
         private const int TimeoutToleranceSeconds = 5;
-
-        // Cửa sổ reconnect khi user mất kết nối lúc Playing (giây).
         private const int ReconnectWindowSeconds = 30;
-
-        // Grace period sau khi Finished trước khi xoá khỏi bộ nhớ (giây).
         private const int FinishedGraceSeconds = 60;
-
-        // Chu kỳ quét ban (giây). Không quét mỗi Tick.
         private const int BanScanIntervalSeconds = 12;
 
         private readonly IRoomPersistence _persistence;
@@ -31,7 +24,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
         private readonly ConcurrentDictionary<string, Room> _rooms = new();
         private readonly ConcurrentDictionary<int, string> _userToRoom = new();
 
-        // Mốc quét ban gần nhất — TickAsync chỉ chạy tuần tự nên không cần lock.
         private DateTime _lastBanScanUtc = DateTime.MinValue;
 
         public RoomManager(IRoomPersistence persistence,
@@ -83,9 +75,9 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                 IsHost = true,
                 JoinedAtUtc = now,
             });
-            _rooms[roomCode] = room;
 
-            // (4) SAU KHI state đã hợp lệ mới ghi DB; lỗi DB → rollback state.
+            // (3) Ghi DB TRƯỚC — chỉ đưa vào _rooms khi đã có SessionId.
+            // Nhờ vậy không có khoảng thời gian Join/AdminList thấy SessionId = 0.
             int sessionId;
             try
             {
@@ -94,11 +86,13 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
             }
             catch
             {
-                _rooms.TryRemove(roomCode, out _);
                 _userToRoom.TryRemove(userId, out _);
                 return HubResult<CreateRoomResultDto>.Fail(
                     ErrorCodes.RoomServerBusy, Messages.RoomServerBusy);
             }
+
+            // Sau khi state đã hợp lệ + đã có SessionId mới publish ra ngoài.
+            _rooms[roomCode] = room;
 
             var state = ToStateDto(room);
             await _notifier.RoomUpdatedAsync(roomCode, state);
@@ -132,7 +126,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
             var now = _clock.GetUtcNow().UtcDateTime;
             HubResult<JoinRoomResultDto>? failResult = null;
 
-            // (4) Check state + capacity + add Players trong CÙNG lock.
             lock (room.SyncRoot)
             {
                 if (room.Status != RoomStatus.Waiting)
@@ -168,7 +161,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                 return failResult;
             }
 
-            // (4) Ghi DB sau khi state đã chốt; lỗi → rollback.
             try
             {
                 await _persistence.AddPlayerAsync(room.SessionId, userId, now);
@@ -198,7 +190,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                     ErrorCodes.RoomNotInRoom, Messages.RoomNotInRoom);
             }
 
-            // (2) Waiting: remove khỏi Players. Playing/Finished: chỉ đánh dấu Left.
             bool wasHost;
             bool shouldDeleteRoom;
             RoomPlayerState? target = null;
@@ -239,7 +230,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
 
             _userToRoom.TryRemove(userId, out _);
 
-            // (3) Waiting hết người → DeleteRoom + RoomClosed.
             if (shouldDeleteRoom)
             {
                 await SafePersist(() => _persistence.DeleteRoomAsync(room.SessionId));
@@ -248,7 +238,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                 return HubResult<RoomStateDto>.Ok(ToStateDto(room));
             }
 
-            // (2) Chỉ xoá row RoomPlayers khi Waiting; Playing/Finished giữ row.
             if (room.Status == RoomStatus.Waiting)
                 await SafePersist(() => _persistence.RemovePlayerAsync(room.SessionId, userId));
 
@@ -258,7 +247,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
             var state = ToStateDto(room);
             await _notifier.RoomUpdatedAsync(roomCode, state);
 
-            // (3) Playing: kiểm tra "all active submitted" / "no active" → Finish.
             if (room.Status == RoomStatus.Playing)
                 await MaybeFinishAsync(room, "leave_while_playing");
 
@@ -320,7 +308,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                     return HubResult<RoomStateDto>.Fail(
                         ErrorCodes.RoomNotEnoughPlayers, Messages.RoomNotEnoughPlayers);
 
-                // (8) Tính optimal + OptimalItemIds 1 lần, cache trong room.
                 var tuples = room.CachedItems
                     .Select(i => (i.Id, i.Weight, i.Value))
                     .ToList();
@@ -328,7 +315,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                 room.OptimalValue = optimalValue;
                 room.OptimalItemIds = optimalIds;
 
-                // (Q3) Tôn trọng MaxPlayers admin vừa set; không đuổi ai.
                 room.MaxPlayers = maxPlayers;
                 room.TimeLimitSeconds = timeLimitSeconds;
 
@@ -351,7 +337,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                     TimeLimitSeconds = timeLimitSeconds,
                     StartTimeUtc = now,
                     EndTimeUtc = endTime,
-                    // (7) Gán ItemDto.Name thật.
                     Items = room.CachedItems.ToList(),
                 };
             }
@@ -363,7 +348,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
             return HubResult<RoomStateDto>.Ok(ToStateDto(room));
         }
 
-        // (6) Bỏ tham số timeSpentSeconds của client — server tự tính.
         public async Task<HubResult<SubmissionResultDto>> SubmitAsync(
             int userId, IReadOnlyList<int> selectedItemIds, bool isAutoSubmit = false)
         {
@@ -382,7 +366,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                     return HubResult<SubmissionResultDto>.Fail(
                         ErrorCodes.SubmitNotPlaying, Messages.SubmitNotPlaying);
 
-                // (8) Không throw InvalidOperationException — trả Fail.
                 player = room.Players.FirstOrDefault(p => p.UserId == userId && p.IsActive)!;
                 if (player == null)
                     return HubResult<SubmissionResultDto>.Fail(
@@ -392,7 +375,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                     return HubResult<SubmissionResultDto>.Fail(
                         ErrorCodes.SubmitAlreadySubmitted, Messages.SubmitAlreadySubmitted);
 
-                // (6) Chặn nộp muộn khi có TimeLimit (auto-submit do TickAsync lo).
                 if (!isAutoSubmit
                     && room.TimeLimitSeconds > 0
                     && room.StartedAtUtc.HasValue
@@ -404,7 +386,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                         "Ván đã hết giờ, không thể nộp bài.");
                 }
 
-                // (6) TimeSpentSeconds do server tính.
                 if (isAutoSubmit)
                 {
                     serverTimeSpent = room.TimeLimitSeconds;
@@ -442,7 +423,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                             ErrorCodes.SubmitOverweight,
                             string.Format(Messages.SubmitOverweightFmt, totalW, room.MaxWeight));
 
-                    // Auto-submit mà vượt sức chứa → coi như bỏ hết.
                     distinct.Clear();
                     totalW = 0;
                     totalV = 0;
@@ -452,7 +432,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                     ? (double)totalV / room.OptimalValue * 100.0
                     : 0;
 
-                // (8) Dùng ScoringRules dùng chung với Solo.
                 int stars = ScoringRules.CalculateStars(percent);
 
                 player.IsSubmitted = true;
@@ -473,7 +452,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                     Stars = stars,
                     TimeSpentSeconds = serverTimeSpent,
                     IsAutoSubmitted = isAutoSubmit,
-                    // (8) Dùng cache, không Solve lại.
                     OptimalItemIds = room.OptimalItemIds.ToList(),
                 };
             }
@@ -483,8 +461,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                 player.TotalScore, player.TotalWeight, player.TimeSpentSeconds ?? 0));
 
             await _notifier.PlayerSubmittedAsync(code, ToPlayerDto(player));
-
-            // (3) Nếu tất cả active đã nộp → Finish.
             await MaybeFinishAsync(room, "all_submitted");
             return HubResult<SubmissionResultDto>.Ok(result);
         }
@@ -550,7 +526,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
 
                 wasHost = target.IsHost;
 
-                // (2) Waiting: remove. Playing/Finished: chỉ đánh dấu Kicked.
                 if (room.Status == RoomStatus.Waiting)
                 {
                     room.Players.Remove(target);
@@ -574,7 +549,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
 
             _userToRoom.TryRemove(targetUserId, out _);
 
-            // (2) Chỉ xoá row RoomPlayers khi Waiting; Playing/Finished đánh dấu.
             if (room.Status == RoomStatus.Waiting)
                 await SafePersist(() => _persistence.RemovePlayerAsync(room.SessionId, targetUserId));
             else
@@ -598,7 +572,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
 
             if (activeCount == 0)
             {
-                // (3) Playing hết người → FinishRoomAsync (ghi DB), không xoá RAM.
                 if (room.Status == RoomStatus.Playing)
                 {
                     await MaybeFinishAsync(room, "no_active_after_kick");
@@ -615,7 +588,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                 var state = ToStateDto(room);
                 await _notifier.RoomUpdatedAsync(roomCode, state);
 
-                // (3) Kiểm tra all-submitted khi Playing.
                 if (room.Status == RoomStatus.Playing)
                     await MaybeFinishAsync(room, "all_submitted_after_kick");
             }
@@ -624,14 +596,13 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
         }
 
         // =========================================================
-        // BACKGROUND LOOP — gọi từ MultiplayerTimerService
+        // BACKGROUND LOOP
         // =========================================================
 
         public async Task TickAsync(CancellationToken ct = default)
         {
             var now = _clock.GetUtcNow().UtcDateTime;
 
-            // (5b) Quét ban theo interval, không phải mỗi Tick.
             if ((now - _lastBanScanUtc).TotalSeconds >= BanScanIntervalSeconds)
             {
                 _lastBanScanUtc = now;
@@ -643,7 +614,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                 }
             }
 
-            // Timeout + dọn Finished grace.
             foreach (var room in _rooms.Values.ToArray())
             {
                 ct.ThrowIfCancellationRequested();
@@ -666,7 +636,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
         // INTERNAL HELPERS
         // =========================================================
 
-        // (3) Gọi khi mọi người active đã nộp HOẶC không còn ai active.
         private async Task MaybeFinishAsync(Room room, string reason)
         {
             bool shouldFinish;
@@ -682,7 +651,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                 await FinishRoomAsync(room, reason);
         }
 
-        // (5a) Lấy UserId list trong lock, gọi _banChecker.Check NGOÀI lock.
         private async Task HandleBansAsync(Room room)
         {
             int[] userIds;
@@ -716,7 +684,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
 
                 wasHost = p.IsHost;
 
-                // (2) Playing/Finished: giữ với flag Banned. Waiting: remove.
                 if (room.Status == RoomStatus.Waiting)
                 {
                     room.Players.Remove(p);
@@ -745,7 +712,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
             else
                 await SafePersist(() => _persistence.MarkBannedAsync(room.SessionId, userId));
 
-            // (5c) Truyền lý do thật.
             await _notifier.ForceLogoutAsync(userId,
                 string.Format(Messages.ForceLogoutFmt, reason ?? "(không có)"));
 
@@ -799,13 +765,11 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
 
             lock (room.SyncRoot)
             {
-                if (room.Status == RoomStatus.Finished) return; // idempotent
+                if (room.Status == RoomStatus.Finished) return;
 
                 room.Status = RoomStatus.Finished;
                 room.FinishedAtUtc = _clock.GetUtcNow().UtcDateTime;
 
-                // (2)(Q2) Kicked/Banned xuống cuối; Left cũng xuống dưới active.
-                // Sắp xếp trong nhóm: điểm desc, thời gian asc, userId asc.
                 var ordered = room.Players
                     .OrderBy(p => p.Leave == PlayerLeaveState.Kicked
                                || p.Leave == PlayerLeaveState.Banned ? 2
@@ -865,7 +829,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
             return true;
         }
 
-        // (4) Sinh code — không cần DB check vì _rooms đã unique.
         private string GenerateUniqueRoomCode()
         {
             const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -884,7 +847,7 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
         private static async Task SafePersist(Func<Task> action)
         {
             try { await action(); }
-            catch { /* Không để lỗi DB làm sập state machine — Server log riêng. */ }
+            catch { /* Không để lỗi DB làm sập state machine */ }
         }
 
         private static RoomPlayerDto ToPlayerDto(RoomPlayerState p) => new()
@@ -901,7 +864,6 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
             JoinedAt = p.JoinedAtUtc,
         };
 
-        // (2) RoomStateDto chỉ show Active — lobby UI sạch.
         private static RoomStateDto ToStateDto(Room room)
         {
             lock (room.SyncRoot)
@@ -941,7 +903,7 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
         {
             public object SyncRoot { get; } = new();
             public string RoomCode { get; init; } = "";
-            public int SessionId { get; set; }        // set sau khi DB trả Id
+            public int SessionId { get; set; }
             public int HostUserId { get; set; }
             public int SetId { get; set; }
             public string SetName { get; set; } = "";
@@ -954,10 +916,8 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
             public DateTime? StartedAtUtc { get; set; }
             public DateTime? FinishedAtUtc { get; set; }
             public List<RoomPlayerState> Players { get; } = new();
-            // (7) ItemDto có Name.
             public List<ItemDto> CachedItems { get; set; } = new();
             public int OptimalValue { get; set; }
-            // (8) Cache OptimalItemIds tại StartGame.
             public List<int> OptimalItemIds { get; set; } = new();
         }
 
