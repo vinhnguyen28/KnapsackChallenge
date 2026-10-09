@@ -11,5 +11,14 @@ namespace KnapsackChallenge.Data.Entities
         public int TotalScore { get; set; }
         public int TotalWeight { get; set; }
         public bool IsSubmitted { get; set; }
+
+        // ---- Bổ sung v5 ----
+        public bool IsHost { get; set; }
+        public int? TimeSpentSeconds { get; set; }
+        public DateTime JoinedAt { get; set; }
+        public bool IsKicked { get; set; }
+
+        // ---- Bổ sung v5 (đợt 2): phân biệt ban vs kick ----
+        public bool IsBanned { get; set; }
     }
 }

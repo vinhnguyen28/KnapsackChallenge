@@ -2,5 +2,7 @@
   <Project Path="KnapsackChallenge.Common/KnapsackChallenge.Common.csproj" />
   <Project Path="KnapsackChallenge.Core/KnapsackChallenge.Core.csproj" />
   <Project Path="KnapsackChallenge.Data/KnapsackChallenge.Data.csproj" />
+  <Project Path="KnapsackChallenge.Server/KnapsackChallenge.Server.csproj" />
+  <Project Path="KnapsackChallenge.Tests/KnapsackChallenge.Tests.csproj" />
   <Project Path="KnapsackChallenge.UI/KnapsackChallenge.UI.csproj" />
 </Solution>

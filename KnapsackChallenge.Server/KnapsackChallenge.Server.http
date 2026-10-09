@@ -1,0 +1,6 @@
+@KnapsackChallenge.Server_HostAddress = http://localhost:5208
+
+GET {{KnapsackChallenge.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

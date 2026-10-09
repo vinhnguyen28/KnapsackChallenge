@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- JWT bearer -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+    <!-- SignalR server (đã có sẵn trong SDK Web, nhưng khai báo để rõ ràng) -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KnapsackChallenge.Common\KnapsackChallenge.Common.csproj" />
+    <ProjectReference Include="..\KnapsackChallenge.Core\KnapsackChallenge.Core.csproj" />
+    <ProjectReference Include="..\KnapsackChallenge.Data\KnapsackChallenge.Data.csproj" />
+  </ItemGroup>
+
+</Project>
