@@ -13,3 +13,4 @@ Chạy đủ 5 script trong `KnapsackChallenge.Data/Scripts/`:
 ```bash
 cd KnapsackChallenge.Server
 dotnet run
+
