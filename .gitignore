@@ -363,4 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 
 #lock file link data base
-*.Local.json
+#*.Local.json

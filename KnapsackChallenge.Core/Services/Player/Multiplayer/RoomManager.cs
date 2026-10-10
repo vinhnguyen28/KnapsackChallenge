@@ -84,8 +84,9 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                 sessionId = await _persistence.CreateRoomAsync(roomCode, userId, setId, now);
                 room.SessionId = sessionId;
             }
-            catch
+            catch (Exception ex)
             {
+
                 _userToRoom.TryRemove(userId, out _);
                 return HubResult<CreateRoomResultDto>.Fail(
                     ErrorCodes.RoomServerBusy, Messages.RoomServerBusy);
