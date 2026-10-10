@@ -99,7 +99,7 @@ namespace KnapsackChallenge.UI.Features.Auth
                 var url = MultiplayerServerConfig.ServerUrl;
 
                 // Timeout 3s để không treo UI khi Server chết hoàn toàn.
-                var task = MultiplayerAuthClient.LoginAsync(username, password, url);
+                var task = Task.Run(() => MultiplayerAuthClient.LoginAsync(username, password, url));
                 if (!task.Wait(TimeSpan.FromSeconds(3)))
                 {
                     MultiplayerSession.Instance.Clear();

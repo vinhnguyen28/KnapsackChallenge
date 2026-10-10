@@ -24,15 +24,15 @@ namespace KnapsackChallenge.UI.Features.Player
                 {
                     username,
                     password,
-                });
+                }).ConfigureAwait(false);
 
                 if (!resp.IsSuccessStatusCode)
                 {
-                    var body = await resp.Content.ReadAsStringAsync();
+                    var body = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
                     return (null, 0, null, $"HTTP {(int)resp.StatusCode}: {body}");
                 }
 
-                var dto = await resp.Content.ReadFromJsonAsync<LoginResponseDto>();
+                var dto = await resp.Content.ReadFromJsonAsync<LoginResponseDto>().ConfigureAwait(false);
                 if (dto == null || string.IsNullOrEmpty(dto.Token))
                     return (null, 0, null, "Phản hồi đăng nhập không hợp lệ.");
 
