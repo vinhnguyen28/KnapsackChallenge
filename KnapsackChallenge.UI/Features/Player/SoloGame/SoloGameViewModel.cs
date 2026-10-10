@@ -50,6 +50,9 @@ namespace KnapsackChallenge.UI.Features.Player
         private readonly DispatcherTimer _playTimer;
         private readonly int _setId;
 
+        // v7: báo cho vỏ Player biết tim đã thay đổi (sau Start / hồi).
+        public event Action<HeartStatusDto>? HeartsChanged;
+
         private string _currentSetName = "";
         public string CurrentSetName
         {
@@ -64,10 +67,29 @@ namespace KnapsackChallenge.UI.Features.Player
             private set { _currentDifficulty = value; OnPropertyChanged(); }
         }
 
-        // Quay lại màn chọn mức độ.
         public event Action? ChangeSetRequested;
-        // Về thẳng trang chủ.
         public event Action? HomeRequested;
+
+        // v7: hiển thị tim ngay trong màn chơi khi hết tim.
+        private HeartStatusDto? _heartStatus;
+        public HeartStatusDto? HeartStatus
+        {
+            get => _heartStatus;
+            private set
+            {
+                _heartStatus = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HeartBadgeText));
+                OnPropertyChanged(nameof(HeartCountdownText));
+                OnPropertyChanged(nameof(HasHeartStatus));
+            }
+        }
+        public bool HasHeartStatus => _heartStatus != null;
+        public string HeartBadgeText => _heartStatus?.BadgeText ?? "❤ --/--";
+        public string HeartCountdownText =>
+            _heartStatus?.IsEmpty == true
+                ? $"Hồi tim sau {_heartStatus.CountdownText}"
+                : "";
 
         public SoloGameViewModel(UserEntity user, int setId)
         {
@@ -186,11 +208,7 @@ namespace KnapsackChallenge.UI.Features.Player
         public ICommand ChooseAnotherSetCommand { get; }
         public ICommand GoHomeCommand { get; }
 
-        // Dừng timer khi vỏ điều hướng đi - tránh rò rỉ.
-        public void OnNavigatedFrom()
-        {
-            _playTimer.Stop();
-        }
+        public void OnNavigatedFrom() => _playTimer.Stop();
 
         private async System.Threading.Tasks.Task InitAsync()
         {
@@ -211,7 +229,15 @@ namespace KnapsackChallenge.UI.Features.Player
         {
             try
             {
-                var (ok, message, data) = _soloService.StartGame(setId);
+                // v7: StartGame giờ nhận userId + trả HeartStatus.
+                var (ok, message, data, heart) = _soloService.StartGame(_user.Id, setId);
+
+                if (heart != null)
+                {
+                    HeartStatus = heart;
+                    HeartsChanged?.Invoke(heart);
+                }
+
                 if (!ok || data == null)
                 {
                     PlayError = message;

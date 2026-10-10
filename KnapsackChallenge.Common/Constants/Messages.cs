@@ -42,5 +42,10 @@
 
         // ---------- Hub / request validation ----------
         public const string RequestInvalid = "Yêu cầu không hợp lệ.";
+
+        // ---------- Heart ----------
+        public const string HeartNotEnoughFmt = "Bạn đã hết tim. Còn {0} để hồi 1 tim.";
+        public const string HeartConsumedFmt = "Đã tiêu tốn 1 tim. Còn lại {0}/{1}.";
+        public const string HeartReadyToPlay = "Bạn đã có tim, có thể chơi tiếp.";
     }
 }

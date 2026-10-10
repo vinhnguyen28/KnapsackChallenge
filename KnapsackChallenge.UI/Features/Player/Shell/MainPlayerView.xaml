@@ -33,6 +33,11 @@
         <DataTemplate DataType="{x:Type player:PlayerPlaceholderViewModel}">
             <player:PlayerPlaceholderView />
         </DataTemplate>
+
+        <DataTemplate DataType="{x:Type player:LobbyViewModel}">
+            <player:LobbyView />
+        </DataTemplate>
+        
     </UserControl.Resources>
 
     <Grid>

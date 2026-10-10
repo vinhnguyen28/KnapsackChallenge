@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.SignalR;
-using KnapsackChallenge.Common.Constants;
+﻿using KnapsackChallenge.Common.Constants;
 using KnapsackChallenge.Common.DTOs;
 using KnapsackChallenge.Common.Enums;
 using KnapsackChallenge.Core.Services.Player.Multiplayer;
 using KnapsackChallenge.Data.Repositories;
 using KnapsackChallenge.Server.Services.Rooms;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 
 namespace KnapsackChallenge.Server.Hubs
 {
@@ -276,6 +276,23 @@ namespace KnapsackChallenge.Server.Hubs
             }
 
             return await _rooms.GetMyResultAsync(userId);
+        }
+
+        // =========================================================
+        // LOBBY — danh sách phòng đang hoạt động
+        // =========================================================
+
+        // Trả danh sách phòng Waiting/Playing. Bất kỳ user đã đăng nhập đều gọi được.
+        // Trả list rỗng (không throw) khi user không hợp lệ để tránh làm vỡ Lobby UI.
+        public async Task<IReadOnlyList<RoomSummaryDto>> ListRooms()
+        {
+            var userId = GetUserIdOrThrow();
+
+            var user = _users.GetById(userId);
+            if (user == null || user.IsBanned)
+                return Array.Empty<RoomSummaryDto>();
+
+            return await _rooms.ListRoomsAsync();
         }
 
         // =========================================================

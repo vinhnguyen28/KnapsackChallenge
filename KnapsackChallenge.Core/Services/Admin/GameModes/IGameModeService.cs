@@ -8,12 +8,17 @@ namespace KnapsackChallenge.Core.Services.Admin
         GameModeEntity? GetByKey(string modeKey);
         bool IsEnabled(string modeKey);
 
-        // Validate: TimeLimitSeconds 0..3600, MaxPlayers 2..10 (chỉ với Multiplayer).
-        // Ghi UpdatedBy/UpdatedAt tự động.
+        // Validate:
+        //   TimeLimitSeconds   : 0..3600
+        //   MaxPlayers         : 2..10 (chỉ Multiplayer)
+        //   MaxHearts          : 1..999 (chỉ Solo)
+        //   HeartRefillMinutes : 1..1440 (chỉ Solo)
         (bool Success, string Message) Update(string modeKey,
                                               bool isEnabled,
                                               int timeLimitSeconds,
                                               int? maxPlayers,
+                                              int? maxHearts,
+                                              int? heartRefillMinutes,
                                               UserEntity currentAdmin);
     }
 }

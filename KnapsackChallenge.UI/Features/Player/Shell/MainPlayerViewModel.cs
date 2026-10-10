@@ -1,20 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows;
-using System.Windows.Input;
-using System.Windows.Threading;
-using Microsoft.Data.SqlClient;
-using KnapsackChallenge.Common.Constants;
+﻿using KnapsackChallenge.Common.Constants;
 using KnapsackChallenge.Core.Factories;
 using KnapsackChallenge.Core.Services.Player;
 using KnapsackChallenge.Data.Entities;
 using KnapsackChallenge.UI.Shared;
+using Microsoft.Data.SqlClient;
+using System.Windows;
+using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace KnapsackChallenge.UI.Features.Player
 {
-    // Vỏ khu vực Player: giữ heartbeat/ban/logout, điều hướng trang con.
-    // KHÔNG còn sidebar - điều hướng chủ yếu qua các nút trong từng trang.
     public class MainPlayerViewModel : ViewModelBase, IPageLifecycle
     {
         private readonly UserEntity _user;
@@ -25,17 +20,25 @@ namespace KnapsackChallenge.UI.Features.Player
         private ViewModelBase _currentPage = null!;
         private PlayerNavItem? _selectedNavItem;
 
-        // NavItems chỉ còn dùng nội bộ để xác định trang hiện tại (title ở header).
         public IReadOnlyList<PlayerNavItem> NavItems { get; } = new List<PlayerNavItem>
         {
             new() { Key = "home",        Icon = "🏠", Title = "Trang chủ" },
             new() { Key = "play",        Icon = "🎯", Title = "Chơi"      },
+            new() { Key = "multiplayer", Icon = "🎮", Title = "Phòng chơi"     },
             new() { Key = "leaderboard", Icon = "🏆", Title = "Xếp hạng"  },
             new() { Key = "history",     Icon = "📜", Title = "Lịch sử"   },
         };
 
         public string PlayerUsername => _user.Username ?? "";
-        public string HeartsBadge => "❤ 25/25";
+
+        // v7: HeartsBadge động — cập nhật mỗi heartbeat 30s.
+        private string _heartsBadge = "❤ --/--";
+        public string HeartsBadge
+        {
+            get => _heartsBadge;
+            private set { _heartsBadge = value; OnPropertyChanged(); }
+        }
+
         public string RankBadge => "Chưa xếp hạng";
 
         private bool _isSettingsOpen;
@@ -87,6 +90,9 @@ namespace KnapsackChallenge.UI.Features.Player
             ShowSocialCommand = new RelayCommand<object>(_ =>
                 ShowPlaceholder("Mạng xã hội", "Liên kết mạng xã hội sẽ được bổ sung sau."));
 
+            // Đọc tim lần đầu ngay khi vào vỏ Player.
+            RefreshHeartsOnce();
+
             _heartbeatTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromSeconds(AppConfig.HeartbeatIntervalSeconds)
@@ -111,15 +117,14 @@ namespace KnapsackChallenge.UI.Features.Player
             {
                 "home" => CreateHomePageVm(),
                 "play" => CreateSetSelectionVm(),
+                "multiplayer" => CreateLobbyVm(),
                 "leaderboard" => new LeaderboardViewModel(_user),
                 "history" => new HistoryViewModel(_user),
                 _ => new PlayerPlaceholderViewModel("🏠", "Trang chủ",
-                                                                "Không xác định được trang."),
+                                                    "Không xác định được trang."),
             };
         }
 
-        // Điều hướng nội bộ về màn theo key, không cần qua SelectedNavItem (tránh bị
-        // logic setter coi là "chuyển nav" và bỏ qua nếu trùng key).
         private void NavigateByKey(string key)
         {
             var item = NavItems.FirstOrDefault(n => n.Key == key);
@@ -128,8 +133,6 @@ namespace KnapsackChallenge.UI.Features.Player
                 SelectedNavItem = item;
                 return;
             }
-
-            // Nếu nav item trùng, vẫn cần refresh page (ví dụ đang ở "play" muốn quay lại "play").
             NavigateTo(key);
         }
 
@@ -139,21 +142,21 @@ namespace KnapsackChallenge.UI.Features.Player
 
             home.PlaySoloRequested += () => NavigateByKey("play");
 
-            home.PlayMultiplayerRequested += () =>
-            {
-                MessageBox.Show("Chế độ nhiều người chơi đang được phát triển.",
-                                "Sắp ra mắt",
-                                MessageBoxButton.OK, MessageBoxImage.Information);
-            };
+            //home.PlayMultiplayerRequested += () =>
+            //{
+            //    MessageBox.Show("Chế độ nhiều người chơi đang được phát triển.",
+            //                    "Sắp ra mắt",
+            //                    MessageBoxButton.OK, MessageBoxImage.Information);
+            //};
 
-            // Shortcut từ HomePage (thay cho sidebar đã bỏ).
+            home.PlayMultiplayerRequested += () => NavigateByKey("multiplayer");
+
             home.OpenLeaderboardRequested += () => NavigateByKey("leaderboard");
             home.OpenHistoryRequested += () => NavigateByKey("history");
 
             return home;
         }
 
-        // Màn chọn mức độ. Chọn mức -> VM random setId -> phát SetChosen.
         private ViewModelBase CreateSetSelectionVm()
         {
             var vm = new SetSelectionViewModel(_user);
@@ -162,7 +165,6 @@ namespace KnapsackChallenge.UI.Features.Player
 
             vm.SetChosen += setId =>
             {
-                // Vẫn giữ nav "play" đang chọn; chỉ đổi CurrentPage sang màn chơi.
                 (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
                 CurrentPage = CreateSoloGameVm(setId);
             };
@@ -170,28 +172,56 @@ namespace KnapsackChallenge.UI.Features.Player
             return vm;
         }
 
-        // Màn chơi với setId đã chọn. Wire 2 event điều hướng.
         private ViewModelBase CreateSoloGameVm(int setId)
         {
             var game = new SoloGameViewModel(_user, setId);
 
-            // Quay lại màn chọn mức độ.
+            // Sau khi start ván, cập nhật lại badge tim ngay (không chờ 30s).
+            game.HeartsChanged += status => HeartsBadge = status.BadgeText;
+
             game.ChangeSetRequested += () =>
             {
                 (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
                 CurrentPage = CreateSetSelectionVm();
             };
 
-            // Về thẳng trang chủ.
             game.HomeRequested += () => NavigateByKey("home");
 
             return game;
+        }
+
+        private ViewModelBase CreateLobbyVm()
+        {
+            var lobby = new LobbyViewModel(_user);
+
+            lobby.BackRequested += () => NavigateByKey("home");
+
+            // Server đá user (ban) -> chạy full logout flow giống heartbeat phát hiện ban.
+            lobby.ForceLogoutRequested += _ =>
+            {
+                _heartbeatTimer.Stop();
+                (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
+                LogoutRequested?.Invoke();
+            };
+
+            return lobby;
         }
 
         private void ShowPlaceholder(string title, string message)
         {
             IsSettingsOpen = false;
             MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void RefreshHeartsOnce()
+        {
+            try
+            {
+                var status = _session.GetHeartStatus(_user.Id);
+                HeartsBadge = status.BadgeText;
+            }
+            catch (SqlException) { }
+            catch (InvalidOperationException) { }
         }
 
         private void OnHeartbeat(object? sender, EventArgs e)
@@ -210,10 +240,15 @@ namespace KnapsackChallenge.UI.Features.Player
                         "Tài khoản bị khóa",
                         MessageBoxButton.OK, MessageBoxImage.Warning);
 
+                    MultiplayerSession.Instance.Clear();
+
                     LogoutRequested?.Invoke();
                     return;
                 }
-                _session.Heartbeat(_user.Id);
+
+                // Heartbeat giờ trả về HeartStatusDto — cập nhật badge luôn.
+                var heartStatus = _session.Heartbeat(_user.Id);
+                HeartsBadge = heartStatus.BadgeText;
             }
             catch (SqlException) { }
             catch (InvalidOperationException) { }
@@ -232,6 +267,8 @@ namespace KnapsackChallenge.UI.Features.Player
             try { _session.GoOffline(_user.Id); }
             catch (SqlException) { }
             catch (InvalidOperationException) { }
+
+            MultiplayerSession.Instance.Clear();
 
             LogoutRequested?.Invoke();
         }

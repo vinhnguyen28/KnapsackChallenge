@@ -14,9 +14,10 @@ namespace KnapsackChallenge.Data.Repositories
             _dbHelper = new DbConnectionHelper();
         }
 
-        // Danh sách cột dùng cho luồng Auth (có PasswordHash).
+        // v7: bổ sung Hearts, LastHeartRefillAt ở CUỐI để không đổi index cũ.
         private const string AuthColumns =
-            "Id, Username, PasswordHash, Role, IsBanned, BanReason, BannedAt, BannedBy, CreatedAt, LastLoginAt, LastSeenAt";
+            "Id, Username, PasswordHash, Role, IsBanned, BanReason, BannedAt, BannedBy, " +
+            "CreatedAt, LastLoginAt, LastSeenAt, Hearts, LastHeartRefillAt";
 
         private static UserEntity MapUser(IDataRecord r) => new UserEntity
         {
@@ -31,6 +32,8 @@ namespace KnapsackChallenge.Data.Repositories
             CreatedAt = r.IsDBNull(8) ? default : r.GetDateTime(8),
             LastLoginAt = r.IsDBNull(9) ? null : r.GetDateTime(9),
             LastSeenAt = r.IsDBNull(10) ? null : r.GetDateTime(10),
+            Hearts = r.IsDBNull(11) ? 25 : r.GetInt32(11),
+            LastHeartRefillAt = r.IsDBNull(12) ? null : r.GetDateTime(12),
         };
 
         // ---------- AUTH ----------
@@ -74,14 +77,12 @@ namespace KnapsackChallenge.Data.Repositories
             }
             catch (SqlException ex) when (ex.Number == 2627 || ex.Number == 2601)
             {
-                // Trùng UNIQUE Username
                 return false;
             }
         }
 
         // ---------- HEARTBEAT ----------
 
-        // Gọi sau khi xác thực đăng nhập thành công.
         public void MarkLogin(int userId)
         {
             using var connection = _dbHelper.CreateConnection();
@@ -93,8 +94,6 @@ namespace KnapsackChallenge.Data.Repositories
             command.ExecuteNonQuery();
         }
 
-        // online=true: LastSeenAt = now
-        // online=false: LastSeenAt = NULL (đăng xuất/đóng app)
         public void UpdateLastSeen(int userId, bool online)
         {
             using var connection = _dbHelper.CreateConnection();
@@ -107,9 +106,44 @@ namespace KnapsackChallenge.Data.Repositories
             command.ExecuteNonQuery();
         }
 
+        // ---------- v7: HEARTS ----------
+
+        // Đọc tim + mốc hồi gần nhất. Trả (0, null) nếu user không tồn tại.
+        public (int Hearts, DateTime? LastRefillAt) GetHearts(int userId)
+        {
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText =
+                "SELECT Hearts, LastHeartRefillAt FROM Users WHERE Id = @Id";
+            AddParameter(command, "@Id", userId);
+            using var reader = command.ExecuteReader();
+            if (!reader.Read()) return (0, null);
+
+            int hearts = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+            DateTime? last = reader.IsDBNull(1) ? null : reader.GetDateTime(1);
+            return (hearts, last);
+        }
+
+        // Ghi tim + mốc hồi. lastRefillAt = null -> set NULL.
+        public void UpdateHearts(int userId, int hearts, DateTime? lastRefillAt)
+        {
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                UPDATE Users
+                SET Hearts = @Hearts,
+                    LastHeartRefillAt = @LastRefillAt
+                WHERE Id = @Id";
+            AddParameter(command, "@Id", userId);
+            AddParameter(command, "@Hearts", hearts);
+            AddParameter(command, "@LastRefillAt", (object?)lastRefillAt ?? DBNull.Value);
+            command.ExecuteNonQuery();
+        }
+
         // ---------- ADMIN ----------
 
-        // Ban/Unban: dùng chung 1 câu UPDATE để bảo toàn tính nguyên tử.
         public void SetBanState(int userId, bool isBanned, string? reason, string adminUsername)
         {
             using var connection = _dbHelper.CreateConnection();
@@ -129,7 +163,6 @@ namespace KnapsackChallenge.Data.Repositories
             command.ExecuteNonQuery();
         }
 
-        // Trả DTO, KHÔNG select PasswordHash.
         public List<UserListItemDto> GetAllForAdmin()
         {
             var list = new List<UserListItemDto>();
@@ -170,8 +203,6 @@ namespace KnapsackChallenge.Data.Repositories
                 "SELECT COUNT(*) FROM Users WHERE CAST(CreatedAt AS DATE) = CAST(SYSUTCDATETIME() AS DATE)";
             return Convert.ToInt32(command.ExecuteScalar());
         }
-
-        // ---------- helper ----------
 
         private static void AddParameter(IDbCommand command, string name, object value)
         {

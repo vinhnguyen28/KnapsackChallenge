@@ -38,5 +38,8 @@
         // ---------- Hub / request validation ----------
         // Dùng chung cho mọi hub method khi payload sai định dạng hoặc vượt giới hạn.
         public const string RequestInvalid = "REQUEST_INVALID";
+
+        // ---------- Heart ----------
+        public const string HeartNotEnough = "HEART_NOT_ENOUGH";
     }
 }

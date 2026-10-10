@@ -7,17 +7,18 @@ namespace KnapsackChallenge.Core.Factories
 {
     public static class ServiceFactory
     {
-        // Repository chỉ giữ chuỗi kết nối lazily -> tạo ở đây an toàn.
         private static readonly Lazy<UserRepository> _userRepository = new(() => new UserRepository());
         private static readonly Lazy<ItemRepository> _itemRepository = new(() => new ItemRepository());
         private static readonly Lazy<SetRepository> _setRepository = new(() => new SetRepository());
         private static readonly Lazy<HistoryRepository> _historyRepository = new(() => new HistoryRepository());
         private static readonly Lazy<BanLogRepository> _banLogRepository = new(() => new BanLogRepository());
         private static readonly Lazy<GameRepository> _gameRepository = new(() => new GameRepository());
-
-        // v4: bảng thống kê + bảng chế độ chơi.
         private static readonly Lazy<StatsRepository> _statsRepository = new(() => new StatsRepository());
         private static readonly Lazy<GameModeRepository> _gameModeRepository = new(() => new GameModeRepository());
+
+        // v7: HeartService là stateless (chỉ giữ 2 repo), tạo 1 lần là đủ.
+        private static readonly Lazy<IHeartService> _heartService =
+            new(() => new HeartService(_userRepository.Value, _gameModeRepository.Value));
 
         public static IAuthService GetAuthService() => new AuthService(_userRepository.Value);
 
@@ -26,17 +27,20 @@ namespace KnapsackChallenge.Core.Factories
         public static IAdminService GetAdminService() =>
             new AdminService(_userRepository.Value, _banLogRepository.Value, _historyRepository.Value);
 
-        public static ISetService GetSetService() =>
-            new SetService(_setRepository.Value);
+        public static ISetService GetSetService() => new SetService(_setRepository.Value);
 
         public static IPlayerSessionService GetPlayerSessionService() =>
-            new PlayerSessionService(_userRepository.Value);
+            new PlayerSessionService(_userRepository.Value, _heartService.Value);
 
-        // Solo: inject thêm GameModeRepository để kiểm tra chế độ + giới hạn thời gian.
+        public static IHeartService GetHeartService() => _heartService.Value;
+
+        // Solo: inject thêm GameModeRepository + HeartService.
         public static ISoloGameService GetSoloGameService() =>
-            new SoloGameService(_gameRepository.Value, _historyRepository.Value, _gameModeRepository.Value);
+            new SoloGameService(_gameRepository.Value,
+                                 _historyRepository.Value,
+                                 _gameModeRepository.Value,
+                                 _heartService.Value);
 
-        // v4: Thống kê & Quản lý chế độ.
         public static IAdminStatsService GetAdminStatsService() =>
             new AdminStatsService(_statsRepository.Value);
 

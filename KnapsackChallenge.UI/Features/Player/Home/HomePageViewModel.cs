@@ -1,21 +1,19 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Windows.Input;
-using Microsoft.Data.SqlClient;
-using KnapsackChallenge.Common.DTOs;
+﻿using KnapsackChallenge.Common.DTOs;
 using KnapsackChallenge.Core.Factories;
 using KnapsackChallenge.Core.Services.Admin;
 using KnapsackChallenge.Core.Services.Player;
 using KnapsackChallenge.Data.Entities;
 using KnapsackChallenge.UI.Shared;
+using Microsoft.Data.SqlClient;
+using System.Collections.ObjectModel;
+using System.Windows.Input;
 
 namespace KnapsackChallenge.UI.Features.Player
 {
     // Trang chủ người chơi: 2 nút lớn + cột stats + cột top + 2 shortcut.
     public class HomePageViewModel : ViewModelBase
     {
-        private const bool MultiplayerImplemented = false;
+        private const bool MultiplayerImplemented = true;
         private const int LeaderboardLoadCount = 100;
 
         private readonly UserEntity _user;

@@ -136,16 +136,27 @@
                                              Tag="0"/>
 
                                     <!-- MaxPlayers (chỉ Multiplayer) -->
+                                    <!-- v7: Cấu hình tim (chỉ Solo) -->
                                     <StackPanel Margin="0,12,0,0"
-                                                Visibility="{Binding IsMultiplayer,
-                                                            Converter={StaticResource BoolToVisibility}}">
-                                        <TextBlock Text="Số người tối đa (2..10)"
-                                                   Style="{DynamicResource FieldLabel}"/>
+            Visibility="{Binding IsSolo,
+                        Converter={StaticResource BoolToVisibility}}">
+
+                                        <TextBlock Text="Số tim tối đa (1..999)"
+               Style="{DynamicResource FieldLabel}"/>
                                         <TextBox Style="{DynamicResource DarkTextBox}"
-                                                 Text="{Binding MaxPlayersText, UpdateSourceTrigger=PropertyChanged}"
-                                                 MaxWidth="220"
-                                                 HorizontalAlignment="Left"
-                                                 Tag="4"/>
+             Text="{Binding MaxHeartsText, UpdateSourceTrigger=PropertyChanged}"
+             MaxWidth="220"
+             HorizontalAlignment="Left"
+             Tag="25"/>
+
+                                        <TextBlock Text="Thời gian hồi 1 tim (phút; 1..1440)"
+               Style="{DynamicResource FieldLabel}"
+               Margin="0,10,0,6"/>
+                                        <TextBox Style="{DynamicResource DarkTextBox}"
+             Text="{Binding HeartRefillMinutesText, UpdateSourceTrigger=PropertyChanged}"
+             MaxWidth="220"
+             HorizontalAlignment="Left"
+             Tag="30"/>
                                     </StackPanel>
 
                                     <TextBlock Text="{Binding UpdatedInfoText}"

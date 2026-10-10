@@ -9,13 +9,10 @@ using KnapsackChallenge.UI.Shared;
 
 namespace KnapsackChallenge.UI.Features.Admin
 {
-    // Row VM: bind trực tiếp trên card, có Original* để so sánh khi Save.
     public class GameModeRowViewModel : ViewModelBase
     {
         public string ModeKey { get; }
         public string DisplayName { get; }
-
-        // Giá trị gốc (để so sánh khi Save & confirm khi tắt).
         public bool OriginalIsEnabled { get; private set; }
 
         private bool _isEnabled;
@@ -39,6 +36,21 @@ namespace KnapsackChallenge.UI.Features.Admin
             set { _maxPlayersText = value; OnPropertyChanged(); }
         }
 
+        // v7: cấu hình tim (chỉ Solo)
+        private string _maxHeartsText = "";
+        public string MaxHeartsText
+        {
+            get => _maxHeartsText;
+            set { _maxHeartsText = value; OnPropertyChanged(); }
+        }
+
+        private string _heartRefillMinutesText = "";
+        public string HeartRefillMinutesText
+        {
+            get => _heartRefillMinutesText;
+            set { _heartRefillMinutesText = value; OnPropertyChanged(); }
+        }
+
         private string _updatedInfoText = "";
         public string UpdatedInfoText
         {
@@ -46,11 +58,12 @@ namespace KnapsackChallenge.UI.Features.Admin
             private set { _updatedInfoText = value; OnPropertyChanged(); }
         }
 
-        // MaxPlayers chỉ áp dụng cho Multiplayer -> ẩn ô nhập khi Solo.
         public bool IsMultiplayer =>
             string.Equals(ModeKey, "Multiplayer", StringComparison.OrdinalIgnoreCase);
 
-        // Nhãn hiển thị cho "ModeKey badge" (mono).
+        public bool IsSolo =>
+            string.Equals(ModeKey, "Solo", StringComparison.OrdinalIgnoreCase);
+
         public string ModeKeyBadge => ModeKey.ToUpperInvariant();
 
         public GameModeRowViewModel(GameModeEntity e)
@@ -66,6 +79,8 @@ namespace KnapsackChallenge.UI.Features.Admin
             IsEnabled = e.IsEnabled;
             TimeLimitText = e.TimeLimitSeconds.ToString();
             MaxPlayersText = e.MaxPlayers?.ToString() ?? "";
+            MaxHeartsText = e.MaxHearts?.ToString() ?? "";
+            HeartRefillMinutesText = e.HeartRefillMinutes?.ToString() ?? "";
             UpdatedInfoText = $"Cập nhật cuối: {e.UpdatedAt.ToLocalTime():dd/MM/yyyy HH:mm}" +
                               (string.IsNullOrEmpty(e.UpdatedBy) ? "" : $" bởi {e.UpdatedBy}");
         }
@@ -113,7 +128,7 @@ namespace KnapsackChallenge.UI.Features.Admin
             _ = LoadAsync();
         }
 
-        public void OnNavigatedFrom() { /* không có timer -> no-op */ }
+        public void OnNavigatedFrom() { }
 
         private async System.Threading.Tasks.Task LoadAsync()
         {
@@ -142,7 +157,6 @@ namespace KnapsackChallenge.UI.Features.Admin
             ErrorMessage = "";
             InfoMessage = "";
 
-            // Confirm khi TẮT một chế độ đang bật.
             if (row.OriginalIsEnabled && !row.IsEnabled)
             {
                 if (!_dialog.Confirm(
@@ -151,14 +165,12 @@ namespace KnapsackChallenge.UI.Features.Admin
                     return;
             }
 
-            // Parse thời gian giới hạn.
             if (!int.TryParse(row.TimeLimitText, out int timeLimit) || timeLimit < 0)
             {
                 ErrorMessage = "Giới hạn thời gian phải là số nguyên không âm!";
                 return;
             }
 
-            // Parse MaxPlayers (chỉ Multiplayer; trống = null).
             int? maxPlayers = null;
             if (row.IsMultiplayer && !string.IsNullOrWhiteSpace(row.MaxPlayersText))
             {
@@ -170,22 +182,43 @@ namespace KnapsackChallenge.UI.Features.Admin
                 maxPlayers = mp;
             }
 
+            // v7: cấu hình tim (chỉ Solo).
+            int? maxHearts = null;
+            int? heartRefillMinutes = null;
+            if (row.IsSolo)
+            {
+                if (!string.IsNullOrWhiteSpace(row.MaxHeartsText))
+                {
+                    if (!int.TryParse(row.MaxHeartsText, out int mh))
+                    {
+                        ErrorMessage = "Số tim tối đa phải là số nguyên!";
+                        return;
+                    }
+                    maxHearts = mh;
+                }
+                if (!string.IsNullOrWhiteSpace(row.HeartRefillMinutesText))
+                {
+                    if (!int.TryParse(row.HeartRefillMinutesText, out int rm))
+                    {
+                        ErrorMessage = "Thời gian hồi tim phải là số nguyên!";
+                        return;
+                    }
+                    heartRefillMinutes = rm;
+                }
+            }
+
             try
             {
                 var (ok, message) = await System.Threading.Tasks.Task.Run(() =>
                 {
-                    // Lấy UserEntity của admin hiện tại: dùng qua AuthService? Không, ta có
-                    // sẵn _service.Update cần UserEntity. Ở đây ta chỉ có username khi login,
-                    // nhưng MainAdminViewModel đã giữ _adminUser; đơn giản là ta tra cứu lại.
-                    // Tránh phụ thuộc: dùng instance UserEntity tối thiểu chỉ với Username.
                     var adminStub = new UserEntity { Username = _currentAdminUsername };
-                    return _service.Update(row.ModeKey, row.IsEnabled, timeLimit, maxPlayers, adminStub);
+                    return _service.Update(row.ModeKey, row.IsEnabled, timeLimit,
+                                            maxPlayers, maxHearts, heartRefillMinutes, adminStub);
                 });
 
                 if (ok)
                 {
                     InfoMessage = message;
-                    // Reload để cập nhật UpdatedAt / UpdatedBy mới.
                     await LoadAsync();
                 }
                 else
@@ -196,7 +229,6 @@ namespace KnapsackChallenge.UI.Features.Admin
             catch (SqlException) { ErrorMessage = "Lỗi cơ sở dữ liệu khi lưu cấu hình!"; }
         }
 
-        // Tên admin hiện tại (gán từ MainAdminViewModel khi khởi tạo qua property).
         private string _currentAdminUsername = "";
         public void SetCurrentAdmin(string username) => _currentAdminUsername = username ?? "";
     }

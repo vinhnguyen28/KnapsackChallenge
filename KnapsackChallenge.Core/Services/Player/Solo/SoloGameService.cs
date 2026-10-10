@@ -1,4 +1,5 @@
-﻿using KnapsackChallenge.Common.DTOs;
+﻿using KnapsackChallenge.Common.Constants;
+using KnapsackChallenge.Common.DTOs;
 using KnapsackChallenge.Core.Algorithms;
 using KnapsackChallenge.Data.Repositories;
 
@@ -6,20 +7,22 @@ namespace KnapsackChallenge.Core.Services.Player
 {
     public class SoloGameService : ISoloGameService
     {
-        // Biên dung sai thời gian khi nộp bài (giây) - tránh lỗi do trễ mạng.
         private const int TimeToleranceSeconds = 5;
 
         private readonly GameRepository _gameRepository;
         private readonly HistoryRepository _historyRepository;
         private readonly GameModeRepository _gameModeRepository;
+        private readonly IHeartService _heartService;
 
         public SoloGameService(GameRepository gameRepository,
                                HistoryRepository historyRepository,
-                               GameModeRepository gameModeRepository)
+                               GameModeRepository gameModeRepository,
+                               IHeartService heartService)
         {
             _gameRepository = gameRepository;
             _historyRepository = historyRepository;
             _gameModeRepository = gameModeRepository;
+            _heartService = heartService;
         }
 
         public (bool IsEnabled, int TimeLimitSeconds) GetSoloModeStatus()
@@ -31,20 +34,34 @@ namespace KnapsackChallenge.Core.Services.Player
 
         public List<SoloGameSetDto> GetAvailableSets() => _gameRepository.GetAvailableSets();
 
-        public (bool Success, string Message, SoloGameDataDto? Data) StartGame(int setId)
+        public (bool Success, string Message, SoloGameDataDto? Data, HeartStatusDto? HeartStatus)
+            StartGame(int userId, int setId)
         {
             // v4: chặn khi chế độ Solo đang tắt.
             var mode = _gameModeRepository.GetByKey("Solo");
             if (mode == null || !mode.IsEnabled)
-                return (false, "Chế độ này đang tạm đóng.", null);
+                return (false, "Chế độ này đang tạm đóng.", null, null);
 
+            // v7: kiểm tra + tiêu tốn 1 tim TRƯỚC khi nạp bộ đề.
+            // Nếu bộ đề hỏng thì ta đã lỡ mất tim -> nên kiểm tra bộ đề trước.
             var set = _gameRepository.GetSetById(setId);
             if (set == null)
-                return (false, "Bộ đề không tồn tại.", null);
+                return (false, "Bộ đề không tồn tại.", null, _heartService.GetStatus(userId));
 
             var items = _gameRepository.GetItemsInSet(setId);
             if (items.Count == 0)
-                return (false, "Bộ đề không có vật phẩm.", null);
+                return (false, "Bộ đề không có vật phẩm.", null, _heartService.GetStatus(userId));
+
+            // Bộ đề OK -> tiêu tốn tim.
+            var (ok, heartStatus) = _heartService.TryConsume(userId);
+            if (!ok)
+            {
+                string wait = heartStatus.CountdownText;
+                return (false,
+                        string.Format(Messages.HeartNotEnoughFmt, wait),
+                        null,
+                        heartStatus);
+            }
 
             var data = new SoloGameDataDto
             {
@@ -62,7 +79,7 @@ namespace KnapsackChallenge.Core.Services.Player
                 }).ToList(),
             };
 
-            return (true, "", data);
+            return (true, "", data, heartStatus);
         }
 
         public (bool Success, string Message, SoloResultDto? Result) Submit(
@@ -72,12 +89,10 @@ namespace KnapsackChallenge.Core.Services.Player
             int timeSpentSeconds,
             bool isTimeout = false)
         {
-            // v4: kiểm tra lại chế độ Solo (có thể Admin vừa tắt).
             var mode = _gameModeRepository.GetByKey("Solo");
             if (mode == null || !mode.IsEnabled)
                 return (false, "Chế độ này đang tạm đóng.", null);
 
-            // v4: kiểm tra thời gian vượt giới hạn (bỏ qua nếu chế độ không giới hạn).
             if (mode.TimeLimitSeconds > 0 && !isTimeout)
             {
                 if (timeSpentSeconds > mode.TimeLimitSeconds + TimeToleranceSeconds)
@@ -85,29 +100,21 @@ namespace KnapsackChallenge.Core.Services.Player
             }
 
             var set = _gameRepository.GetSetById(setId);
-            if (set == null)
-                return (false, "Bộ đề không tồn tại.", null);
+            if (set == null) return (false, "Bộ đề không tồn tại.", null);
 
             var items = _gameRepository.GetItemsInSet(setId);
-            if (items.Count == 0)
-                return (false, "Bộ đề không có vật phẩm.", null);
+            if (items.Count == 0) return (false, "Bộ đề không có vật phẩm.", null);
 
             var itemDict = items.ToDictionary(i => i.Id);
-
             var distinct = selectedItemIds?.Distinct().ToList() ?? new List<int>();
 
-            // Nếu không phải timeout: yêu cầu phải có ít nhất 1 item.
             if (!isTimeout && distinct.Count == 0)
                 return (false, "Bạn chưa chọn vật phẩm nào.", null);
 
-            // Validate item thuộc bộ đề.
             foreach (var id in distinct)
-            {
                 if (!itemDict.ContainsKey(id))
                     return (false, $"Vật phẩm #{id} không thuộc bộ đề này.", null);
-            }
 
-            // Server-side tính lại KL/GT.
             int totalWeight = 0, totalValue = 0;
             foreach (var id in distinct)
             {
@@ -116,20 +123,17 @@ namespace KnapsackChallenge.Core.Services.Player
                 totalValue += it.Value;
             }
 
-            // Xử lý vượt sức chứa.
             if (totalWeight > set.MaxWeight)
             {
                 if (!isTimeout)
                     return (false,
                         $"Vượt sức chứa ({totalWeight}/{set.MaxWeight}). Hãy bỏ bớt vật phẩm.",
                         null);
-                // Timeout mà vượt sức chứa: tự bỏ hết -> 0 điểm.
                 distinct.Clear();
                 totalWeight = 0;
                 totalValue = 0;
             }
 
-            // Tính đáp án tối ưu + % + sao.
             var tuples = items.Select(i => (i.Id, i.Weight, i.Value)).ToList();
             var (optimalValue, optimalIds) = KnapsackSolver.Solve(tuples, set.MaxWeight);
 
@@ -137,10 +141,7 @@ namespace KnapsackChallenge.Core.Services.Player
                 ? (double)totalValue / optimalValue * 100.0
                 : 0;
 
-            int stars = percent >= 100.0 ? 3
-                      : percent >= 90.0 ? 2
-                      : percent >= 70.0 ? 1
-                      : 0;
+            int stars = ScoringRules.CalculateStars(percent);
 
             if (timeSpentSeconds < 0) timeSpentSeconds = 0;
 
