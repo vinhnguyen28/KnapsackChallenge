@@ -260,6 +260,31 @@ namespace KnapsackChallenge.Server.Hubs
             return await _rooms.GetRoomStateAsync(userId);
         }
 
+        // Host kick người chơi khác. Validate: caller phải là host của phòng.
+        public async Task<HubResult<bool>> Kick(string roomCode, int targetUserId, string reason)
+        {
+            var userId = GetUserIdOrThrow();
+
+            if (string.IsNullOrWhiteSpace(roomCode))
+                return HubResult<bool>.Fail(ErrorCodes.RequestInvalid, "Mã phòng không hợp lệ.");
+            if (targetUserId <= 0)
+                return HubResult<bool>.Fail(ErrorCodes.RequestInvalid, "UserId không hợp lệ.");
+
+            // Caller phải đang ở trong phòng này và là host.
+            var state = await _rooms.GetRoomStateAsync(userId);
+            if (!state.Success || state.Data == null)
+                return HubResult<bool>.Fail(ErrorCodes.RoomNotInRoom, Messages.RoomNotInRoom);
+
+            var normalized = (roomCode ?? "").Trim().ToUpperInvariant();
+            if (!string.Equals(state.Data.RoomCode, normalized, StringComparison.OrdinalIgnoreCase))
+                return HubResult<bool>.Fail(ErrorCodes.RoomNotFound, Messages.RoomNotFound);
+
+            if (state.Data.HostUserId != userId)
+                return HubResult<bool>.Fail(ErrorCodes.RoomNotHost, Messages.RoomNotHost);
+
+            return await _rooms.KickAsync(normalized, targetUserId, reason ?? "");
+        }
+
         // (7) Client gọi sau khi reconnect (hoặc bất kỳ lúc nào đang trong phòng)
         //     để lấy lại kết quả đã nộp. Data=null nghĩa là chưa nộp.
         public async Task<HubResult<SubmissionResultDto?>> GetMyResult()

@@ -101,6 +101,65 @@ namespace KnapsackChallenge.UI.Features.Player
             return await _connection.InvokeAsync<IReadOnlyList<RoomSummaryDto>>("ListRooms", ct);
         }
 
+        // =========================================================
+        // HUB METHODS (Phase 3)
+        // Trả null nếu chưa Connected — caller tự xử lý như mất kết nối.
+        // =========================================================
+
+        public async Task<HubResult<CreateRoomResultDto>?> CreateRoomAsync(
+            int setId, CancellationToken ct = default)
+        {
+            if (_connection.State != HubConnectionState.Connected) return null;
+            return await _connection.InvokeAsync<HubResult<CreateRoomResultDto>>(
+                "CreateRoom", new CreateRoomRequest { SetId = setId }, ct);
+        }
+
+        public async Task<HubResult<JoinRoomResultDto>?> JoinRoomAsync(
+            string roomCode, CancellationToken ct = default)
+        {
+            if (_connection.State != HubConnectionState.Connected) return null;
+            return await _connection.InvokeAsync<HubResult<JoinRoomResultDto>>(
+                "JoinRoom", roomCode, ct);
+        }
+
+        public async Task<HubResult<RoomStateDto>?> LeaveRoomAsync(
+            CancellationToken ct = default)
+        {
+            if (_connection.State != HubConnectionState.Connected) return null;
+            return await _connection.InvokeAsync<HubResult<RoomStateDto>>("LeaveRoom", ct);
+        }
+
+        public async Task<HubResult<RoomStateDto>?> ChangeSetAsync(
+            int setId, CancellationToken ct = default)
+        {
+            if (_connection.State != HubConnectionState.Connected) return null;
+            return await _connection.InvokeAsync<HubResult<RoomStateDto>>(
+                "ChangeSet", setId, ct);
+        }
+
+        public async Task<HubResult<RoomStateDto>?> StartGameAsync(
+            CancellationToken ct = default)
+        {
+            if (_connection.State != HubConnectionState.Connected) return null;
+            return await _connection.InvokeAsync<HubResult<RoomStateDto>>("StartGame", ct);
+        }
+
+        public async Task<HubResult<RoomStateDto>?> GetRoomStateAsync(
+            CancellationToken ct = default)
+        {
+            if (_connection.State != HubConnectionState.Connected) return null;
+            return await _connection.InvokeAsync<HubResult<RoomStateDto>>("GetRoomState", ct);
+        }
+
+        // Kick do host thực hiện. Server-side Hub method "Kick" cần thêm (xem mục 3).
+        public async Task<HubResult<bool>?> KickAsync(
+            string roomCode, int targetUserId, string reason, CancellationToken ct = default)
+        {
+            if (_connection.State != HubConnectionState.Connected) return null;
+            return await _connection.InvokeAsync<HubResult<bool>>(
+                "Kick", roomCode, targetUserId, reason, ct);
+        }
+
         public async ValueTask DisposeAsync()
         {
             try

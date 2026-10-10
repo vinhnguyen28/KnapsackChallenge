@@ -58,7 +58,7 @@ namespace KnapsackChallenge.UI.Features.Auth
         private void ExecuteLogin(object? parameter)
         {
             var passwordBox = parameter as PasswordBox;
-            var password = passwordBox?.Password;
+            var password = passwordBox?.Password ?? "";
 
             InfoMessage = "";
 

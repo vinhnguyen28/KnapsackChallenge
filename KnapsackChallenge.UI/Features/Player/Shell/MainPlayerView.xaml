@@ -37,7 +37,11 @@
         <DataTemplate DataType="{x:Type player:LobbyViewModel}">
             <player:LobbyView />
         </DataTemplate>
-        
+
+        <DataTemplate DataType="{x:Type player:MultiplayerRoomViewModel}">
+            <player:MultiplayerRoomView />
+        </DataTemplate>
+
     </UserControl.Resources>
 
     <Grid>

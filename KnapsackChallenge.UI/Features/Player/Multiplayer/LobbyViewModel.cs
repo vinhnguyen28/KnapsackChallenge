@@ -1,14 +1,16 @@
 ﻿using KnapsackChallenge.Common.DTOs;
 using KnapsackChallenge.Common.Enums;
+using KnapsackChallenge.Core.Factories;
+using KnapsackChallenge.Core.Services.Player;
 using KnapsackChallenge.Data.Entities;
 using KnapsackChallenge.UI.Shared;
+using Microsoft.Data.SqlClient;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
 
 namespace KnapsackChallenge.UI.Features.Player
 {
-    // Wrapper 1 dòng phòng trong DataGrid, thêm text tiếng Việt + giờ local.
     public class RoomRowViewModel
     {
         public RoomSummaryDto Data { get; }
@@ -36,12 +38,10 @@ namespace KnapsackChallenge.UI.Features.Player
             : "—";
     }
 
-    // Màn Lobby: kết nối SignalR, hiển thị danh sách phòng.
-    // Phase 2: chỉ ĐỌC danh sách + hiển thị trạng thái kết nối.
-    // Phase 3+: Tạo phòng / Vào phòng / Màn chơi.
     public class LobbyViewModel : ViewModelBase, IPageLifecycle
     {
         private readonly UserEntity _user;
+        private readonly ISoloGameService _soloService;
 
         private MultiplayerConnectionService? _connection;
         private bool _disposed;
@@ -91,18 +91,20 @@ namespace KnapsackChallenge.UI.Features.Player
         public ICommand JoinRoomCommand { get; }
         public ICommand BackCommand { get; }
 
-        // Phát khi user bấm "Quay lại" để vỏ điều hướng về Home.
         public event Action? BackRequested;
-        // Phát khi Server bắt buộc đăng xuất (ban) — vỏ sẽ kích hoạt logout flow.
         public event Action<string>? ForceLogoutRequested;
+
+        // Phase 3: báo cho vỏ điều hướng sang MultiplayerRoomView.
+        public event Action<RoomStateDto>? RoomEntered;
 
         public LobbyViewModel(UserEntity user)
         {
             _user = user;
+            _soloService = ServiceFactory.GetSoloGameService();
 
             RefreshCommand = new RelayCommand<object>(_ => _ = RefreshAsync(), _ => IsConnected && !IsBusy);
-            CreateRoomCommand = new RelayCommand<object>(_ => ShowComingSoon());
-            JoinRoomCommand = new RelayCommand<object>(_ => ShowComingSoon());
+            CreateRoomCommand = new RelayCommand<object>(_ => ExecuteCreateRoom(), _ => IsConnected && !IsBusy);
+            JoinRoomCommand = new RelayCommand<object>(_ => ExecuteJoinRoom(), _ => IsConnected && !IsBusy);
             BackCommand = new RelayCommand<object>(_ => BackRequested?.Invoke());
 
             _ = InitAsync();
@@ -115,7 +117,13 @@ namespace KnapsackChallenge.UI.Features.Player
         public void OnNavigatedFrom()
         {
             _disposed = true;
-            _ = DisposeConnectionAsync();
+
+            // Chỉ UNSUBSCRIBE, KHÔNG dispose connection — Room có thể đang dùng chung.
+            if (_connection != null)
+            {
+                _connection.StateChanged -= OnConnectionStateChanged;
+                _connection.ForceLogout -= OnForceLogout;
+            }
         }
 
         // =========================================================
@@ -136,26 +144,20 @@ namespace KnapsackChallenge.UI.Features.Player
                 return;
             }
 
-            var (token, _, _) = MultiplayerSession.Instance.GetSnapshot();
-            if (string.IsNullOrEmpty(token)) return;
-
             try
             {
-                _connection = new MultiplayerConnectionService(
-                    MultiplayerServerConfig.ServerUrl, token);
+                _connection = await MultiplayerSession.Instance.EnsureConnectionAsync();
 
-                // Subscribe TRƯỚC khi connect để không bỏ sót event đầu tiên.
+                // Subscribe TRƯỚC khi refresh.
                 _connection.StateChanged += OnConnectionStateChanged;
                 _connection.ForceLogout += OnForceLogout;
-                _connection.Kicked += OnKicked;
-                _connection.RoomClosed += OnRoomClosed;
-                // RoomUpdated/GameStarted/PlayerSubmitted/GameEnded không dùng ở phase 2
-                // (Lobby không nằm trong group nào) — subscribe sẵn để phase 3 dùng.
 
-                await _connection.ConnectAsync();
-
-                if (!_disposed)
+                if (_connection.IsConnected)
+                {
+                    IsConnected = true;
+                    StatusText = "Đã kết nối";
                     await RefreshAsync();
+                }
             }
             catch (Exception ex)
             {
@@ -179,14 +181,12 @@ namespace KnapsackChallenge.UI.Features.Player
             try
             {
                 var list = await _connection.ListRoomsAsync();
-
                 if (_disposed) return;
 
                 RunOnUi(() =>
                 {
                     Rooms.Clear();
-                    foreach (var r in list)
-                        Rooms.Add(new RoomRowViewModel(r));
+                    foreach (var r in list) Rooms.Add(new RoomRowViewModel(r));
 
                     InfoMessage = list.Count == 0
                         ? "Chưa có phòng nào. Hãy tạo phòng đầu tiên!"
@@ -204,7 +204,110 @@ namespace KnapsackChallenge.UI.Features.Player
         }
 
         // =========================================================
-        // SIGNALR EVENT HANDLERS (background thread)
+        // CREATE / JOIN
+        // =========================================================
+
+        private void ExecuteCreateRoom()
+        {
+            if (_connection == null || !_connection.IsConnected) return;
+
+            List<SoloGameSetDto> sets;
+            try
+            {
+                sets = _soloService.GetAvailableSets();
+            }
+            catch (SqlException) { ErrorMessage = "Không kết nối được cơ sở dữ liệu!"; return; }
+
+            if (sets.Count == 0)
+            {
+                ErrorMessage = "Chưa có bộ đề nào để tạo phòng.";
+                return;
+            }
+
+            var dlg = new CreateRoomDialog(sets) { Owner = Application.Current.MainWindow };
+            if (dlg.ShowDialog() != true) return;
+
+            _ = CreateRoomAsync(dlg.SelectedSetId);
+        }
+
+        private async System.Threading.Tasks.Task CreateRoomAsync(int setId)
+        {
+            if (_connection == null) return;
+
+            RunOnUi(() => { IsBusy = true; ErrorMessage = ""; InfoMessage = ""; });
+            try
+            {
+                var result = await _connection.CreateRoomAsync(setId);
+
+                if (result == null)
+                {
+                    RunOnUi(() => ErrorMessage = "Mất kết nối tới Server.");
+                    return;
+                }
+                if (!result.Success || result.Data == null)
+                {
+                    RunOnUi(() => ErrorMessage = result.Message);
+                    return;
+                }
+
+                var state = result.Data.State;
+                RunOnUi(() => RoomEntered?.Invoke(state));
+            }
+            catch (Exception ex)
+            {
+                RunOnUi(() => ErrorMessage = $"Lỗi tạo phòng: {ex.Message}");
+            }
+            finally
+            {
+                RunOnUi(() => IsBusy = false);
+            }
+        }
+
+        private void ExecuteJoinRoom()
+        {
+            if (_connection == null || !_connection.IsConnected) return;
+
+            var dlg = new JoinRoomDialog { Owner = Application.Current.MainWindow };
+            if (dlg.ShowDialog() != true) return;
+
+            _ = JoinRoomAsync(dlg.RoomCode);
+        }
+
+        private async System.Threading.Tasks.Task JoinRoomAsync(string roomCode)
+        {
+            if (_connection == null) return;
+
+            RunOnUi(() => { IsBusy = true; ErrorMessage = ""; InfoMessage = ""; });
+            try
+            {
+                var result = await _connection.JoinRoomAsync(roomCode);
+
+                if (result == null)
+                {
+                    RunOnUi(() => ErrorMessage = "Mất kết nối tới Server.");
+                    return;
+                }
+                if (!result.Success || result.Data == null)
+                {
+                    RunOnUi(() => ErrorMessage = result.Message);
+                    return;
+                }
+
+                var state = result.Data.State;
+                RunOnUi(() => RoomEntered?.Invoke(state));
+            }
+            catch (Exception ex)
+            {
+                RunOnUi(() => ErrorMessage = $"Lỗi vào phòng: {ex.Message}");
+            }
+            finally
+            {
+                RunOnUi(() => IsBusy = false);
+            }
+        }
+
+        // =========================================================
+        // SIGNALR EVENT HANDLERS
         // =========================================================
 
         private void OnConnectionStateChanged(MultiplayerConnectionService.ConnectionState s)
@@ -220,7 +323,6 @@ namespace KnapsackChallenge.UI.Features.Player
                     _ => "Mất kết nối",
                 };
 
-                // Khi reconnect thành công -> refresh danh sách phòng.
                 if (s == MultiplayerConnectionService.ConnectionState.Connected)
                     _ = RefreshAsync();
             });
@@ -241,58 +343,10 @@ namespace KnapsackChallenge.UI.Features.Player
             });
         }
 
-        private void OnKicked(string reason)
-        {
-            RunOnUi(() =>
-            {
-                MessageBox.Show(
-                    string.IsNullOrWhiteSpace(reason) ? "Bạn đã bị mời khỏi phòng." : reason,
-                    "Bị mời khỏi phòng",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-            });
-        }
-
-        private void OnRoomClosed(string reason)
-        {
-            RunOnUi(() =>
-            {
-                InfoMessage = string.IsNullOrWhiteSpace(reason) ? "Phòng đã đóng." : reason;
-            });
-        }
-
         // =========================================================
         // HELPERS
         // =========================================================
 
-        private void ShowComingSoon()
-        {
-            MessageBox.Show(
-                "Chức năng Tạo phòng / Vào phòng sẽ có ở phiên bản tiếp theo.",
-                "Sắp ra mắt",
-                MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
-        private async System.Threading.Tasks.Task DisposeConnectionAsync()
-        {
-            if (_connection == null) return;
-
-            try
-            {
-                _connection.StateChanged -= OnConnectionStateChanged;
-                _connection.ForceLogout -= OnForceLogout;
-                _connection.Kicked -= OnKicked;
-                _connection.RoomClosed -= OnRoomClosed;
-
-                await _connection.DisposeAsync();
-            }
-            catch { /* ignore */ }
-            finally
-            {
-                _connection = null;
-            }
-        }
-
-        // Marshal sang UI thread nếu cần. Không crash khi app đang shutdown.
         private static void RunOnUi(Action action)
         {
             var app = Application.Current;
@@ -301,10 +355,8 @@ namespace KnapsackChallenge.UI.Features.Player
             var dispatcher = app.Dispatcher;
             if (dispatcher == null) return;
 
-            if (dispatcher.CheckAccess())
-                action();
-            else
-                dispatcher.BeginInvoke(action);
+            if (dispatcher.CheckAccess()) action();
+            else dispatcher.BeginInvoke(action);
         }
     }
 }

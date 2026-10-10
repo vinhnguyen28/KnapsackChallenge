@@ -23,7 +23,10 @@
             get
             {
                 var s = SecondsUntilNextRefill;
-                return TimeSpan.FromSeconds(s).ToString(@"mm\:ss");
+                var ts = TimeSpan.FromSeconds(s);
+                return ts.TotalHours >= 1
+                    ? $"{(int)ts.TotalHours}h{ts.Minutes:D2}m"
+                    : ts.ToString(@"mm\:ss");
             }
         }
 

@@ -1,4 +1,5 @@
 ﻿using KnapsackChallenge.Common.Constants;
+using KnapsackChallenge.Common.DTOs;   // cần RoomStateDto
 using KnapsackChallenge.Core.Factories;
 using KnapsackChallenge.Core.Services.Player;
 using KnapsackChallenge.Data.Entities;
@@ -196,15 +197,46 @@ namespace KnapsackChallenge.UI.Features.Player
 
             lobby.BackRequested += () => NavigateByKey("home");
 
-            // Server đá user (ban) -> chạy full logout flow giống heartbeat phát hiện ban.
-            lobby.ForceLogoutRequested += _ =>
+            // Phase 3: Lobby tạo/vào phòng thành công → chuyển sang Room.
+            lobby.RoomEntered += state =>
+            {
+                (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
+                CurrentPage = CreateRoomVm(state);
+            };
+
+            lobby.ForceLogoutRequested += async _ =>
             {
                 _heartbeatTimer.Stop();
                 (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
+                await MultiplayerSession.Instance.DisposeConnectionAsync();
+                MultiplayerSession.Instance.Clear();
                 LogoutRequested?.Invoke();
             };
 
             return lobby;
+        }
+
+        private ViewModelBase CreateRoomVm(RoomStateDto initialState)
+        {
+            var room = new MultiplayerRoomViewModel(_user, initialState);
+
+            // Rời phòng / bị kick / phòng đóng → quay lại Lobby (tạo mới để refresh sạch).
+            room.RoomExited += () =>
+            {
+                (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
+                CurrentPage = CreateLobbyVm();
+            };
+
+            room.ForceLogoutRequested += () =>
+            {
+                _heartbeatTimer.Stop();
+                (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
+                _ = MultiplayerSession.Instance.DisposeConnectionAsync();
+                MultiplayerSession.Instance.Clear();
+                LogoutRequested?.Invoke();
+            };
+
+            return room;
         }
 
         private void ShowPlaceholder(string title, string message)
@@ -268,6 +300,8 @@ namespace KnapsackChallenge.UI.Features.Player
             catch (SqlException) { }
             catch (InvalidOperationException) { }
 
+            // Phase 3: đóng kết nối SignalR nếu còn.
+            _ = MultiplayerSession.Instance.DisposeConnectionAsync();
             MultiplayerSession.Instance.Clear();
 
             LogoutRequested?.Invoke();

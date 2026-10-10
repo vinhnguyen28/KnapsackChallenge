@@ -136,6 +136,17 @@
                                              Tag="0"/>
 
                                     <!-- MaxPlayers (chỉ Multiplayer) -->
+                                    <StackPanel Margin="0,12,0,0"
+            Visibility="{Binding IsMultiplayer,
+                        Converter={StaticResource BoolToVisibility}}">
+                                        <TextBlock Text="Số người tối đa (2..10)"
+               Style="{DynamicResource FieldLabel}"/>
+                                        <TextBox Style="{DynamicResource DarkTextBox}"
+             Text="{Binding MaxPlayersText, UpdateSourceTrigger=PropertyChanged}"
+             MaxWidth="220"
+             HorizontalAlignment="Left"
+             Tag="4"/>
+                                    </StackPanel>
                                     <!-- v7: Cấu hình tim (chỉ Solo) -->
                                     <StackPanel Margin="0,12,0,0"
             Visibility="{Binding IsSolo,

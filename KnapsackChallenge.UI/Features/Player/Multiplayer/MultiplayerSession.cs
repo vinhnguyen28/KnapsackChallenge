@@ -1,19 +1,15 @@
 ﻿namespace KnapsackChallenge.UI.Features.Player
 {
-    // Lưu JWT + userId + username trong RAM cho phiên Player hiện tại.
-    // KHÔNG persist — mất khi đóng app là điều mong muốn.
-    // Thread-safe (dùng lock; singleton readonly).
     public sealed class MultiplayerSession
     {
-        // Dùng factory delegate để Lazy<T> gọi constructor private.
         private static readonly Lazy<MultiplayerSession> _instance = new(() => new MultiplayerSession());
-
         public static MultiplayerSession Instance => _instance.Value;
 
         private readonly object _lock = new();
         private string? _token;
         private int _userId;
         private string? _username;
+        private MultiplayerConnectionService? _connection;
 
         private MultiplayerSession() { }
 
@@ -29,21 +25,52 @@
 
         public void Set(string token, int userId, string username)
         {
-            lock (_lock)
-            {
-                _token = token;
-                _userId = userId;
-                _username = username;
-            }
+            lock (_lock) { _token = token; _userId = userId; _username = username; }
         }
 
         public void Clear()
         {
-            lock (_lock)
+            lock (_lock) { _token = null; _userId = 0; _username = null; }
+        }
+
+        // ===== Connection lifecycle (Phase 3) =====
+
+        public MultiplayerConnectionService? Connection
+        {
+            get { lock (_lock) return _connection; }
+        }
+
+        // Get-or-create: trả về connection đang Connected, hoặc tạo mới.
+        public async Task<MultiplayerConnectionService> EnsureConnectionAsync(CancellationToken ct = default)
+        {
+            MultiplayerConnectionService? existing;
+            lock (_lock) existing = _connection;
+
+            if (existing != null && existing.IsConnected) return existing;
+            if (existing != null)
             {
-                _token = null;
-                _userId = 0;
-                _username = null;
+                try { await existing.DisposeAsync(); } catch { /* ignore */ }
+            }
+
+            string? token;
+            lock (_lock) token = _token;
+            if (string.IsNullOrEmpty(token))
+                throw new InvalidOperationException("Chưa có JWT. Hãy đăng nhập lại.");
+
+            var conn = new MultiplayerConnectionService(MultiplayerServerConfig.ServerUrl, token);
+            await conn.ConnectAsync(ct);
+
+            lock (_lock) _connection = conn;
+            return conn;
+        }
+
+        public async Task DisposeConnectionAsync()
+        {
+            MultiplayerConnectionService? conn;
+            lock (_lock) { conn = _connection; _connection = null; }
+            if (conn != null)
+            {
+                try { await conn.DisposeAsync(); } catch { /* ignore */ }
             }
         }
     }
