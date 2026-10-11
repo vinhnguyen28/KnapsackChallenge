@@ -20,14 +20,25 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- ============ HEADER ============ -->
+            <!-- ============ HEADER ============ -->
         <Grid Grid.Row="0" Margin="0,0,0,12">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0">
+            <Button Grid.Column="0"
+                    Command="{Binding BackCommand}"
+                    Style="{DynamicResource ButtonSecondary}"
+                    Padding="12,7"
+                    Margin="0,0,14,0"
+                    VerticalAlignment="Center"
+                    ToolTip="Về trang chủ">
+                <TextBlock Text="← Trang chủ"/>
+            </Button>
+
+            <StackPanel Grid.Column="1">
                 <TextBlock Text="Phòng chơi Multiplayer"
                            FontFamily="{DynamicResource FontSans}"
                            FontSize="{DynamicResource FontSizeTitle}"
@@ -41,7 +52,10 @@
             </StackPanel>
 
             <!-- Trạng thái kết nối: tem màu -->
-            <Border Grid.Column="1"
+            <!--<Border Grid.Column="2"-->
+
+            <!-- Trạng thái kết nối: tem màu -->
+            <Border Grid.Column="2"
                     Padding="10,5"
                     BorderThickness="1"
                     CornerRadius="2"

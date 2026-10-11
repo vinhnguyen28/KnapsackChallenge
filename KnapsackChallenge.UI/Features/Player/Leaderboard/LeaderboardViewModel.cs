@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Windows.Input;
-using Microsoft.Data.SqlClient;
-using KnapsackChallenge.Common.DTOs;
+﻿using KnapsackChallenge.Common.DTOs;
 using KnapsackChallenge.Core.Factories;
 using KnapsackChallenge.Core.Services.Player;
 using KnapsackChallenge.Data.Entities;
 using KnapsackChallenge.UI.Shared;
+using Microsoft.Data.SqlClient;
+using System.Collections.ObjectModel;
+using System.Windows.Input;
 
 namespace KnapsackChallenge.UI.Features.Player
 {
@@ -51,6 +49,9 @@ namespace KnapsackChallenge.UI.Features.Player
         }
 
         public ICommand RefreshCommand { get; }
+        public ICommand BackCommand { get; }
+
+        public event Action? BackRequested;
 
         // user hiện không dùng trong luồng tải BXH, nhưng giữ tham số để sau này
         // highlight dòng của chính mình mà không phải đổi constructor.
@@ -60,6 +61,7 @@ namespace KnapsackChallenge.UI.Features.Player
             _soloService = ServiceFactory.GetSoloGameService();
 
             RefreshCommand = new RelayCommand<object>(_ => _ = LoadAsync());
+            BackCommand = new RelayCommand<object>(_ => BackRequested?.Invoke());
 
             _ = LoadFiltersThenDataAsync();
         }

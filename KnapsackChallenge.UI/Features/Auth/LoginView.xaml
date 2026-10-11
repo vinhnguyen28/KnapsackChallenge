@@ -74,7 +74,7 @@
                 BorderThickness="1,0,0,0">
             <StackPanel VerticalAlignment="Center" Margin="44,0">
 
-                <TextBlock Text="Dang nhap"
+                <TextBlock Text="ĐĂNG NHẬP"
                            FontFamily="{DynamicResource FontSans}"
                            FontSize="22"
                            FontWeight="SemiBold"
@@ -140,14 +140,14 @@
                 </Grid>
 
                 <!-- Hanh dong chinh - Accent duy nhat tren man nay -->
-                <Button Content="Dang nhap"
+                <Button Content="Đăng Nhập"
                         Command="{Binding LoginCommand}"
                         CommandParameter="{Binding ElementName=txtPassword}"
                         Style="{DynamicResource ButtonPrimary}"
-                        Margin="0,8,0,0"/>
+                        Margin="0,8,0,0" Click="Button_Click_1"/>
 
                 <!-- Chuyen sang Dang ky -->
-                <Button Content="Chua co tai khoan? Dang ky"
+                <Button Content="Chưa có tài khoản ? Đăng Ký"
                         Command="{Binding RegisterCommand}"
                         Style="{DynamicResource ButtonGhost}"
                         Margin="0,8,0,0"/>

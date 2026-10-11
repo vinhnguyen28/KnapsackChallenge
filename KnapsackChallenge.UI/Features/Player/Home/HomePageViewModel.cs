@@ -125,7 +125,7 @@ namespace KnapsackChallenge.UI.Features.Player
         public bool CanPlaySolo => SoloEnabled;
         public bool CanPlayMultiplayer => MultiplayerEnabled && MultiplayerImplemented;
         public string SoloStatusText => SoloEnabled ? "Đang hoạt động" : "Tạm đóng";
-        public string MultiplayerSubtitle => MultiplayerEnabled ? "Sắp ra mắt" : "Đang tạm đóng";
+        public string MultiplayerSubtitle => MultiplayerEnabled ? "Đang hoạt động" : "Đang tạm đóng";
 
         // ---- Commands ----
         public ICommand PlaySoloCommand { get; }

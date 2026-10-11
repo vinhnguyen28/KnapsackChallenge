@@ -135,8 +135,8 @@ namespace KnapsackChallenge.UI.Features.Player
                 "home" => CreateHomePageVm(),
                 "play" => CreateSetSelectionVm(),
                 "multiplayer" => CreateLobbyVm(),
-                "leaderboard" => new LeaderboardViewModel(_user),
-                "history" => new HistoryViewModel(_user),
+                "leaderboard" => CreateLeaderboardVm(),
+                "history" => CreateHistoryVm(),
                 _ => new PlayerPlaceholderViewModel("🏠", "Trang chủ",
                                                     "Không xác định được trang."),
             };
@@ -213,13 +213,28 @@ namespace KnapsackChallenge.UI.Features.Player
             return game;
         }
 
+        private ViewModelBase CreateLeaderboardVm()
+        {
+            var vm = new LeaderboardViewModel(_user);
+            vm.BackRequested += () => NavigateByKey("home");
+            return vm;
+        }
+
+        private ViewModelBase CreateHistoryVm()
+        {
+            var vm = new HistoryViewModel(_user);
+            vm.BackRequested += () => NavigateByKey("home");
+            return vm;
+        }
+
+        //private ViewModelBase CreateLobbyVm(){}
         private ViewModelBase CreateLobbyVm()
         {
             var lobby = new LobbyViewModel(_user);
 
             lobby.BackRequested += () => NavigateByKey("home");
 
-            // Phase 3: Lobby tạo/vào phòng thành công → chuyển sang Room.
+
             lobby.RoomEntered += state =>
             {
                 (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
@@ -307,6 +322,13 @@ namespace KnapsackChallenge.UI.Features.Player
             {
                 (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
                 CurrentPage = CreateLobbyVm();
+            };
+
+            // Quay thẳng về Trang chủ.
+            result.BackToHomeRequested += () =>
+            {
+                (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
+                NavigateByKey("home");
             };
 
             return result;

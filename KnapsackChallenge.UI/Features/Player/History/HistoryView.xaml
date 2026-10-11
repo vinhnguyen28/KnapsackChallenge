@@ -14,18 +14,34 @@
         </Grid.RowDefinitions>
 
         <Grid Grid.Row="0" Margin="0,0,0,10">
-            <StackPanel>
-                <TextBlock Text="Lịch sử ván chơi"
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="{DynamicResource FontSizeTitle}"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource BrushInk}"/>
-                <TextBlock Text="Các ván gần đây của bạn (tối đa 100 ván)."
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="{DynamicResource FontSizeSmall}"
-                           Foreground="{DynamicResource BrushInkMuted}"
-                           Margin="0,2,0,0"/>
-            </StackPanel>
+            <Grid HorizontalAlignment="Left">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="0"
+                        Command="{Binding BackCommand}"
+                        Style="{DynamicResource ButtonSecondary}"
+                        Padding="12,7"
+                        Margin="0,0,14,0"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="← Trang chủ"/>
+                </Button>
+
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="Lịch sử ván chơi"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeTitle}"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource BrushInk}"/>
+                    <TextBlock Text="Các ván gần đây của bạn (tối đa 100 ván)."
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               Foreground="{DynamicResource BrushInkMuted}"
+                               Margin="0,2,0,0"/>
+                </StackPanel>
+            </Grid>
 
             <TextBlock Text="Đang tải..."
                        FontFamily="{DynamicResource FontSans}"

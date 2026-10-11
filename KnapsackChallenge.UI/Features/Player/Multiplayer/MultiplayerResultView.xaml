@@ -210,24 +210,32 @@
                        FontSize="{DynamicResource FontSizeSmall}"
                        Foreground="{DynamicResource BrushInkMuted}"
                        VerticalAlignment="Center"/>
-            <Button Command="{Binding BackToLobbyCommand}"
-                    Style="{DynamicResource ButtonPrimary}"
-                    Padding="20,11"
-                    HorizontalAlignment="Right">
-                
-                <StackPanel Orientation="Horizontal">
-                    <Path Data="{DynamicResource IconArrowLeft}"
-                          Width="14" Height="14"
-                          Stroke="{Binding Foreground,
-                                   RelativeSource={RelativeSource AncestorType=Button}}"
-                          StrokeThickness="1.5"
-                          Stretch="Uniform"
-                          VerticalAlignment="Center"
-                          Margin="0,0,8,0"/>
-                    <TextBlock Text="Về Lobby" VerticalAlignment="Center"/>
-                </StackPanel>
-                
-            </Button>
+            
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Command="{Binding BackToLobbyCommand}"
+                        Style="{DynamicResource ButtonPrimary}"
+                        Padding="20,11">
+                    
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{DynamicResource IconArrowLeft}"
+                              Width="14" Height="14"
+                              Stroke="{Binding Foreground,
+                                       RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.5"
+                              Stretch="Uniform"
+                              VerticalAlignment="Center"
+                              Margin="0,0,8,0"/>
+                        
+                        <TextBlock Text="Về Lobby" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Command="{Binding BackToHomeCommand}"
+                        Style="{DynamicResource ButtonSecondary}"
+                        Padding="20,11"
+                        Margin="10,0,0,0"
+                        Content="Về trang chủ"/>
+            </StackPanel>
         </Grid>
     </Grid>
 </UserControl>

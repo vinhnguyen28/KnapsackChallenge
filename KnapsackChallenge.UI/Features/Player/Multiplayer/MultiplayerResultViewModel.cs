@@ -54,8 +54,12 @@ namespace KnapsackChallenge.UI.Features.Player
         public ObservableCollection<MultiplayerResultEntryRow> Entries { get; } = new();
 
         public event Action? BackToLobbyRequested;
+        public event Action? BackToHomeRequested;
 
         public ICommand BackToLobbyCommand { get; }
+        public ICommand BackToHomeCommand { get; }
+
+        private bool _isLeaving;
 
         public MultiplayerResultViewModel(UserEntity user, FinalRankingDto ranking)
         {
@@ -67,7 +71,27 @@ namespace KnapsackChallenge.UI.Features.Player
 
             _myEntry = Entries.FirstOrDefault(e => e.IsMe);
 
-            BackToLobbyCommand = new RelayCommand<object>(_ => BackToLobbyRequested?.Invoke());
+            BackToLobbyCommand = new RelayCommand<object>(
+                _ => _ = LeaveThenAsync(() => BackToLobbyRequested?.Invoke()), _ => !_isLeaving);
+            BackToHomeCommand = new RelayCommand<object>(
+                _ => _ = LeaveThenAsync(() => BackToHomeRequested?.Invoke()), _ => !_isLeaving);
+        }
+
+        // Gọi LeaveRoom trước khi điều hướng để server gỡ user khỏi phòng ngay,
+        // tránh lỗi "Bạn đang ở trong một phòng khác" khi tạo/vào phòng mới.
+        private async Task LeaveThenAsync(Action navigate)
+        {
+            if (_isLeaving) return;
+            _isLeaving = true;
+            CommandManager.InvalidateRequerySuggested();
+
+            try
+            {
+                var conn = MultiplayerSession.Instance.Connection;
+                if (conn != null) await conn.LeaveRoomAsync();
+            }
+            catch { /* vẫn phải điều hướng */ }
+            finally { navigate(); }
         }
 
         public string RoomCode => _ranking.RoomCode;

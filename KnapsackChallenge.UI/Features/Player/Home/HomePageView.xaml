@@ -235,7 +235,7 @@
 
                 <Button Style="{StaticResource HomeActionButton}"
                         Command="{Binding PlayMultiplayerCommand}"
-                        ToolTip="Chế độ nhiều người chơi đang được phát triển.">
+                        ToolTip="Tạo hoặc vào phòng chơi cùng người khác.">
                     <StackPanel>
                         <TextBlock Text="🎮"
                                    FontSize="44"

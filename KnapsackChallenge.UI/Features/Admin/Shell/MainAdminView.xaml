@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:admin="clr-namespace:KnapsackChallenge.UI.Features.Admin"
              mc:Ignorable="d"
-             d:DesignHeight="680" d:DesignWidth="1040"
+             d:DesignHeight="680" d:DesignWidth="1200"
              Background="{DynamicResource BrushBackground}">
 
     <UserControl.Resources>

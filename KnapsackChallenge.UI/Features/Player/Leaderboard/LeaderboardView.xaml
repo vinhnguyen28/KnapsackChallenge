@@ -32,18 +32,34 @@
         </Grid.RowDefinitions>
 
         <!-- Tiêu đề -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,10">
-            <TextBlock Text="Bảng xếp hạng"
-                       FontFamily="{DynamicResource FontSans}"
-                       FontSize="{DynamicResource FontSizeTitle}"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource BrushInk}"/>
-            <TextBlock Text="Điểm cao nhất của mỗi người chơi theo từng bộ đề."
-                       FontFamily="{DynamicResource FontSans}"
-                       FontSize="{DynamicResource FontSizeSmall}"
-                       Foreground="{DynamicResource BrushInkMuted}"
-                       Margin="0,2,0,0"/>
-        </StackPanel>
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0"
+                    Command="{Binding BackCommand}"
+                    Style="{DynamicResource ButtonSecondary}"
+                    Padding="12,7"
+                    Margin="0,0,14,0"
+                    VerticalAlignment="Center">
+                <TextBlock Text="← Trang chủ"/>
+            </Button>
+
+            <StackPanel Grid.Column="1">
+                <TextBlock Text="Bảng xếp hạng"
+                           FontFamily="{DynamicResource FontSans}"
+                           FontSize="{DynamicResource FontSizeTitle}"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource BrushInk}"/>
+                <TextBlock Text="Điểm cao nhất của mỗi người chơi theo từng bộ đề."
+                           FontFamily="{DynamicResource FontSans}"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Foreground="{DynamicResource BrushInkMuted}"
+                           Margin="0,2,0,0"/>
+            </StackPanel>
+        </Grid>
 
         <!-- Toolbar: filter + refresh -->
         <Grid Grid.Row="1" Margin="0,0,0,10">

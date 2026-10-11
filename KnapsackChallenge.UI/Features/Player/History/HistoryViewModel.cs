@@ -1,10 +1,11 @@
-﻿using System.Collections.ObjectModel;
-using Microsoft.Data.SqlClient;
-using KnapsackChallenge.Common.DTOs;
+﻿using KnapsackChallenge.Common.DTOs;
 using KnapsackChallenge.Core.Factories;
 using KnapsackChallenge.Core.Services.Player;
 using KnapsackChallenge.Data.Entities;
 using KnapsackChallenge.UI.Shared;
+using Microsoft.Data.SqlClient;
+using System.Collections.ObjectModel;
+using System.Windows.Input;
 
 namespace KnapsackChallenge.UI.Features.Player
 {
@@ -32,10 +33,17 @@ namespace KnapsackChallenge.UI.Features.Player
             set { _errorMessage = value; OnPropertyChanged(); }
         }
 
+        public ICommand BackCommand { get; }
+
+        public event Action? BackRequested;
+
         public HistoryViewModel(UserEntity user)
         {
             _user = user;
             _soloService = ServiceFactory.GetSoloGameService();
+
+            BackCommand = new RelayCommand<object>(_ => BackRequested?.Invoke());
+
             _ = LoadAsync();
         }
 

@@ -27,5 +27,10 @@ namespace KnapsackChallenge.UI.Features.Auth
         {
 
         }
+
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }
