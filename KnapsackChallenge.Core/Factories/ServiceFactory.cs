@@ -39,12 +39,19 @@ namespace KnapsackChallenge.Core.Factories
             new SoloGameService(_gameRepository.Value,
                                  _historyRepository.Value,
                                  _gameModeRepository.Value,
-                                 _heartService.Value);
+                                 _heartService.Value,
+                                 _rankService.Value);
+
 
         public static IAdminStatsService GetAdminStatsService() =>
             new AdminStatsService(_statsRepository.Value);
 
         public static IGameModeService GetGameModeService() =>
             new GameModeService(_gameModeRepository.Value);
+
+        private static readonly Lazy<IRankService> _rankService =
+            new(() => new RankService(_userRepository.Value));
+
+        public static IRankService GetRankService() => _rankService.Value;
     }
 }

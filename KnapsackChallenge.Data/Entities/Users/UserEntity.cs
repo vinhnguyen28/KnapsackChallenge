@@ -21,5 +21,9 @@
         // ---- v7: Hệ thống tim ----
         public int Hearts { get; set; }
         public DateTime? LastHeartRefillAt { get; set; }
+
+        // ---- v8: Hệ thống Rank & EXP ----
+        public long TotalExp { get; set; }
+        public int Level { get; set; } = 1;
     }
 }

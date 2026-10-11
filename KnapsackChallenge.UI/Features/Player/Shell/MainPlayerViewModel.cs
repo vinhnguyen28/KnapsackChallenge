@@ -220,7 +220,6 @@ namespace KnapsackChallenge.UI.Features.Player
         {
             var room = new MultiplayerRoomViewModel(_user, initialState);
 
-            // Rời phòng / bị kick / phòng đóng → quay lại Lobby (tạo mới để refresh sạch).
             room.RoomExited += () =>
             {
                 (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
@@ -236,7 +235,59 @@ namespace KnapsackChallenge.UI.Features.Player
                 LogoutRequested?.Invoke();
             };
 
+            // Phase 4: ván bắt đầu → chuyển sang màn chơi.
+            room.GameStartedReceived += start =>
+            {
+                (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
+                CurrentPage = CreateMultiplayerGameVm(start);
+            };
+
             return room;
+        }
+
+        private ViewModelBase CreateMultiplayerGameVm(GameStartDto start)
+        {
+            var game = new MultiplayerGameViewModel(_user, start);
+
+            // Tất cả nộp hoặc hết giờ → server broadcast GameEnded → mở BXH.
+            game.GameEndedReceived += ranking =>
+            {
+                (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
+                CurrentPage = CreateMultiplayerResultVm(ranking);
+            };
+
+            // Rời phòng / bị kick / phòng đóng → về Lobby.
+            game.ForceLeaveToLobby += () =>
+            {
+                (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
+                CurrentPage = CreateLobbyVm();
+            };
+
+            // Bị ban giữa ván → logout toàn cục.
+            game.ForceLogoutRequested += () =>
+            {
+                _heartbeatTimer.Stop();
+                (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
+                _ = MultiplayerSession.Instance.DisposeConnectionAsync();
+                MultiplayerSession.Instance.Clear();
+                LogoutRequested?.Invoke();
+            };
+
+            return game;
+        }
+
+        private ViewModelBase CreateMultiplayerResultVm(FinalRankingDto ranking)
+        {
+            var result = new MultiplayerResultViewModel(_user, ranking);
+
+            // Quay về Lobby mới tinh (refresh sạch).
+            result.BackToLobbyRequested += () =>
+            {
+                (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
+                CurrentPage = CreateLobbyVm();
+            };
+
+            return result;
         }
 
         private void ShowPlaceholder(string title, string message)

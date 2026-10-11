@@ -1,8 +1,8 @@
-﻿using System.Collections.Concurrent;
-using KnapsackChallenge.Common.Constants;
+﻿using KnapsackChallenge.Common.Constants;
 using KnapsackChallenge.Common.DTOs;
 using KnapsackChallenge.Common.Enums;
 using KnapsackChallenge.Core.Algorithms;
+using System.Collections.Concurrent;
 
 namespace KnapsackChallenge.Core.Services.Player.Multiplayer
 {
@@ -999,6 +999,36 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
 
             await SafePersist(() => _persistence.MarkFinishedAsync(
                 room.SessionId, room.FinishedAtUtc!.Value));
+
+            // v8: cộng EXP cho từng người đã tham gia ván (chỉ người đã nộp).
+            // - Best-effort: lỗi DB cho 1 user không làm hỏng cả ván.
+            // - Chỉ cộng cho entry IsSubmitted (không cộng cho kicked/left/banned/không nộp).
+            foreach (var entry in ranking.Entries)
+            {
+                if (!entry.IsSubmitted) continue;
+
+                try
+                {
+                    int expGain = RankRules.CalculateExpGain(
+                        entry.TotalScore, room.OptimalValue, CalculateStarsFromPercent(entry.OptimalPercent));
+
+                    var (oldExp, _) = await _persistence.GetExpAndLevelAsync(entry.UserId);
+                    long newExp = oldExp + expGain;
+                    int newLevel = RankRules.GetLevelFromExp(newExp);
+
+                    await _persistence.UpdateExpAndLevelAsync(entry.UserId, newExp, newLevel);
+
+                    // Bổ sung thông tin EXP cho entry để client hiển thị "+XX EXP".
+                    entry.ExpGained = expGain;
+                    entry.NewLevel = newLevel;
+                    entry.OldLevel = RankRules.GetLevelFromExp(oldExp);
+                    entry.RankTitle = RankRules.GetRankTitle(newLevel);
+                }
+                catch
+                {
+                    // Nuốt lỗi DB — không để 1 user làm hỏng GameEnded của cả phòng.
+                }
+            }
 
             await _notifier.GameEndedAsync(room.RoomCode, ranking);
         }

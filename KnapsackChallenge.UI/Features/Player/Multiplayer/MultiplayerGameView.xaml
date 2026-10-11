@@ -1,0 +1,433 @@
+﻿<UserControl x:Class="KnapsackChallenge.UI.Features.Player.MultiplayerGameView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="620" d:DesignWidth="1000"
+             Background="{DynamicResource BrushBackground}">
+
+    <UserControl.Resources>
+        <Style x:Key="CapacityBar" TargetType="ProgressBar">
+            <Setter Property="Height" Value="8"/>
+            <Setter Property="Maximum" Value="100"/>
+            <Setter Property="Foreground" Value="{DynamicResource BrushAccent}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Grid>
+                            <Border Background="{DynamicResource BrushRule}" CornerRadius="2"/>
+                            <Rectangle x:Name="PART_Indicator"
+                                       Fill="{TemplateBinding Foreground}"
+                                       HorizontalAlignment="Left"
+                                       RadiusX="2" RadiusY="2"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsOverWeight}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource BrushDanger}"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="GamePlayerRow" TargetType="DataGridRow"
+               BasedOn="{StaticResource GridRow}"/>
+    </UserControl.Resources>
+
+    <Grid Margin="20,14,20,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- =========================================================
+             ROW 0: HEADER (mã phòng + bộ đề + timer)
+             ========================================================= -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource BrushSurface}"
+                BorderBrush="{DynamicResource BrushRule}"
+                BorderThickness="1"
+                CornerRadius="2"
+                Padding="16,10"
+                Margin="0,0,0,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Mã phòng"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeCaption}"
+                               Foreground="{DynamicResource BrushInkMuted}"/>
+                    <TextBlock Text="{Binding RoomCode, Mode=OneWay}"
+                               FontFamily="{DynamicResource FontMono}"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource BrushInk}"
+                               Margin="0,2,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Margin="28,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding SetName, Mode=OneWay}"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeTitle}"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource BrushInk}"
+                               TextTrimming="CharacterEllipsis"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                        <Border Style="{DynamicResource StampNeutral}" Margin="0,0,6,0">
+                            <TextBlock Text="{Binding Difficulty, Mode=OneWay}"
+                                       Style="{StaticResource MonoCaptionTextStyle}"
+                                       Foreground="{DynamicResource BrushInkMuted}"/>
+                        </Border>
+                        <Border Style="{DynamicResource StampNeutral}" Margin="0,0,6,0">
+                            <TextBlock Style="{StaticResource MonoCaptionTextStyle}"
+                                       Foreground="{DynamicResource BrushInkMuted}">
+                                <Run Text="Max "/>
+                                <Run Text="{Binding MaxWeight, Mode=OneWay}"/>
+                            </TextBlock>
+                        </Border>
+                        <Border Style="{DynamicResource StampNeutral}">
+                            <TextBlock Text="{Binding ProgressText, Mode=OneWay}"
+                                       Style="{StaticResource MonoCaptionTextStyle}"
+                                       Foreground="{DynamicResource BrushInkMuted}"/>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal">
+                    <TextBlock Text="{Binding TimerLabel, Mode=OneWay}"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeCaption}"
+                               Foreground="{DynamicResource BrushInkMuted}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding TimerText, Mode=OneWay}"
+                               FontFamily="{DynamicResource FontMono}"
+                               FontSize="22"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource BrushInk}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- =========================================================
+             ROW 1: BANNERS
+             ========================================================= -->
+        <Grid Grid.Row="1" MinHeight="42" Margin="0,0,0,8">
+            <Border Style="{DynamicResource InfoBanner}" Margin="0" VerticalAlignment="Top">
+                <TextBlock Text="{Binding InfoMessage, Mode=OneWay}"
+                           FontFamily="{DynamicResource FontSans}"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Foreground="{DynamicResource BrushSuccess}"
+                           TextWrapping="Wrap"/>
+            </Border>
+            <Border Style="{DynamicResource ErrorBanner}" Margin="0" VerticalAlignment="Top">
+                <TextBlock Text="{Binding ErrorMessage, Mode=OneWay}"
+                           FontFamily="{DynamicResource FontSans}"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Foreground="{DynamicResource BrushDanger}"
+                           TextWrapping="Wrap"/>
+            </Border>
+        </Grid>
+
+        <!-- =========================================================
+             ROW 2: GRID ITEMS + SIDE PLAYERS
+             ========================================================= -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="300"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Lưới vật phẩm (giống SoloGameView) -->
+            <Border Grid.Column="0"
+                    Background="{DynamicResource BrushSurface}"
+                    BorderBrush="{DynamicResource BrushRule}"
+                    BorderThickness="1"
+                    CornerRadius="2"
+                    Padding="6">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding GameItems}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Margin="4"
+                                        Width="150" Height="96"
+                                        Cursor="Hand"
+                                        Command="{Binding DataContext.ToggleItemCommand,
+                                                  RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="bd"
+                                                    CornerRadius="2"
+                                                    BorderThickness="1"
+                                                    BorderBrush="{DynamicResource BrushRule}"
+                                                    Background="{DynamicResource BrushSurface}">
+                                                <Grid Margin="10,8">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+
+                                                    <TextBlock Grid.Row="0"
+                                                               Text="{Binding Name}"
+                                                               FontFamily="{DynamicResource FontSans}"
+                                                               FontSize="{DynamicResource FontSizeBody}"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource BrushInk}"
+                                                               TextTrimming="CharacterEllipsis"/>
+
+                                                    <StackPanel Grid.Row="2">
+                                                        <TextBlock FontFamily="{DynamicResource FontMono}"
+                                                                   FontSize="{DynamicResource FontSizeCaption}"
+                                                                   Foreground="{DynamicResource BrushInkMuted}">
+                                                            <Run Text="KL: "/>
+                                                            <Run Text="{Binding Weight, Mode=OneWay}"/>
+                                                        </TextBlock>
+                                                        <TextBlock FontFamily="{DynamicResource FontMono}"
+                                                                   FontSize="{DynamicResource FontSizeCaption}"
+                                                                   Foreground="{DynamicResource BrushInkMuted}">
+                                                            <Run Text="GT: "/>
+                                                            <Run Text="{Binding Value, Mode=OneWay}"/>
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter TargetName="bd" Property="BorderBrush"
+                                                            Value="{DynamicResource BrushAccent}"/>
+                                                    <Setter TargetName="bd" Property="Background"
+                                                            Value="{DynamicResource BrushAccentSoft}"/>
+                                                </DataTrigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Side panel: players -->
+            <Border Grid.Column="2" Style="{DynamicResource Card}" Padding="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0"
+                            BorderBrush="{DynamicResource BrushRule}"
+                            BorderThickness="0,0,0,1"
+                            Padding="12,10">
+                        <TextBlock Text="Người chơi"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeCaption}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushInkMuted}"/>
+                    </Border>
+
+                    <DataGrid Grid.Row="1"
+                              ItemsSource="{Binding Players}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              SelectionUnit="FullRow"
+                              CanUserAddRows="False"
+                              CanUserResizeRows="False"
+                              CanUserResizeColumns="False"
+                              HeadersVisibility="None"
+                              GridLinesVisibility="None"
+                              Background="Transparent"
+                              BorderThickness="0"
+                              RowHeight="42"
+                              FontSize="{DynamicResource FontSizeBody}"
+                              Foreground="{DynamicResource BrushInk}"
+                              RowStyle="{StaticResource GamePlayerRow}"
+                              CellStyle="{DynamicResource GridCell}">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Username}"
+                                                           FontFamily="{DynamicResource FontSans}"
+                                                           FontSize="{DynamicResource FontSizeBody}"
+                                                           Foreground="{DynamicResource BrushInk}"
+                                                           VerticalAlignment="Center"/>
+                                                <Border Padding="6,2"
+                                                        BorderThickness="1"
+                                                        CornerRadius="2"
+                                                        Background="Transparent"
+                                                        BorderBrush="{DynamicResource BrushAccent}"
+                                                        Margin="6,0,0,0"
+                                                        VerticalAlignment="Center"
+                                                        Visibility="{Binding IsHost,
+                                                                     Converter={StaticResource BoolToVisibility}}">
+                                                    <TextBlock Text="HOST"
+                                                               Style="{StaticResource MonoCaptionTextStyle}"
+                                                               Foreground="{DynamicResource BrushAccent}"/>
+                                                </Border>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding StatusText}"
+                                                       FontFamily="{DynamicResource FontMono}"
+                                                       FontSize="{DynamicResource FontSizeCaption}"
+                                                       Foreground="{DynamicResource BrushInkMuted}"
+                                                       Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- =========================================================
+             ROW 3: CAPACITY BAR
+             ========================================================= -->
+        <Grid Grid.Row="3" Margin="0,12,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <ProgressBar Grid.Row="0"
+                         Style="{StaticResource CapacityBar}"
+                         Value="{Binding CapacityPercent, Mode=OneWay}"/>
+
+            <Grid Grid.Row="1" Margin="0,6,0,0">
+                <TextBlock Text="{Binding CapacityText, Mode=OneWay}"
+                           FontFamily="{DynamicResource FontMono}"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Foreground="{DynamicResource BrushInk}"/>
+                <TextBlock Text="Vượt sức chứa!"
+                           FontFamily="{DynamicResource FontMono}"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource BrushDanger}"
+                           HorizontalAlignment="Right"
+                           Visibility="{Binding IsOverWeight,
+                                        Converter={StaticResource BoolToVisibility}}"/>
+            </Grid>
+        </Grid>
+
+        <!-- =========================================================
+             ROW 4: ACTIONS / MY RESULT
+             ========================================================= -->
+        <Grid Grid.Row="4" Margin="0,14,0,0" MinHeight="68">
+            <!-- Chưa nộp -->
+            <Grid>
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Visible"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasResult}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Command="{Binding LeaveCommand}"
+                            Style="{DynamicResource ButtonSecondary}"
+                            Padding="16,10"
+                            Margin="0,0,8,0"
+                            Content="Rời phòng"/>
+                    <Button Command="{Binding SubmitCommand}"
+                            Style="{DynamicResource ButtonPrimary}"
+                            Padding="20,10"
+                            Content="Nộp bài"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Đã nộp: hiển thị kết quả tạm thời -->
+            <Border Background="{DynamicResource BrushSurface}"
+                    BorderBrush="{DynamicResource BrushRule}"
+                    BorderThickness="1"
+                    CornerRadius="2"
+                    Padding="16,12">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasResult}" Value="True">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding ResultStarText, Mode=OneWay}"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="26"
+                                   Foreground="{DynamicResource BrushAccent}"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="Xếp hạng"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeCaption}"
+                                   Foreground="{DynamicResource BrushInkMuted}"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                        <TextBlock FontFamily="{DynamicResource FontMono}"
+                                   FontSize="{DynamicResource FontSizeBody}"
+                                   Foreground="{DynamicResource BrushInk}">
+                            <Run Text="Điểm: "/>
+                            <Run Text="{Binding MyResult.Score, Mode=OneWay}" FontWeight="SemiBold"/>
+                            <Run Text=" / Tối ưu: "/>
+                            <Run Text="{Binding MyResult.OptimalValue, Mode=OneWay}"/>
+                            <Run Text=" ("/>
+                            <Run Text="{Binding MyResult.OptimalPercent, StringFormat={}{0:0.0}, Mode=OneWay}"/>
+                            <Run Text="%)"/>
+                        </TextBlock>
+                        <TextBlock FontFamily="{DynamicResource FontMono}"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   Foreground="{DynamicResource BrushInkMuted}"
+                                   Margin="0,4,0,0"
+                                   Text="Chờ những người chơi khác nộp bài..."/>
+                    </StackPanel>
+
+                    <Button Grid.Column="3"
+                            Command="{Binding LeaveCommand}"
+                            Style="{DynamicResource ButtonSecondary}"
+                            Padding="14,9"
+                            Content="Rời phòng"
+                            VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

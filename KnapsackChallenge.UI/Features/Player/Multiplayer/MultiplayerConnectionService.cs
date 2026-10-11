@@ -151,6 +151,32 @@ namespace KnapsackChallenge.UI.Features.Player
             return await _connection.InvokeAsync<HubResult<RoomStateDto>>("GetRoomState", ct);
         }
 
+        // =========================================================
+        // SUBMIT + GET MY RESULT (Phase 4)
+        // =========================================================
+
+        public async Task<HubResult<SubmissionResultDto>?> SubmitAsync(
+            IReadOnlyList<int> selectedItemIds,
+            int timeSpentSeconds,
+            CancellationToken ct = default)
+        {
+            if (_connection.State != HubConnectionState.Connected) return null;
+
+            var req = new SubmitRequest
+            {
+                SelectedItemIds = selectedItemIds.ToList(),
+                TimeSpentSeconds = timeSpentSeconds,
+            };
+            return await _connection.InvokeAsync<HubResult<SubmissionResultDto>>("Submit", req, ct);
+        }
+
+        public async Task<HubResult<SubmissionResultDto>?> GetMyResultAsync(
+            CancellationToken ct = default)
+        {
+            if (_connection.State != HubConnectionState.Connected) return null;
+            return await _connection.InvokeAsync<HubResult<SubmissionResultDto>>("GetMyResult", ct);
+        }
+
         // Kick do host thực hiện. Server-side Hub method "Kick" cần thêm (xem mục 3).
         public async Task<HubResult<bool>?> KickAsync(
             string roomCode, int targetUserId, string reason, CancellationToken ct = default)

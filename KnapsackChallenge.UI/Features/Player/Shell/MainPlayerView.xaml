@@ -42,6 +42,14 @@
             <player:MultiplayerRoomView />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type player:MultiplayerGameViewModel}">
+            <player:MultiplayerGameView />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type player:MultiplayerResultViewModel}">
+            <player:MultiplayerResultView />
+        </DataTemplate>
+
     </UserControl.Resources>
 
     <Grid>

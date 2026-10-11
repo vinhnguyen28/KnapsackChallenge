@@ -1,7 +1,7 @@
-﻿using System.Data;
-using Microsoft.Data.SqlClient;
-using KnapsackChallenge.Common.DTOs;
+﻿using KnapsackChallenge.Common.DTOs;
 using KnapsackChallenge.Data.Entities;
+using Microsoft.Data.SqlClient;
+using System.Data;
 
 namespace KnapsackChallenge.Data.Repositories
 {
@@ -17,7 +17,7 @@ namespace KnapsackChallenge.Data.Repositories
         // v7: bổ sung Hearts, LastHeartRefillAt ở CUỐI để không đổi index cũ.
         private const string AuthColumns =
             "Id, Username, PasswordHash, Role, IsBanned, BanReason, BannedAt, BannedBy, " +
-            "CreatedAt, LastLoginAt, LastSeenAt, Hearts, LastHeartRefillAt";
+            "CreatedAt, LastLoginAt, LastSeenAt, Hearts, LastHeartRefillAt, TotalExp, Level";
 
         private static UserEntity MapUser(IDataRecord r) => new UserEntity
         {
@@ -34,6 +34,8 @@ namespace KnapsackChallenge.Data.Repositories
             LastSeenAt = r.IsDBNull(10) ? null : r.GetDateTime(10),
             Hearts = r.IsDBNull(11) ? 25 : r.GetInt32(11),
             LastHeartRefillAt = r.IsDBNull(12) ? null : r.GetDateTime(12),
+            TotalExp = r.IsDBNull(13) ? 0L : r.GetInt64(13),
+            Level = r.IsDBNull(14) ? 1 : r.GetInt32(14),
         };
 
         // ---------- AUTH ----------
@@ -140,6 +142,66 @@ namespace KnapsackChallenge.Data.Repositories
             AddParameter(command, "@Hearts", hearts);
             AddParameter(command, "@LastRefillAt", (object?)lastRefillAt ?? DBNull.Value);
             command.ExecuteNonQuery();
+        }
+
+        // ---------- v8: RANK & EXP ----------
+
+        // Đọc TotalExp + Level hiện tại. Trả (0, 1) nếu user không tồn tại.
+        public (long TotalExp, int Level) GetExpAndLevel(int userId)
+        {
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText =
+                "SELECT TotalExp, Level FROM Users WHERE Id = @Id";
+            AddParameter(command, "@Id", userId);
+            using var reader = command.ExecuteReader();
+            if (!reader.Read()) return (0L, 1);
+
+            long exp = reader.IsDBNull(0) ? 0L : reader.GetInt64(0);
+            int level = reader.IsDBNull(1) ? 1 : reader.GetInt32(1);
+            return (exp, level);
+        }
+
+        // Cộng EXP và cập nhật Level. Trả về (NewTotalExp, NewLevel).
+        // Level được tính lại ở Core, KHÔNG tin số liệu từ caller.
+        public (long NewTotalExp, int NewLevel) AddExp(int userId, int expToAdd)
+        {
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+
+            // Đọc giá trị hiện tại trong CÙNG connection để giảm round-trip.
+            long currentExp;
+            int currentLevel;
+            using (var read = connection.CreateCommand())
+            {
+                read.CommandText = "SELECT TotalExp, Level FROM Users WHERE Id = @Id";
+                AddParameter(read, "@Id", userId);
+                using var reader = read.ExecuteReader();
+                if (!reader.Read()) return (0L, 1);
+                currentExp = reader.IsDBNull(0) ? 0L : reader.GetInt64(0);
+                currentLevel = reader.IsDBNull(1) ? 1 : reader.GetInt32(1);
+            }
+
+            long newExp = currentExp + Math.Max(0, expToAdd);
+            int newLevel = Algorithms.RankRules.GetLevelFromExp(newExp);
+
+            // Chỉ UPDATE khi có thay đổi.
+            if (newExp != currentExp || newLevel != currentLevel)
+            {
+                using var update = connection.CreateCommand();
+                update.CommandText = @"
+            UPDATE Users
+            SET TotalExp = @Exp,
+                Level    = @Level
+            WHERE Id = @Id";
+                AddParameter(update, "@Id", userId);
+                AddParameter(update, "@Exp", newExp);
+                AddParameter(update, "@Level", newLevel);
+                update.ExecuteNonQuery();
+            }
+
+            return (newExp, newLevel);
         }
 
         // ---------- ADMIN ----------

@@ -42,6 +42,10 @@ namespace KnapsackChallenge.UI.Features.Player
         public ObservableCollection<MultiplayerPlayerRow> Players { get; } = new();
         public ObservableCollection<SoloGameSetDto> AvailableSets { get; } = new();
 
+        // Phase 4: báo cho vỏ điều hướng khi ván bắt đầu.
+        public event Action<GameStartDto>? GameStartedReceived;
+
+
         // Vỏ điều hướng subscribe để quay về Lobby.
         public event Action? RoomExited;
 
@@ -258,16 +262,8 @@ namespace KnapsackChallenge.UI.Features.Player
 
         private void OnGameStarted(GameStartDto start)
         {
-            RunOnUi(() =>
-            {
-                // Phase 3: chỉ placeholder. Phase 4 sẽ mở màn chơi thật.
-                MessageBox.Show(
-                    $"Ván đã bắt đầu!\n" +
-                    $"Bộ đề: {start.SetName}\n" +
-                    $"Thời gian: {(start.TimeLimitSeconds > 0 ? start.TimeLimitSeconds + " giây" : "không giới hạn")}",
-                    "Ván bắt đầu",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
-            });
+            // KHÔNG hiện MessageBox nữa — fire event để vỏ điều hướng sang màn chơi.
+            RunOnUi(() => GameStartedReceived?.Invoke(start));
         }
 
         private void OnKicked(string reason)

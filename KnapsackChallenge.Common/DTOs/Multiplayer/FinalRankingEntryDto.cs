@@ -14,5 +14,14 @@
         public bool IsKicked { get; set; }
         public bool IsBanned { get; set; }
         public bool IsLeft { get; set; }   // ← thêm dòng này
+
+        // v8: EXP nhận được (0 nếu không nộp hoặc lỗi).
+        public int ExpGained { get; set; }
+        public int OldLevel { get; set; }
+        public int NewLevel { get; set; }
+        public string RankTitle { get; set; } = "";
+
+        public string ExpGainText => ExpGained > 0 ? $"+{ExpGained} EXP" : "";
+        public bool LeveledUp => NewLevel > OldLevel;
     }
 }

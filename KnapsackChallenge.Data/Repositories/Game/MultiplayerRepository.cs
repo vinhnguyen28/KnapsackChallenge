@@ -1,8 +1,6 @@
-﻿using System.Data;
-using Microsoft.Data.SqlClient;
-using KnapsackChallenge.Common.DTOs;
+﻿using KnapsackChallenge.Common.DTOs;
 using KnapsackChallenge.Common.Enums;
-using KnapsackChallenge.Data.Entities;
+using System.Data;
 
 namespace KnapsackChallenge.Data.Repositories
 {
@@ -444,6 +442,39 @@ namespace KnapsackChallenge.Data.Repositories
             param.ParameterName = name;
             param.Value = value;
             command.Parameters.Add(param);
+        }
+
+        // v8: cộng EXP + cập nhật Level cho 1 user. Atomic trong 1 UPDATE.
+        // Level tính sẵn ở Core (RankService), ở đây chỉ ghi.
+        public void UpdateExpAndLevel(int userId, long newTotalExp, int newLevel)
+        {
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = @"
+        UPDATE Users
+        SET TotalExp = @Exp,
+            Level    = @Level
+        WHERE Id = @Id";
+            AddParameter(cmd, "@Id", userId);
+            AddParameter(cmd, "@Exp", newTotalExp);
+            AddParameter(cmd, "@Level", newLevel);
+            cmd.ExecuteNonQuery();
+        }
+
+        // Đọc EXP + Level hiện tại — dùng trong FinishRoomAsync để tính EXP cho từng player.
+        public (long TotalExp, int Level) GetExpAndLevel(int userId)
+        {
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT TotalExp, Level FROM Users WHERE Id = @Id";
+            AddParameter(cmd, "@Id", userId);
+            using var reader = cmd.ExecuteReader();
+            if (!reader.Read()) return (0L, 1);
+            long exp = reader.IsDBNull(0) ? 0L : reader.GetInt64(0);
+            int level = reader.IsDBNull(1) ? 1 : reader.GetInt32(1);
+            return (exp, level);
         }
     }
 }

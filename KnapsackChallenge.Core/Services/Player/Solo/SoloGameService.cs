@@ -17,12 +17,15 @@ namespace KnapsackChallenge.Core.Services.Player
         public SoloGameService(GameRepository gameRepository,
                                HistoryRepository historyRepository,
                                GameModeRepository gameModeRepository,
-                               IHeartService heartService)
+                               IHeartService heartService,
+                               IRankService rankService)
+
         {
             _gameRepository = gameRepository;
             _historyRepository = historyRepository;
             _gameModeRepository = gameModeRepository;
             _heartService = heartService;
+            _rankService = rankService;
         }
 
         public (bool IsEnabled, int TimeLimitSeconds) GetSoloModeStatus()
@@ -158,7 +161,26 @@ namespace KnapsackChallenge.Core.Services.Player
                 OptimalPercent = percent,
                 Stars = stars,
                 OptimalItemIds = optimalIds,
+
+                ExpGained = expAward?.ExpGained ?? 0,
+                OldLevel = expAward?.OldLevel ?? 0,
+                NewLevel = expAward?.NewLevel ?? 0,
+                RankTitle = expAward?.RankTitle ?? "",
             };
+
+            // v8: cộng EXP sau khi lưu ván thành công.
+            ExpAwardResultDto? expAward = null;
+            try
+            {
+                int expGain = _rankService.CalculateExpGain(
+                    result.Score, result.OptimalValue, result.Stars);
+                expAward = _rankService.AwardExp(userId, expGain);
+            }
+            catch
+            {
+                // Không để lỗi DB khi cộng EXP làm hỏng luồng nộp bài.
+                // Ván đã được lưu thành công → vẫn trả result bình thường.
+            }
 
             return (true, "Nộp bài thành công!", result);
         }
