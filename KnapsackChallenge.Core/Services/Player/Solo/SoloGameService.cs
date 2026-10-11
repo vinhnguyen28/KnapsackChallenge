@@ -13,6 +13,7 @@ namespace KnapsackChallenge.Core.Services.Player
         private readonly HistoryRepository _historyRepository;
         private readonly GameModeRepository _gameModeRepository;
         private readonly IHeartService _heartService;
+        private readonly IRankService _rankService;
 
         public SoloGameService(GameRepository gameRepository,
                                HistoryRepository historyRepository,

@@ -106,6 +106,23 @@
                                Foreground="{DynamicResource BrushInkMuted}"
                                HorizontalAlignment="Right"
                                Margin="0,2,0,0"/>
+                    <TextBlock Text="{Binding MyExpGainText, Mode=OneWay}"
+           FontFamily="{DynamicResource FontMono}"
+           FontSize="14"
+           FontWeight="SemiBold"
+           Foreground="{DynamicResource BrushSuccess}"
+           HorizontalAlignment="Right"
+           Margin="0,2,0,0"
+           Visibility="{Binding HasExpGain,
+                        Converter={StaticResource BoolToVisibility}}"/>
+                    <TextBlock Text="{Binding MyLevelUpText, Mode=OneWay}"
+           FontFamily="{DynamicResource FontMono}"
+           FontSize="12"
+           Foreground="{DynamicResource BrushAccent}"
+           HorizontalAlignment="Right"
+           Margin="0,2,0,0"
+           Visibility="{Binding HasExpGain,
+                        Converter={StaticResource BoolToVisibility}}"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -172,6 +189,12 @@
                                         Binding="{Binding TimeText}"
                                         Width="90"
                                         ElementStyle="{StaticResource RightCellText}"/>
+
+                    <DataGridTextColumn Header="EXP"
+                    Binding="{Binding Data.ExpGainText}"
+                    Width="90"
+                    ElementStyle="{StaticResource RightCellText}"/>
+
                     <DataGridTextColumn Header="TRẠNG THÁI"
                                         Binding="{Binding StatusText}"
                                         Width="110"
@@ -191,6 +214,7 @@
                     Style="{DynamicResource ButtonPrimary}"
                     Padding="20,11"
                     HorizontalAlignment="Right">
+                
                 <StackPanel Orientation="Horizontal">
                     <Path Data="{DynamicResource IconArrowLeft}"
                           Width="14" Height="14"
@@ -202,6 +226,7 @@
                           Margin="0,0,8,0"/>
                     <TextBlock Text="Về Lobby" VerticalAlignment="Center"/>
                 </StackPanel>
+                
             </Button>
         </Grid>
     </Grid>

@@ -410,6 +410,20 @@
                             <Run Text=" / "/>
                             <Run Text="{Binding Result.MaxWeight, Mode=OneWay}"/>
                         </TextBlock>
+
+                        <TextBlock Text="{Binding Result.ExpGainText, Mode=OneWay}"
+                                  FontFamily="{DynamicResource FontMono}"
+                                  FontSize="{DynamicResource FontSizeSmall}"
+                                  FontWeight="SemiBold"
+                                  Foreground="{DynamicResource BrushSuccess}"
+                                   Margin="0,4,0,0"/>
+                        
+                        <TextBlock Text="{Binding Result.LevelUpText, Mode=OneWay}"
+                            FontFamily="{DynamicResource FontMono}"
+                            FontSize="{DynamicResource FontSizeSmall}"
+                            FontWeight="SemiBold"
+                            Foreground="{DynamicResource BrushAccent}"
+                            Margin="0,2,0,0"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="3" Orientation="Horizontal"

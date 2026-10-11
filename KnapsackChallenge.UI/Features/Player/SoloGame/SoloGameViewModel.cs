@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Windows.Input;
-using System.Windows.Threading;
-using Microsoft.Data.SqlClient;
-using KnapsackChallenge.Common.DTOs;
+﻿using KnapsackChallenge.Common.DTOs;
 using KnapsackChallenge.Core.Factories;
 using KnapsackChallenge.Core.Services.Player;
 using KnapsackChallenge.Data.Entities;
 using KnapsackChallenge.UI.Shared;
+using Microsoft.Data.SqlClient;
+using System.Collections.ObjectModel;
+using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace KnapsackChallenge.UI.Features.Player
 {
@@ -52,6 +50,9 @@ namespace KnapsackChallenge.UI.Features.Player
 
         // v7: báo cho vỏ Player biết tim đã thay đổi (sau Start / hồi).
         public event Action<HeartStatusDto>? HeartsChanged;
+
+        // v8: báo cho vỏ Player khi EXP đã được cộng (cập nhật RankBadge header).
+        public event Action<ExpAwardResultDto>? ExpAwarded;
 
         private string _currentSetName = "";
         public string CurrentSetName
@@ -351,6 +352,19 @@ namespace KnapsackChallenge.UI.Features.Player
                     it.IsOptimal = optimalSet.Contains(it.Id);
 
                 Result = result;
+
+                // v8: fire event để vỏ Player cập nhật RankBadge.
+                if (result.ExpGained > 0 || result.LeveledUp)
+                {
+                    ExpAwarded?.Invoke(new ExpAwardResultDto
+                    {
+                        ExpGained = result.ExpGained,
+                        NewLevel = result.NewLevel,
+                        OldLevel = result.OldLevel,
+                        RankTitle = result.RankTitle,
+                    });
+                }
+
                 PlayError = "";
                 PlayInfo = isTimeout ? "Hết giờ - bài đã được nộp tự động." : "";
                 NotifyGameChanged();

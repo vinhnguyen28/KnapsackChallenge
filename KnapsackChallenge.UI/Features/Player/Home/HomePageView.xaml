@@ -78,6 +78,32 @@
 
                 <Border Style="{StaticResource GameStatCard}">
                     <StackPanel>
+                        <TextBlock Text="CẤP ĐỘ &amp; EXP"
+                   FontFamily="{DynamicResource FontSans}"
+                   FontSize="{DynamicResource FontSizeCaption}"
+                   Foreground="{DynamicResource BrushInkMuted}"/>
+                        <TextBlock Text="{Binding LevelBadge}"
+                   FontFamily="{DynamicResource FontMono}"
+                   FontSize="20"
+                   FontWeight="SemiBold"
+                   Foreground="{DynamicResource BrushAccent}"
+                   Margin="0,4,0,0"/>
+                        <ProgressBar Height="6"
+                     Maximum="100"
+                     Value="{Binding ExpProgressPercent, Mode=OneWay}"
+                     Foreground="{DynamicResource BrushAccent}"
+                     Background="{DynamicResource BrushRule}"
+                     Margin="0,6,0,4"
+                     BorderThickness="0"/>
+                        <TextBlock Text="{Binding ExpProgressText}"
+                   FontFamily="{DynamicResource FontMono}"
+                   FontSize="{DynamicResource FontSizeCaption}"
+                   Foreground="{DynamicResource BrushInkMuted}"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource GameStatCard}">
+                    <StackPanel>
                         <TextBlock Text="HẠNG HIỆN TẠI"
                                    FontFamily="{DynamicResource FontSans}"
                                    FontSize="{DynamicResource FontSizeCaption}"
@@ -90,6 +116,33 @@
                                    Foreground="{DynamicResource BrushAccent}"
                                    Margin="0,4,0,0"
                                    TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource GameStatCard}">
+                    <StackPanel>
+                        <TextBlock Text="CẤP ĐỘ &amp; EXP"
+                   FontFamily="{DynamicResource FontSans}"
+                   FontSize="{DynamicResource FontSizeCaption}"
+                   Foreground="{DynamicResource BrushInkMuted}"
+                   TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding LevelBadge}"
+                   FontFamily="{DynamicResource FontMono}"
+                   FontSize="20"
+                   FontWeight="SemiBold"
+                   Foreground="{DynamicResource BrushAccent}"
+                   Margin="0,4,0,0"/>
+                        <ProgressBar Height="6"
+                     Maximum="100"
+                     Value="{Binding ExpProgressPercent, Mode=OneWay}"
+                     Foreground="{DynamicResource BrushAccent}"
+                     Background="{DynamicResource BrushRule}"
+                     Margin="0,6,0,4"
+                     BorderThickness="0"/>
+                        <TextBlock Text="{Binding ExpProgressText}"
+                   FontFamily="{DynamicResource FontMono}"
+                   FontSize="{DynamicResource FontSizeCaption}"
+                   Foreground="{DynamicResource BrushInkMuted}"/>
                     </StackPanel>
                 </Border>
 

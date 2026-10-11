@@ -20,13 +20,70 @@ namespace KnapsackChallenge.UI.Features.Player
         private readonly UserEntity _user;
         private readonly IGameModeService _gameModeService;
         private readonly ISoloGameService _soloGameService;
+        private readonly IRankService _rankService;
 
         public string WelcomeText => $"Chào {_user.Username ?? ""}, sẵn sàng chưa?";
 
         // ---- Placeholder stats ----
-        public string BestScoreText => "—";
-        public string CurrentRankText => "Chưa xếp hạng";
-        public string GamesPlayedText => "0";
+        // ---- Stats thực từ DB ----
+        private string _bestScoreText = "—";
+        public string BestScoreText
+        {
+            get => _bestScoreText;
+            private set { _bestScoreText = value; OnPropertyChanged(); }
+        }
+
+        private string _currentRankText = "Lv 1 · Đồng";
+        public string CurrentRankText
+        {
+            get => _currentRankText;
+            private set { _currentRankText = value; OnPropertyChanged(); }
+        }
+
+        private string _gamesPlayedText = "0";
+        public string GamesPlayedText
+        {
+            get => _gamesPlayedText;
+            private set { _gamesPlayedText = value; OnPropertyChanged(); }
+        }
+
+        // ---- v8: EXP / Level ----
+        private long _totalExp;
+        public long TotalExp
+        {
+            get => _totalExp;
+            private set { _totalExp = value; OnPropertyChanged(); }
+        }
+
+        private int _level = 1;
+        public int Level
+        {
+            get => _level;
+            private set { _level = value; OnPropertyChanged(); OnPropertyChanged(nameof(LevelBadge)); }
+        }
+
+        private string _rankTitle = "Đồng";
+        public string RankTitle
+        {
+            get => _rankTitle;
+            private set { _rankTitle = value; OnPropertyChanged(); OnPropertyChanged(nameof(LevelBadge)); }
+        }
+
+        private double _expProgressPercent;
+        public double ExpProgressPercent
+        {
+            get => _expProgressPercent;
+            private set { _expProgressPercent = value; OnPropertyChanged(); }
+        }
+
+        private string _expProgressText = "0 / 100 EXP";
+        public string ExpProgressText
+        {
+            get => _expProgressText;
+            private set { _expProgressText = value; OnPropertyChanged(); }
+        }
+
+        public string LevelBadge => $"Lv {Level} · {RankTitle}";
 
         // ---- Top người chơi ----
         public ObservableCollection<LeaderboardEntryDto> TopPlayers { get; } = new();
@@ -87,6 +144,7 @@ namespace KnapsackChallenge.UI.Features.Player
             _user = user;
             _gameModeService = ServiceFactory.GetGameModeService();
             _soloGameService = ServiceFactory.GetSoloGameService();
+            _rankService = ServiceFactory.GetRankService();
 
             PlaySoloCommand = new RelayCommand<object>(
                 _ => PlaySoloRequested?.Invoke(),
@@ -101,6 +159,7 @@ namespace KnapsackChallenge.UI.Features.Player
 
             _ = LoadModeStatusAsync();
             _ = LoadTopPlayersAsync();
+            _ = LoadMyStatsAsync();
         }
 
         private async System.Threading.Tasks.Task LoadModeStatusAsync()
@@ -135,6 +194,34 @@ namespace KnapsackChallenge.UI.Features.Player
             catch (SqlException) { }
             catch (InvalidOperationException) { }
             finally { IsLoadingTopPlayers = false; }
+        }
+
+        private async System.Threading.Tasks.Task LoadMyStatsAsync()
+        {
+            try
+            {
+                var rank = await System.Threading.Tasks.Task.Run(() => _rankService.GetStatus(_user.Id));
+
+                TotalExp = rank.TotalExp;
+                Level = rank.Level;
+                RankTitle = rank.RankTitle;
+                ExpProgressPercent = rank.ProgressPercent;
+                ExpProgressText = rank.ProgressText;
+                CurrentRankText = rank.LevelBadge;
+
+                var history = await System.Threading.Tasks.Task.Run(
+                    () => _soloGameService.GetHistory(_user.Id, 100));
+
+                GamesPlayedText = history.Count.ToString();
+                int best = history
+                    .Where(h => h.IsSubmitted)
+                    .Select(h => h.TotalScore)
+                    .DefaultIfEmpty(0)
+                    .Max();
+                BestScoreText = best > 0 ? best.ToString() : "—";
+            }
+            catch (SqlException) { }
+            catch (InvalidOperationException) { }
         }
     }
 }

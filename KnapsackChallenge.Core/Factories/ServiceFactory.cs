@@ -20,6 +20,9 @@ namespace KnapsackChallenge.Core.Factories
         private static readonly Lazy<IHeartService> _heartService =
             new(() => new HeartService(_userRepository.Value, _gameModeRepository.Value));
 
+        private static readonly Lazy<IRankService> _rankService =
+            new(() => new RankService(_userRepository.Value));
+
         public static IAuthService GetAuthService() => new AuthService(_userRepository.Value);
 
         public static IItemService GetItemService() => new ItemService(_itemRepository.Value);
@@ -49,8 +52,7 @@ namespace KnapsackChallenge.Core.Factories
         public static IGameModeService GetGameModeService() =>
             new GameModeService(_gameModeRepository.Value);
 
-        private static readonly Lazy<IRankService> _rankService =
-            new(() => new RankService(_userRepository.Value));
+
 
         public static IRankService GetRankService() => _rankService.Value;
     }

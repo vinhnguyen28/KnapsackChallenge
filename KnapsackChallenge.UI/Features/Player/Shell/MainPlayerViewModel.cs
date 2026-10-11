@@ -15,6 +15,7 @@ namespace KnapsackChallenge.UI.Features.Player
     {
         private readonly UserEntity _user;
         private readonly IPlayerSessionService _session;
+        private readonly IRankService _rankService;
         private readonly IDialogService _dialog;
         private readonly DispatcherTimer _heartbeatTimer;
 
@@ -40,7 +41,12 @@ namespace KnapsackChallenge.UI.Features.Player
             private set { _heartsBadge = value; OnPropertyChanged(); }
         }
 
-        public string RankBadge => "Chưa xếp hạng";
+        private string _rankBadge = "Lv 1 · Đồng";
+        public string RankBadge
+        {
+            get => _rankBadge;
+            private set { _rankBadge = value; OnPropertyChanged(); }
+        }
 
         private bool _isSettingsOpen;
         public bool IsSettingsOpen
@@ -80,6 +86,7 @@ namespace KnapsackChallenge.UI.Features.Player
             _user = user;
             _dialog = dialog ?? new WpfDialogService();
             _session = ServiceFactory.GetPlayerSessionService();
+            _rankService = ServiceFactory.GetRankService();
 
             LogoutCommand = new RelayCommand<object>(_ => ExecuteLogout());
             ToggleSettingsCommand = new RelayCommand<object>(_ => IsSettingsOpen = !IsSettingsOpen);
@@ -93,6 +100,15 @@ namespace KnapsackChallenge.UI.Features.Player
 
             // Đọc tim lần đầu ngay khi vào vỏ Player.
             RefreshHeartsOnce();
+
+            // v8: load rank badge.
+            try
+            {
+                var rank = _rankService.GetStatus(_user.Id);
+                RankBadge = rank.LevelBadge;
+            }
+            catch (SqlException) { }
+            catch (InvalidOperationException) { }
 
             _heartbeatTimer = new DispatcherTimer
             {
@@ -179,6 +195,12 @@ namespace KnapsackChallenge.UI.Features.Player
 
             // Sau khi start ván, cập nhật lại badge tim ngay (không chờ 30s).
             game.HeartsChanged += status => HeartsBadge = status.BadgeText;
+
+            game.ExpAwarded += award =>
+            {
+                if (award.ExpGained > 0)
+                    RankBadge = $"Lv {award.NewLevel} · {award.RankTitle}";
+            };
 
             game.ChangeSetRequested += () =>
             {

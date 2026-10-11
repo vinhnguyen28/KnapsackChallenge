@@ -47,6 +47,7 @@ namespace KnapsackChallenge.UI.Features.Player
     // qua Lobby mới tinh để refresh danh sách phòng.
     public class MultiplayerResultViewModel : ViewModelBase, IPageLifecycle
     {
+        private readonly MultiplayerResultEntryRow? _myEntry;
         private readonly UserEntity _user;
         private readonly FinalRankingDto _ranking;
 
@@ -63,6 +64,8 @@ namespace KnapsackChallenge.UI.Features.Player
 
             foreach (var e in ranking.Entries)
                 Entries.Add(new MultiplayerResultEntryRow(e, user.Id));
+
+            _myEntry = Entries.FirstOrDefault(e => e.IsMe);
 
             BackToLobbyCommand = new RelayCommand<object>(_ => BackToLobbyRequested?.Invoke());
         }
@@ -87,5 +90,13 @@ namespace KnapsackChallenge.UI.Features.Player
         }
 
         public void OnNavigatedFrom() { }
+
+        public string MyExpGainText => _myEntry?.Data.ExpGainText ?? "";
+        public bool HasExpGain => _myEntry?.Data.ExpGained > 0;
+        public string MyLevelUpText => _myEntry?.Data.LeveledUp == true
+            ? $"Lên cấp! Lv {_myEntry.Data.NewLevel} · {_myEntry.Data.RankTitle}"
+            : "";
     }
+
+
 }
