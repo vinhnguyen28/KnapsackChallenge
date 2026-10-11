@@ -49,5 +49,11 @@ namespace KnapsackChallenge.Server.Services.Rooms
 
         public Task DeleteRoomAsync(int sessionId)
             => Task.Run(() => _repo.DeleteRoom(sessionId));
+
+        public Task<(long TotalExp, int Level)> GetExpAndLevelAsync(int userId)
+    => Task.Run(() => _repo.GetExpAndLevel(userId));
+
+        public Task UpdateExpAndLevelAsync(int userId, long newTotalExp, int newLevel)
+            => Task.Run(() => _repo.UpdateExpAndLevel(userId, newTotalExp, newLevel));
     }
 }

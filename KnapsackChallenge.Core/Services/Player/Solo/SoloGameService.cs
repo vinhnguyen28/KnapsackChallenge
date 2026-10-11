@@ -152,6 +152,20 @@ namespace KnapsackChallenge.Core.Services.Player
                 userId, setId, distinct,
                 totalValue, totalWeight, optimalValue, timeSpentSeconds);
 
+
+            // v8: cộng EXP sau khi lưu ván thành công.
+            ExpAwardResultDto? expAward = null;
+            try
+            {
+                int expGain = _rankService.CalculateExpGain(totalValue, optimalValue, stars);
+                expAward = _rankService.AwardExp(userId, expGain);
+            }
+            catch
+            {
+                // Không để lỗi DB khi cộng EXP làm hỏng luồng nộp bài.
+                // Ván đã được lưu thành công → vẫn trả result bình thường.
+            }
+
             var result = new SoloResultDto
             {
                 Score = totalValue,
@@ -166,21 +180,8 @@ namespace KnapsackChallenge.Core.Services.Player
                 OldLevel = expAward?.OldLevel ?? 0,
                 NewLevel = expAward?.NewLevel ?? 0,
                 RankTitle = expAward?.RankTitle ?? "",
-            };
 
-            // v8: cộng EXP sau khi lưu ván thành công.
-            ExpAwardResultDto? expAward = null;
-            try
-            {
-                int expGain = _rankService.CalculateExpGain(
-                    result.Score, result.OptimalValue, result.Stars);
-                expAward = _rankService.AwardExp(userId, expGain);
-            }
-            catch
-            {
-                // Không để lỗi DB khi cộng EXP làm hỏng luồng nộp bài.
-                // Ván đã được lưu thành công → vẫn trả result bình thường.
-            }
+            };
 
             return (true, "Nộp bài thành công!", result);
         }

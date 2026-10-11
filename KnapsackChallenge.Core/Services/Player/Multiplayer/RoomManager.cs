@@ -1033,6 +1033,9 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
             await _notifier.GameEndedAsync(room.RoomCode, ranking);
         }
 
+        private static int CalculateStarsFromPercent(double percent)
+    => ScoringRules.CalculateStars(percent);
+
         private bool TryGetRoomOfUser(int userId, out Room room, out string roomCode)
         {
             room = null!;

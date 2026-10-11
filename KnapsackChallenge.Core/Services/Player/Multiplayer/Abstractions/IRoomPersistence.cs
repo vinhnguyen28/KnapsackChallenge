@@ -1,6 +1,4 @@
-﻿using KnapsackChallenge.Common.DTOs;
-
-namespace KnapsackChallenge.Core.Services.Player.Multiplayer
+﻿namespace KnapsackChallenge.Core.Services.Player.Multiplayer
 {
     // Cổng ghi DB cho RoomManager. Implement ở Server bằng MultiplayerRepository.
     // Mọi method là async để Server có thể await; implementation mặc định
@@ -20,5 +18,9 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
         Task MarkKickedAsync(int sessionId, int userId);
         Task MarkBannedAsync(int sessionId, int userId);
         Task DeleteRoomAsync(int sessionId);
+
+        // v8: Rank & EXP — dùng khi finish ván Multiplayer.
+        Task<(long TotalExp, int Level)> GetExpAndLevelAsync(int userId);
+        Task UpdateExpAndLevelAsync(int userId, long newTotalExp, int newLevel);
     }
 }

@@ -13,6 +13,7 @@ namespace KnapsackChallenge.UI.Features.Player
     // Trang chủ người chơi: 2 nút lớn + cột stats + cột top + 2 shortcut.
     public class HomePageViewModel : ViewModelBase
     {
+
         private const bool MultiplayerImplemented = true;
         private const int LeaderboardLoadCount = 100;
 
