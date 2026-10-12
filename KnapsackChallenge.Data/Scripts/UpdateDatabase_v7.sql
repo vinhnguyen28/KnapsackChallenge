@@ -6,8 +6,7 @@
    - Mọi timestamp dùng UTC (SYSUTCDATETIME()).
    ============================================================= */
 
-USE KnapsackChallenge;
-GO
+
 
 /* ---------- 1. Users: hearts ---------- */
 

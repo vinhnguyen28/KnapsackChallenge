@@ -4,8 +4,7 @@
    - Idempotent: chạy lại nhiều lần vẫn an toàn
    ============================================================= */
 
-USE KnapsackChallenge;
-GO
+
 
 /* ---------- 1. Users: ban + heartbeat ---------- */
 IF COL_LENGTH('dbo.Users', 'IsBanned') IS NULL

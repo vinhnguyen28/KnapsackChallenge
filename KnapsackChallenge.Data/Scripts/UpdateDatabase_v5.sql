@@ -6,8 +6,6 @@
    - Mọi timestamp dùng SYSUTCDATETIME() (UTC).
    ============================================================= */
 
-USE KnapsackChallenge;
-GO
 
 /* ---------- 1. GameSessions: host + mốc thời gian ---------- */
 

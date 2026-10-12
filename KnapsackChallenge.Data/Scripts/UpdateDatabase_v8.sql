@@ -6,8 +6,6 @@
    - User cũ mặc định TotalExp = 0, Level = 1.
    ============================================================= */
 
-USE KnapsackChallenge;
-GO
 
 /* ---------- 1. Users: TotalExp ---------- */
 IF COL_LENGTH('dbo.Users', 'TotalExp') IS NULL

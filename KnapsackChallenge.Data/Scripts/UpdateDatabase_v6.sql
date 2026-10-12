@@ -10,8 +10,6 @@
    - Mọi timestamp dùng SYSUTCDATETIME() (UTC).
    ============================================================= */
 
-USE KnapsackChallenge;
-GO
 
 SET NOCOUNT ON;
 GO

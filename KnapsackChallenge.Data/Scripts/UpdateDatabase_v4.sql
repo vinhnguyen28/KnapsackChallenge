@@ -7,8 +7,6 @@
        * Multiplayer: TẮT (chưa triển khai UI), MaxPlayers = 4.
    ============================================================= */
 
-USE KnapsackChallenge;
-GO
 
 IF OBJECT_ID('dbo.GameModes', 'U') IS NULL
 BEGIN

@@ -4,9 +4,6 @@
    - Idempotent: chạy lại nhiều lần vẫn an toàn
    ============================================================= */
 
-USE KnapsackChallenge;
-GO
-
 /* ---------- 1. GameSessions.Mode ---------- */
 IF COL_LENGTH('dbo.GameSessions', 'Mode') IS NULL
     ALTER TABLE GameSessions ADD Mode NVARCHAR(20) NOT NULL

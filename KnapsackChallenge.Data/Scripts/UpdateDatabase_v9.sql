@@ -5,9 +5,6 @@
    - Index theo EXP (IX_Users_TotalExp_Desc) đã có ở v8, không tạo lại.
    ============================================================= */
 
-USE KnapsackChallenge;
-GO
-
 DECLARE @Mode nvarchar(20) = NULL, @Difficulty nvarchar(20) = NULL,
         @SetId int = NULL, @Since datetime2 = NULL;
 

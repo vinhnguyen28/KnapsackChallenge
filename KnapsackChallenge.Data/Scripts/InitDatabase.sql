@@ -4,8 +4,7 @@
 
 
 -- 2. Chuyển sang sử dụng cơ sở dữ liệu vừa tạo
-USE KnapsackChallenge;
-GO
+
 
 -- 1. Bảng Users (Tài khoản)
 CREATE TABLE Users (
