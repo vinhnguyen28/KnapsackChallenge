@@ -53,6 +53,9 @@ builder.Services.AddSingleton<IRankService>(_ =>
 builder.Services.AddSingleton<ISoloGameService>(_ =>
     ServiceFactory.GetSoloGameService());
 
+builder.Services.AddSingleton<ILeaderboardService>(_ =>
+    ServiceFactory.GetLeaderboardService());
+
 // =========================================================
 // 3. Cổng cho RoomManager + ConnectionTracker
 // =========================================================

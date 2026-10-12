@@ -1,9 +1,8 @@
 ﻿using KnapsackChallenge.Common.DTOs;
-using KnapsackChallenge.Core.Factories;
 using KnapsackChallenge.Core.Services.Player;
 using KnapsackChallenge.Data.Entities;
+using KnapsackChallenge.UI.Services;
 using KnapsackChallenge.UI.Shared;
-using Microsoft.Data.SqlClient;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 
@@ -40,7 +39,7 @@ namespace KnapsackChallenge.UI.Features.Player
         public HistoryViewModel(UserEntity user)
         {
             _user = user;
-            _soloService = ServiceFactory.GetSoloGameService();
+            _soloService = ClientServiceFactory.GetSoloGameService();
 
             BackCommand = new RelayCommand<object>(_ => BackRequested?.Invoke());
 
@@ -61,7 +60,7 @@ namespace KnapsackChallenge.UI.Features.Player
 
                 ErrorMessage = "";
             }
-            catch (SqlException) { ErrorMessage = "Không kết nối được cơ sở dữ liệu!"; }
+            catch (Exception ex) { ErrorMessage = ApiErrorText.From(ex); }
             finally { IsLoading = false; }
         }
     }

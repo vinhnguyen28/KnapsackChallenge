@@ -1,10 +1,9 @@
 ﻿using KnapsackChallenge.Common.Constants;
-using KnapsackChallenge.Common.DTOs;   // cần RoomStateDto
-using KnapsackChallenge.Core.Factories;
+using KnapsackChallenge.Common.DTOs;
 using KnapsackChallenge.Core.Services.Player;
 using KnapsackChallenge.Data.Entities;
+using KnapsackChallenge.UI.Services;
 using KnapsackChallenge.UI.Shared;
-using Microsoft.Data.SqlClient;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -21,6 +20,10 @@ namespace KnapsackChallenge.UI.Features.Player
 
         private ViewModelBase _currentPage = null!;
         private PlayerNavItem? _selectedNavItem;
+
+        // Cờ chống chạy chồng heartbeat (DispatcherTimer có thể tick khi lần
+        // trước chưa hoàn tất do mạng chậm).
+        private bool _heartbeatBusy;
 
         public IReadOnlyList<PlayerNavItem> NavItems { get; } = new List<PlayerNavItem>
         {
@@ -85,8 +88,8 @@ namespace KnapsackChallenge.UI.Features.Player
         {
             _user = user;
             _dialog = dialog ?? new WpfDialogService();
-            _session = ServiceFactory.GetPlayerSessionService();
-            _rankService = ServiceFactory.GetRankService();
+            _session = ClientServiceFactory.GetPlayerSessionService();
+            _rankService = ClientServiceFactory.GetRankService();
 
             LogoutCommand = new RelayCommand<object>(_ => ExecuteLogout());
             ToggleSettingsCommand = new RelayCommand<object>(_ => IsSettingsOpen = !IsSettingsOpen);
@@ -98,17 +101,9 @@ namespace KnapsackChallenge.UI.Features.Player
             ShowSocialCommand = new RelayCommand<object>(_ =>
                 ShowPlaceholder("Mạng xã hội", "Liên kết mạng xã hội sẽ được bổ sung sau."));
 
-            // Đọc tim lần đầu ngay khi vào vỏ Player.
-            RefreshHeartsOnce();
-
-            // v8: load rank badge.
-            try
-            {
-                var rank = _rankService.GetStatus(_user.Id);
-                RankBadge = rank.LevelBadge;
-            }
-            catch (SqlException) { }
-            catch (InvalidOperationException) { }
+            // Đọc tim + rank badge lần đầu — chạy async, KHÔNG chặn UI.
+            _ = RefreshHeartsOnceAsync();
+            _ = LoadRankBadgeAsync();
 
             _heartbeatTimer = new DispatcherTimer
             {
@@ -158,13 +153,6 @@ namespace KnapsackChallenge.UI.Features.Player
             var home = new HomePageViewModel(_user);
 
             home.PlaySoloRequested += () => NavigateByKey("play");
-
-            //home.PlayMultiplayerRequested += () =>
-            //{
-            //    MessageBox.Show("Chế độ nhiều người chơi đang được phát triển.",
-            //                    "Sắp ra mắt",
-            //                    MessageBoxButton.OK, MessageBoxImage.Information);
-            //};
 
             home.PlayMultiplayerRequested += () => NavigateByKey("multiplayer");
 
@@ -227,13 +215,11 @@ namespace KnapsackChallenge.UI.Features.Player
             return vm;
         }
 
-        //private ViewModelBase CreateLobbyVm(){}
         private ViewModelBase CreateLobbyVm()
         {
             var lobby = new LobbyViewModel(_user);
 
             lobby.BackRequested += () => NavigateByKey("home");
-
 
             lobby.RoomEntered += state =>
             {
@@ -340,22 +326,67 @@ namespace KnapsackChallenge.UI.Features.Player
             MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        private void RefreshHeartsOnce()
+        // =========================================================
+        // FIRST-LOAD (ASYNC) — không chặn UI
+        // =========================================================
+
+        private async System.Threading.Tasks.Task RefreshHeartsOnceAsync()
         {
             try
             {
-                var status = _session.GetHeartStatus(_user.Id);
+                var status = await System.Threading.Tasks.Task.Run(
+                    () => _session.GetHeartStatus(_user.Id));
                 HeartsBadge = status.BadgeText;
             }
-            catch (SqlException) { }
-            catch (InvalidOperationException) { }
+            catch (Exception)
+            {
+                // Nuốt im lặng — badge giữ giá trị mặc định "❤ --/--".
+            }
         }
 
-        private void OnHeartbeat(object? sender, EventArgs e)
+        private async System.Threading.Tasks.Task LoadRankBadgeAsync()
         {
             try
             {
-                var (banned, reason) = _session.CheckStatus(_user.Id);
+                var rank = await System.Threading.Tasks.Task.Run(
+                    () => _rankService.GetStatus(_user.Id));
+                RankBadge = rank.LevelBadge;
+            }
+            catch (Exception)
+            {
+                // Nuốt im lặng — badge giữ giá trị mặc định "Lv 1 · Đồng".
+            }
+        }
+
+        // =========================================================
+        // HEARTBEAT — async void + cờ chống chạy chồng
+        // =========================================================
+
+        private async void OnHeartbeat(object? sender, EventArgs e)
+        {
+            if (_heartbeatBusy) return;
+            _heartbeatBusy = true;
+            try
+            {
+                bool banned;
+                string? reason;
+
+                try
+                {
+                    var result = await System.Threading.Tasks.Task.Run(
+                        () => _session.CheckStatus(_user.Id));
+                    banned = result.Banned;
+                    reason = result.Reason;
+                }
+                catch (Exception)
+                {
+                    // Lỗi mạng/API khác: nuốt im lặng, timer tiếp tục chạy.
+                    return;
+                }
+
+                // Đã đăng xuất ở luồng khác → không áp kết quả.
+                if (!_heartbeatTimer.IsEnabled) return;
+
                 if (banned)
                 {
                     _heartbeatTimer.Stop();
@@ -373,13 +404,31 @@ namespace KnapsackChallenge.UI.Features.Player
                     return;
                 }
 
-                // Heartbeat giờ trả về HeartStatusDto — cập nhật badge luôn.
-                var heartStatus = _session.Heartbeat(_user.Id);
-                HeartsBadge = heartStatus.BadgeText;
+                HeartStatusDto? heartStatus = null;
+                try
+                {
+                    heartStatus = await System.Threading.Tasks.Task.Run(
+                        () => _session.Heartbeat(_user.Id));
+                }
+                catch (Exception)
+                {
+                    // Lỗi mạng khi heartbeat: giữ badge cũ.
+                }
+
+                if (!_heartbeatTimer.IsEnabled) return;
+
+                if (heartStatus != null)
+                    HeartsBadge = heartStatus.BadgeText;
             }
-            catch (SqlException) { }
-            catch (InvalidOperationException) { }
+            finally
+            {
+                _heartbeatBusy = false;
+            }
         }
+
+        // =========================================================
+        // LOGOUT
+        // =========================================================
 
         private void ExecuteLogout()
         {
@@ -391,9 +440,12 @@ namespace KnapsackChallenge.UI.Features.Player
             _heartbeatTimer.Stop();
             (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
 
-            try { _session.GoOffline(_user.Id); }
-            catch (SqlException) { }
-            catch (InvalidOperationException) { }
+            // Fire-and-forget: không await để không treo UI khi mạng chậm.
+            _ = System.Threading.Tasks.Task.Run(() =>
+            {
+                try { _session.GoOffline(_user.Id); }
+                catch (Exception) { /* nuốt — logout phải luôn thành công phía UI */ }
+            });
 
             // Phase 3: đóng kết nối SignalR nếu còn.
             _ = MultiplayerSession.Instance.DisposeConnectionAsync();

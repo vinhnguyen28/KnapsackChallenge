@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Windows.Input;
-using Microsoft.Data.SqlClient;
-using KnapsackChallenge.Core.Factories;
-using KnapsackChallenge.Core.Services.Player;
+﻿using KnapsackChallenge.Core.Services.Player;
 using KnapsackChallenge.Data.Entities;
+using KnapsackChallenge.UI.Services;
 using KnapsackChallenge.UI.Shared;
+using System.Windows.Input;
 
 namespace KnapsackChallenge.UI.Features.Admin
 {
@@ -55,17 +52,15 @@ namespace KnapsackChallenge.UI.Features.Admin
         {
             _adminUser = adminUser;
             _dialog = dialog ?? new WpfDialogService();
-            _sessionService = ServiceFactory.GetPlayerSessionService();
+            _sessionService = ClientServiceFactory.GetPlayerSessionService();
 
             LogoutCommand = new RelayCommand<object>(_ => ExecuteLogout());
 
-            // Chọn mặc định mục đầu -> đây cũng là lần navigate đầu tiên.
             SelectedNavItem = NavItems[0];
         }
 
         private void NavigateTo(string key)
         {
-            // Cho VM cũ cơ hội dọn dẹp (dừng DispatcherTimer).
             (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
 
             CurrentPage = key switch
@@ -93,13 +88,12 @@ namespace KnapsackChallenge.UI.Features.Admin
             if (!_dialog.Confirm("Bạn có chắc muốn đăng xuất?", "Xác nhận đăng xuất"))
                 return;
 
-            // Đánh dấu Offline. Nuốt lỗi mạng vì đăng xuất phải luôn thành công phía UI.
-            try
+            // Fire-and-forget: không await để không treo UI khi mạng chậm.
+            _ = System.Threading.Tasks.Task.Run(() =>
             {
-                _sessionService.GoOffline(_adminUser.Id);
-            }
-            catch (SqlException) { }
-            catch (InvalidOperationException) { }
+                try { _sessionService.GoOffline(_adminUser.Id); }
+                catch (Exception) { /* nuốt — logout phải luôn thành công phía UI */ }
+            });
 
             // Dọn dẹp VM con trước khi rời trang.
             (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();

@@ -1,9 +1,8 @@
-﻿using KnapsackChallenge.Core.Factories;
-using KnapsackChallenge.Core.Services.Admin;
+﻿using KnapsackChallenge.Core.Services.Admin;
 using KnapsackChallenge.Core.Services.Player;
 using KnapsackChallenge.Data.Entities;
+using KnapsackChallenge.UI.Services;
 using KnapsackChallenge.UI.Shared;
-using Microsoft.Data.SqlClient;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 
@@ -12,7 +11,6 @@ namespace KnapsackChallenge.UI.Features.Player
     // Trang chủ người chơi: 2 nút lớn + cột stats + cột top + 2 shortcut.
     public class HomePageViewModel : ViewModelBase
     {
-
         private const bool MultiplayerImplemented = true;
 
         private readonly UserEntity _user;
@@ -20,9 +18,9 @@ namespace KnapsackChallenge.UI.Features.Player
         private readonly ISoloGameService _soloGameService;
         private readonly IRankService _rankService;
         private readonly ILeaderboardService _leaderboardService;
+
         public string WelcomeText => $"Chào {_user.Username ?? ""}, sẵn sàng chưa?";
 
-        // ---- Placeholder stats ----
         // ---- Stats thực từ DB ----
         private string _bestScoreText = "—";
         public string BestScoreText
@@ -83,7 +81,6 @@ namespace KnapsackChallenge.UI.Features.Player
 
         public string LevelBadge => $"Lv {Level} · {RankTitle}";
 
-
         // ---- Top người chơi (v9: top 10 theo EXP) ----
         public ObservableCollection<ExpBoardRow> TopPlayers { get; } = new();
 
@@ -94,7 +91,7 @@ namespace KnapsackChallenge.UI.Features.Player
             private set { _isLoadingTopPlayers = value; OnPropertyChanged(); }
         }
 
-        // Dòng ghim hạng của mình khi KHÔNG nằm trong top 10 (ngoài top thì cần chỉ rõ).
+        // Dòng ghim hạng của mình khi KHÔNG nằm trong top 10.
         private string _myRankLine = "";
         public string MyRankLine
         {
@@ -156,10 +153,10 @@ namespace KnapsackChallenge.UI.Features.Player
         public HomePageViewModel(UserEntity user)
         {
             _user = user;
-            _gameModeService = ServiceFactory.GetGameModeService();
-            _soloGameService = ServiceFactory.GetSoloGameService();
-            _rankService = ServiceFactory.GetRankService();
-            _leaderboardService = ServiceFactory.GetLeaderboardService();
+            _gameModeService = ClientServiceFactory.GetGameModeService();
+            _soloGameService = ClientServiceFactory.GetSoloGameService();
+            _rankService = ClientServiceFactory.GetRankService();
+            _leaderboardService = ClientServiceFactory.GetLeaderboardService();
 
             PlaySoloCommand = new RelayCommand<object>(
                 _ => PlaySoloRequested?.Invoke(),
@@ -191,8 +188,10 @@ namespace KnapsackChallenge.UI.Features.Player
                 SoloEnabled = solo?.IsEnabled ?? true;
                 MultiplayerEnabled = multi?.IsEnabled ?? false;
             }
-            catch (SqlException) { }
-            catch (InvalidOperationException) { }
+            catch (Exception)
+            {
+                // Panel phụ — giữ giá trị mặc định (SoloEnabled=true, MultiplayerEnabled=false).
+            }
         }
 
         private async System.Threading.Tasks.Task LoadTopPlayersAsync()
@@ -208,15 +207,17 @@ namespace KnapsackChallenge.UI.Features.Player
                 TopPlayers.Clear();
                 foreach (var e in list) TopPlayers.Add(new ExpBoardRow(e, _user.Id));
 
-                // Nếu mình đã nằm trong top 10 thì dòng của mình đã được tô nổi bật → không cần ghim.
+                // Nếu mình đã nằm trong top 10 thì dòng của mình đã được tô nổi bật.
                 MyRankLine = me == null
                     ? "Bạn chưa có EXP — chơi ván đầu tiên!"
                     : (list.Any(x => x.UserId == _user.Id)
                         ? ""
                         : $"Hạng của bạn: #{me.Rank} · {me.LevelBadge}");
             }
-            catch (SqlException) { }
-            catch (InvalidOperationException) { }
+            catch (Exception)
+            {
+                // Panel phụ — nuốt im lặng.
+            }
             finally { IsLoadingTopPlayers = false; }
         }
 
@@ -244,8 +245,10 @@ namespace KnapsackChallenge.UI.Features.Player
                     .Max();
                 BestScoreText = best > 0 ? best.ToString() : "—";
             }
-            catch (SqlException) { }
-            catch (InvalidOperationException) { }
+            catch (Exception)
+            {
+                // Panel phụ — nuốt im lặng.
+            }
         }
     }
 }

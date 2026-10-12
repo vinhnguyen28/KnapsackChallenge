@@ -131,3 +131,47 @@ Content-Type: application/json
   "timeSpentSeconds": 0,
   "isTimeout": false
 }
+
+### =========================================================
+### LEADERBOARD (v9) — /api/leaderboard
+### =========================================================
+
+### 22. Leaderboard: top EXP
+GET {{host}}/api/leaderboard/exp?topN=10
+Authorization: Bearer {{token}}
+
+### 23. Leaderboard: hạng EXP của chính mình (204 nếu chưa có EXP)
+GET {{host}}/api/leaderboard/exp/me
+Authorization: Bearer {{token}}
+
+### 24. Leaderboard: bảng theo bộ đề (không lọc)
+GET {{host}}/api/leaderboard/sets
+Authorization: Bearer {{token}}
+
+### 25. Leaderboard: bảng theo bộ đề (lọc mode + difficulty + setId)
+GET {{host}}/api/leaderboard/sets?mode=Solo&difficulty=Easy&setId=1
+Authorization: Bearer {{token}}
+
+### 26. Leaderboard: hạng của tôi theo bộ đề (204 nếu chưa có ván hợp lệ)
+GET {{host}}/api/leaderboard/sets/me
+Authorization: Bearer {{token}}
+
+### 27. Leaderboard: mode sai — phải trả 400
+GET {{host}}/api/leaderboard/sets?mode=Abc
+Authorization: Bearer {{token}}
+
+### 28. Leaderboard: difficulty sai — phải trả 400
+GET {{host}}/api/leaderboard/sets?difficulty=Xyz
+Authorization: Bearer {{token}}
+
+### 29. Leaderboard: setId = 0 — phải trả 400
+GET {{host}}/api/leaderboard/sets?setId=0
+Authorization: Bearer {{token}}
+
+### =========================================================
+### MODES — /api/modes
+### =========================================================
+
+### 30. Modes: danh sách chế độ chơi cho Player (đã lược bỏ field Admin-only)
+GET {{host}}/api/modes
+Authorization: Bearer {{token}}

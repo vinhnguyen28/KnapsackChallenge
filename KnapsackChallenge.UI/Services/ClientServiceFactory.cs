@@ -7,14 +7,16 @@ namespace KnapsackChallenge.UI.Services
 {
     // Bản sao UI của Core.Factories.ServiceFactory.
     // - Đúng tên + kiểu trả về của từng method public bên Core.
-    // - GetAuthService      -> RemoteAuthService (REST).
-    // - GetPlayerSession    -> RemotePlayerSessionService (REST).
-    // - GetRankService      -> RemoteRankService (REST).
-    // - GetSoloGameService  -> RemoteSoloGameService (REST).
+    // - GetAuthService            -> RemoteAuthService (REST).
+    // - GetPlayerSessionService   -> RemotePlayerSessionService (REST).
+    // - GetRankService            -> RemoteRankService (REST).
+    // - GetSoloGameService        -> RemoteSoloGameService (REST).
+    // - GetLeaderboardService     -> RemoteLeaderboardService (REST).
+    // - GetGameModeService        -> RemoteGameModeService (REST).
     // - Các service khác TẠM THỜI gọi thẳng Core (TODO remote).
     //
-    // LƯU Ý: PlayerSession + Rank + Solo dùng INSTANCE DÙNG CHUNG (Lazy singleton)
-    // để cache nội bộ (vd: tim) hoạt động xuyên suốt vòng đời ứng dụng.
+    // LƯU Ý: các Remote instance dùng chung Lazy singleton để cache nội bộ
+    // (tim, danh sách chế độ...) hoạt động xuyên suốt vòng đời ứng dụng.
     public static class ClientServiceFactory
     {
         // ---- Remote instances dùng chung ----
@@ -28,6 +30,12 @@ namespace KnapsackChallenge.UI.Services
         private static readonly Lazy<ISoloGameService> _soloGameService =
             new(() => new RemoteSoloGameService());
 
+        private static readonly Lazy<ILeaderboardService> _leaderboardService =
+            new(() => new RemoteLeaderboardService());
+
+        private static readonly Lazy<IGameModeService> _gameModeService =
+            new(() => new RemoteGameModeService());
+
         // ĐÃ CHUYỂN SANG REST.
         public static IAuthService GetAuthService() => new RemoteAuthService();
 
@@ -39,6 +47,12 @@ namespace KnapsackChallenge.UI.Services
 
         // ĐÃ CHUYỂN SANG REST — instance dùng chung.
         public static ISoloGameService GetSoloGameService() => _soloGameService.Value;
+
+        // ĐÃ CHUYỂN SANG REST — instance dùng chung.
+        public static ILeaderboardService GetLeaderboardService() => _leaderboardService.Value;
+
+        // ĐÃ CHUYỂN SANG REST — instance dùng chung.
+        public static IGameModeService GetGameModeService() => _gameModeService.Value;
 
         // TODO remote: chuyển sang REST endpoint tương ứng.
         public static IItemService GetItemService() =>
@@ -59,13 +73,5 @@ namespace KnapsackChallenge.UI.Services
         // TODO remote.
         public static IAdminStatsService GetAdminStatsService() =>
             KnapsackChallenge.Core.Factories.ServiceFactory.GetAdminStatsService();
-
-        // TODO remote.
-        public static IGameModeService GetGameModeService() =>
-            KnapsackChallenge.Core.Factories.ServiceFactory.GetGameModeService();
-
-        // TODO remote.
-        public static ILeaderboardService GetLeaderboardService() =>
-            KnapsackChallenge.Core.Factories.ServiceFactory.GetLeaderboardService();
     }
 }

@@ -1,9 +1,8 @@
 ﻿using KnapsackChallenge.Common.DTOs;
-using KnapsackChallenge.Core.Factories;
 using KnapsackChallenge.Core.Services.Player;
 using KnapsackChallenge.Data.Entities;
+using KnapsackChallenge.UI.Services;
 using KnapsackChallenge.UI.Shared;
-using Microsoft.Data.SqlClient;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 
@@ -197,8 +196,8 @@ namespace KnapsackChallenge.UI.Features.Player
         public LeaderboardViewModel(UserEntity user)
         {
             _user = user;
-            _lb = ServiceFactory.GetLeaderboardService();
-            _solo = ServiceFactory.GetSoloGameService();
+            _lb = ClientServiceFactory.GetLeaderboardService();
+            _solo = ClientServiceFactory.GetSoloGameService();
 
             _selectedMode = ModeOptions[0];
             _selectedTime = TimeOptions[0];
@@ -217,8 +216,7 @@ namespace KnapsackChallenge.UI.Features.Player
                 var sets = await Task.Run(() => _solo.GetAvailableSets());
                 _allSets = sets ?? new List<SoloGameSetDto>();
             }
-            catch (SqlException) { ErrorMessage = "Không kết nối được cơ sở dữ liệu!"; }
-            catch (InvalidOperationException ex) { ErrorMessage = ex.Message; }
+            catch (Exception ex) { ErrorMessage = ApiErrorText.From(ex); }
 
             RebuildSetOptions();
             await LoadAsync();
@@ -307,13 +305,9 @@ namespace KnapsackChallenge.UI.Features.Player
                         : "Bạn chưa có thứ hạng trong phạm vi này.";
                 }
             }
-            catch (SqlException)
+            catch (Exception ex)
             {
-                if (version == _loadVersion) ErrorMessage = "Không kết nối được cơ sở dữ liệu!";
-            }
-            catch (InvalidOperationException ex)
-            {
-                if (version == _loadVersion) ErrorMessage = ex.Message;
+                if (version == _loadVersion) ErrorMessage = ApiErrorText.From(ex);
             }
             finally
             {

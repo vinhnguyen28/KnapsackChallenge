@@ -1,10 +1,9 @@
 ﻿using KnapsackChallenge.Common.DTOs;
 using KnapsackChallenge.Common.Enums;
-using KnapsackChallenge.Core.Factories;
 using KnapsackChallenge.Core.Services.Player;
 using KnapsackChallenge.Data.Entities;
+using KnapsackChallenge.UI.Services;
 using KnapsackChallenge.UI.Shared;
-using Microsoft.Data.SqlClient;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
@@ -34,8 +33,8 @@ namespace KnapsackChallenge.UI.Features.Player
             : Data.CreatedAtUtc.ToLocalTime().ToString("dd/MM HH:mm");
 
         public string StartedAtText => Data.StartedAtUtc.HasValue
-    ? Data.StartedAtUtc.Value.ToLocalTime().ToString("dd/MM HH:mm")
-    : "—";
+            ? Data.StartedAtUtc.Value.ToLocalTime().ToString("dd/MM HH:mm")
+            : "—";
 
         public string Difficulty => Data.Difficulty;
         public string DifficultyText => (Data.Difficulty ?? "").ToLowerInvariant() switch
@@ -186,16 +185,15 @@ namespace KnapsackChallenge.UI.Features.Player
         public event Action? BackRequested;
         public event Action<string>? ForceLogoutRequested;
 
-        // Phase 3: báo cho vỏ điều hướng sang MultiplayerRoomView.
         public event Action<RoomStateDto>? RoomEntered;
 
         public LobbyViewModel(UserEntity user)
         {
             _user = user;
-            _soloService = ServiceFactory.GetSoloGameService();
+            _soloService = ClientServiceFactory.GetSoloGameService();
 
             RefreshCommand = new RelayCommand<object>(_ => _ = RefreshAsync(), _ => IsConnected && !IsBusy);
-            CreateRoomCommand = new RelayCommand<object>(_ => ExecuteCreateRoom(), _ => IsConnected && !IsBusy);
+            CreateRoomCommand = new RelayCommand<object>(_ => _ = ExecuteCreateRoomAsync(), _ => IsConnected && !IsBusy);
             JoinRoomCommand = new RelayCommand<object>(_ => ExecuteJoinRoom(), _ => IsConnected && !IsBusy);
             JoinSelectedCommand = new RelayCommand<object>(
                 _ => { if (SelectedRoom != null) _ = JoinRoomAsync(SelectedRoom.RoomCode); },
@@ -205,25 +203,16 @@ namespace KnapsackChallenge.UI.Features.Player
             _ = InitAsync();
         }
 
-        // =========================================================
-        // LIFECYCLE
-        // =========================================================
-
         public void OnNavigatedFrom()
         {
             _disposed = true;
 
-            // Chỉ UNSUBSCRIBE, KHÔNG dispose connection — Room có thể đang dùng chung.
             if (_connection != null)
             {
                 _connection.StateChanged -= OnConnectionStateChanged;
                 _connection.ForceLogout -= OnForceLogout;
             }
         }
-
-        // =========================================================
-        // INIT / CONNECT
-        // =========================================================
 
         private async System.Threading.Tasks.Task InitAsync()
         {
@@ -243,7 +232,6 @@ namespace KnapsackChallenge.UI.Features.Player
             {
                 _connection = await MultiplayerSession.Instance.EnsureConnectionAsync();
 
-                // Subscribe TRƯỚC khi refresh.
                 _connection.StateChanged += OnConnectionStateChanged;
                 _connection.ForceLogout += OnForceLogout;
 
@@ -264,12 +252,6 @@ namespace KnapsackChallenge.UI.Features.Player
             }
         }
 
-        // =========================================================
-        // FILTER
-        // =========================================================
-
-        // Áp dụng bộ lọc hiện tại lên _allRooms → rebuild Rooms.
-        // Luôn chạy trên UI thread: chỉ được gọi từ setter property (UI thread) hoặc từ RefreshAsync (đã bọc RunOnUi).
         private void ApplyFilter()
         {
             IEnumerable<RoomSummaryDto> q = _allRooms;
@@ -290,7 +272,6 @@ namespace KnapsackChallenge.UI.Features.Player
                     (r.SetName ?? "").Contains(search, StringComparison.OrdinalIgnoreCase));
             }
 
-            // Phòng đang chờ luôn lên trước; trong cùng nhóm sắp theo CreatedAtUtc giảm dần.
             var ordered = q
                 .OrderBy(r => r.Status == RoomStatus.Waiting ? 0 : 1)
                 .ThenByDescending(r => r.CreatedAtUtc)
@@ -319,10 +300,6 @@ namespace KnapsackChallenge.UI.Features.Player
             }
         }
 
-        // =========================================================
-        // REFRESH
-        // =========================================================
-
         private async System.Threading.Tasks.Task RefreshAsync()
         {
             if (_connection == null || !_connection.IsConnected || _disposed) return;
@@ -349,20 +326,22 @@ namespace KnapsackChallenge.UI.Features.Player
             }
         }
 
-        // =========================================================
-        // CREATE / JOIN
-        // =========================================================
-
-        private void ExecuteCreateRoom()
+        // Async vì GetAvailableSets đi qua mạng — bọc Task.Run.
+        private async System.Threading.Tasks.Task ExecuteCreateRoomAsync()
         {
             if (_connection == null || !_connection.IsConnected) return;
 
             List<SoloGameSetDto> sets;
             try
             {
-                sets = _soloService.GetAvailableSets();
+                sets = await System.Threading.Tasks.Task.Run(
+                    () => _soloService.GetAvailableSets());
             }
-            catch (SqlException) { ErrorMessage = "Không kết nối được cơ sở dữ liệu!"; return; }
+            catch (Exception ex)
+            {
+                ErrorMessage = ApiErrorText.From(ex);
+                return;
+            }
 
             if (sets.Count == 0)
             {
@@ -452,10 +431,6 @@ namespace KnapsackChallenge.UI.Features.Player
             }
         }
 
-        // =========================================================
-        // SIGNALR EVENT HANDLERS
-        // =========================================================
-
         private void OnConnectionStateChanged(MultiplayerConnectionService.ConnectionState s)
         {
             RunOnUi(() =>
@@ -488,10 +463,6 @@ namespace KnapsackChallenge.UI.Features.Player
                 ForceLogoutRequested?.Invoke(reason);
             });
         }
-
-        // =========================================================
-        // HELPERS
-        // =========================================================
 
         private static void RunOnUi(Action action)
         {

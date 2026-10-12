@@ -1,8 +1,8 @@
 ﻿using KnapsackChallenge.Common.DTOs;
 using KnapsackChallenge.Common.Enums;
-using KnapsackChallenge.Core.Factories;
 using KnapsackChallenge.Core.Services.Player;
 using KnapsackChallenge.Data.Entities;
+using KnapsackChallenge.UI.Services;
 using KnapsackChallenge.UI.Shared;
 using System.Collections.ObjectModel;
 using System.Windows;
@@ -50,7 +50,6 @@ namespace KnapsackChallenge.UI.Features.Player
         // Phase 4: báo cho vỏ điều hướng khi ván bắt đầu.
         public event Action<GameStartDto>? GameStartedReceived;
 
-
         // Vỏ điều hướng subscribe để quay về Lobby.
         public event Action? RoomExited;
 
@@ -61,7 +60,7 @@ namespace KnapsackChallenge.UI.Features.Player
         {
             _user = user;
             _state = initialState;
-            _soloService = ServiceFactory.GetSoloGameService();
+            _soloService = ClientServiceFactory.GetSoloGameService();
 
             LeaveRoomCommand = new RelayCommand<object>(_ => _ = LeaveRoomAsync());
             StartGameCommand = new RelayCommand<object>(_ => _ = StartGameAsync(), _ => CanStartGame);
@@ -72,10 +71,6 @@ namespace KnapsackChallenge.UI.Features.Player
 
             _ = InitAsync();
         }
-
-        // =========================================================
-        // STATE EXPOSURE
-        // =========================================================
 
         public string RoomCode => _state.RoomCode;
         public string SetName => _state.SetName;
@@ -115,10 +110,6 @@ namespace KnapsackChallenge.UI.Features.Player
             ? (CanStartGame ? "Sẵn sàng bắt đầu" : "Cần ít nhất 2 người online")
             : "Chờ chủ phòng bắt đầu";
 
-        // =========================================================
-        // SET PICKER
-        // =========================================================
-
         private SoloGameSetDto? _selectedSet;
         public SoloGameSetDto? SelectedSet
         {
@@ -132,7 +123,6 @@ namespace KnapsackChallenge.UI.Features.Player
             }
         }
 
-        // ===== Bộ lọc độ khó cho ComboBox bộ đề (chỉ host) =====
         public bool IsSetFilterEasy
         {
             get => _setDifficultyFilter == "Easy";
@@ -171,17 +161,12 @@ namespace KnapsackChallenge.UI.Features.Player
             }
         }
 
-        // Chuẩn hoá độ khó về 3 giá trị cố định; mặc định "Easy" khi giá trị lạ/rỗng.
         private static string NormalizeDifficulty(string? d)
         {
             if (string.Equals(d, "Medium", StringComparison.OrdinalIgnoreCase)) return "Medium";
             if (string.Equals(d, "Hard", StringComparison.OrdinalIgnoreCase)) return "Hard";
             return "Easy";
         }
-
-        // =========================================================
-        // BANNERS
-        // =========================================================
 
         private string _infoMessage = "";
         public string InfoMessage
@@ -197,20 +182,12 @@ namespace KnapsackChallenge.UI.Features.Player
             set { _errorMessage = value; OnPropertyChanged(); }
         }
 
-        // =========================================================
-        // COMMANDS
-        // =========================================================
-
         public ICommand LeaveRoomCommand { get; }
         public ICommand StartGameCommand { get; }
         public ICommand ChangeSetCommand { get; }
         public ICommand RandomSetCommand { get; }
         public ICommand KickPlayerCommand { get; }
         public ICommand CopyCodeCommand { get; }
-
-        // =========================================================
-        // LIFECYCLE
-        // =========================================================
 
         public void OnNavigatedFrom()
         {
@@ -227,10 +204,6 @@ namespace KnapsackChallenge.UI.Features.Player
             _connection.ForceLogout -= OnForceLogout;
             _connection.RoomClosed -= OnRoomClosed;
         }
-
-        // =========================================================
-        // INIT
-        // =========================================================
 
         private async System.Threading.Tasks.Task InitAsync()
         {
@@ -271,14 +244,14 @@ namespace KnapsackChallenge.UI.Features.Player
 
                 _suppressSetChange = false;
             }
-            catch { /* best-effort */ }
+            catch (Exception ex)
+            {
+                // Best-effort: vẫn phải ApplyState để phòng hiển thị đúng.
+                ErrorMessage = ApiErrorText.From(ex);
+            }
 
             ApplyState(_state);
         }
-
-        // =========================================================
-        // STATE APPLICATION
-        // =========================================================
 
         private void ApplyState(RoomStateDto state)
         {
@@ -307,11 +280,6 @@ namespace KnapsackChallenge.UI.Features.Player
             OnPropertyChanged(nameof(CanChangeSet));
             OnPropertyChanged(nameof(HostHintText));
 
-            // Đồng bộ ComboBox với set hiện tại của server (không trigger command).
-            // Chỉ đồng bộ ComboBox khi bộ đề của phòng THẬT SỰ đổi
-            // (hoặc khi lần đầu vào phòng vì _setDifficultyFilter còn rỗng).
-            // Nhờ vậy host đang duyệt ComboBox sẽ không bị nhảy về đề cũ
-            // khi có người khác vào/ra phòng.
             bool serverSetChanged = prevSetId != state.SetId || _setDifficultyFilter == "";
             if (serverSetChanged && !_suppressSetChange)
             {
@@ -328,16 +296,11 @@ namespace KnapsackChallenge.UI.Features.Player
             CommandManager.InvalidateRequerySuggested();
         }
 
-        // =========================================================
-        // SIGNALR HANDLERS (background thread → marshal UI)
-        // =========================================================
-
         private void OnRoomUpdated(RoomStateDto state)
             => RunOnUi(() => ApplyState(state));
 
         private void OnGameStarted(GameStartDto start)
         {
-            // KHÔNG hiện MessageBox nữa — fire event để vỏ điều hướng sang màn chơi.
             RunOnUi(() => GameStartedReceived?.Invoke(start));
         }
 
@@ -377,10 +340,6 @@ namespace KnapsackChallenge.UI.Features.Player
             });
         }
 
-        // =========================================================
-        // COMMAND HANDLERS
-        // =========================================================
-
         private async System.Threading.Tasks.Task LeaveRoomAsync()
         {
             if (_connection == null)
@@ -405,7 +364,6 @@ namespace KnapsackChallenge.UI.Features.Player
                 var result = await _connection.StartGameAsync();
                 if (result == null || !result.Success)
                     RunOnUi(() => ErrorMessage = result?.Message ?? "Không bắt đầu được ván.");
-                // Success: server broadcast GameStarted → OnGameStarted xử lý.
             }
             catch (Exception ex)
             {
@@ -432,8 +390,6 @@ namespace KnapsackChallenge.UI.Features.Player
             }
         }
 
-        // Random 1 bộ đề trong mức đang lọc (khác đề hiện tại nếu có từ 2 đề trở lên),
-        // rồi gọi ChangeSetAsync — server vẫn kiểm tra setId hợp lệ.
         private async System.Threading.Tasks.Task RandomSetAsync()
         {
             if (_connection == null || FilteredSets.Count == 0) return;
@@ -493,10 +449,6 @@ namespace KnapsackChallenge.UI.Features.Player
             }
             catch { /* ignore */ }
         }
-
-        // =========================================================
-        // HELPERS
-        // =========================================================
 
         private static void RunOnUi(Action action)
         {

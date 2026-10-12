@@ -1,9 +1,8 @@
 ﻿using KnapsackChallenge.Common.DTOs;
-using KnapsackChallenge.Core.Factories;
 using KnapsackChallenge.Core.Services.Player;
 using KnapsackChallenge.Data.Entities;
+using KnapsackChallenge.UI.Services;
 using KnapsackChallenge.UI.Shared;
-using Microsoft.Data.SqlClient;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -48,10 +47,14 @@ namespace KnapsackChallenge.UI.Features.Player
         private readonly DispatcherTimer _playTimer;
         private readonly int _setId;
 
+        // Cờ chống bấm đúp / tick chồng.
+        private bool _startGameBusy;
+        private bool _submitBusy;
+
         // v7: báo cho vỏ Player biết tim đã thay đổi (sau Start / hồi).
         public event Action<HeartStatusDto>? HeartsChanged;
 
-        // v8: báo cho vỏ Player khi EXP đã được cộng (cập nhật RankBadge header).
+        // v8: báo cho vỏ Player khi EXP đã được cộng.
         public event Action<ExpAwardResultDto>? ExpAwarded;
 
         private string _currentSetName = "";
@@ -96,7 +99,7 @@ namespace KnapsackChallenge.UI.Features.Player
         {
             _user = user;
             _setId = setId;
-            _soloService = ServiceFactory.GetSoloGameService();
+            _soloService = ClientServiceFactory.GetSoloGameService();
 
             _playTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _playTimer.Tick += OnPlayTick;
@@ -213,6 +216,7 @@ namespace KnapsackChallenge.UI.Features.Player
 
         private async System.Threading.Tasks.Task InitAsync()
         {
+            bool serverUnavailable = false;
             try
             {
                 var (enabled, timeLimit) = await System.Threading.Tasks.Task.Run(
@@ -220,18 +224,47 @@ namespace KnapsackChallenge.UI.Features.Player
                 SoloModeEnabled = enabled;
                 TimeLimitSeconds = timeLimit;
             }
-            catch (SqlException) { }
-            catch (InvalidOperationException) { }
+            catch (ServerUnavailableException ex)
+            {
+                // Server tắt: báo rõ và KHÔNG gọi StartGame (tránh thêm 1 lần fail).
+                PlayError = ApiErrorText.From(ex);
+                serverUnavailable = true;
+            }
+            catch (Exception)
+            {
+                // Lỗi khác: giữ giá trị mặc định rồi vẫn tiếp tục StartGame.
+            }
 
-            StartGameWithSet(_setId);
+            if (serverUnavailable) return;
+
+            await StartGameWithSetAsync(_setId);
         }
 
-        private void StartGameWithSet(int setId)
+        private async System.Threading.Tasks.Task StartGameWithSetAsync(int setId)
         {
+            if (_startGameBusy) return;
+            _startGameBusy = true;
             try
             {
-                // v7: StartGame giờ nhận userId + trả HeartStatus.
-                var (ok, message, data, heart) = _soloService.StartGame(_user.Id, setId);
+                bool ok;
+                string message;
+                SoloGameDataDto? data;
+                HeartStatusDto? heart;
+
+                try
+                {
+                    var tuple = await System.Threading.Tasks.Task.Run(
+                        () => _soloService.StartGame(_user.Id, setId));
+                    ok = tuple.Success;
+                    message = tuple.Message;
+                    data = tuple.Data;
+                    heart = tuple.HeartStatus;
+                }
+                catch (Exception ex)
+                {
+                    PlayError = ApiErrorText.From(ex);
+                    return;
+                }
 
                 if (heart != null)
                 {
@@ -266,7 +299,10 @@ namespace KnapsackChallenge.UI.Features.Player
 
                 NotifyGameChanged();
             }
-            catch (SqlException) { PlayError = "Lỗi cơ sở dữ liệu khi tải bộ đề!"; }
+            finally
+            {
+                _startGameBusy = false;
+            }
         }
 
         private void ToggleItem(SelectableItem? item)
@@ -312,7 +348,7 @@ namespace KnapsackChallenge.UI.Features.Player
         private void ExecuteSubmit()
         {
             if (!CanSubmit) return;
-            SubmitInternal(isTimeout: false);
+            _ = SubmitInternalAsync(isTimeout: false);
         }
 
         private void OnPlayTick(object? sender, EventArgs e)
@@ -324,18 +360,40 @@ namespace KnapsackChallenge.UI.Features.Player
             if (IsCountdown && _elapsedSeconds >= TimeLimitSeconds && !HasResult)
             {
                 _playTimer.Stop();
-                SubmitInternal(isTimeout: true);
+                _ = SubmitInternalAsync(isTimeout: true);
             }
         }
 
-        private void SubmitInternal(bool isTimeout)
+        private async System.Threading.Tasks.Task SubmitInternalAsync(bool isTimeout)
         {
+            if (_submitBusy) return;
+            _submitBusy = true;
             try
             {
                 _playTimer.Stop();
                 var selectedIds = GameItems.Where(i => i.IsSelected).Select(i => i.Id).ToList();
-                var (ok, message, result) = _soloService.Submit(
-                    _user.Id, _setId, selectedIds, _elapsedSeconds, isTimeout);
+
+                bool ok;
+                string message;
+                SoloResultDto? result;
+
+                try
+                {
+                    var tuple = await System.Threading.Tasks.Task.Run(
+                        () => _soloService.Submit(
+                            _user.Id, _setId, selectedIds, _elapsedSeconds, isTimeout));
+                    ok = tuple.Success;
+                    message = tuple.Message;
+                    result = tuple.Result;
+                }
+                catch (Exception ex)
+                {
+                    // Lỗi mạng: báo rõ. Nếu không phải timeout thì mở lại đồng hồ
+                    // để người chơi bấm Nộp lại; nếu timeout thì để Nộp thủ công.
+                    PlayError = ApiErrorText.From(ex);
+                    if (!isTimeout) _playTimer.Start();
+                    return;
+                }
 
                 if (!ok || result == null)
                 {
@@ -353,7 +411,6 @@ namespace KnapsackChallenge.UI.Features.Player
 
                 Result = result;
 
-                // v8: fire event để vỏ Player cập nhật RankBadge.
                 if (result.ExpGained > 0 || result.LeveledUp)
                 {
                     ExpAwarded?.Invoke(new ExpAwardResultDto
@@ -369,7 +426,10 @@ namespace KnapsackChallenge.UI.Features.Player
                 PlayInfo = isTimeout ? "Hết giờ - bài đã được nộp tự động." : "";
                 NotifyGameChanged();
             }
-            catch (SqlException) { PlayError = "Lỗi cơ sở dữ liệu khi nộp bài!"; _playTimer.Start(); }
+            finally
+            {
+                _submitBusy = false;
+            }
         }
 
         private void NotifyGameChanged()
