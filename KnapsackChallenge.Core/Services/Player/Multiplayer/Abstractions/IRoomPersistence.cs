@@ -22,5 +22,8 @@
         // v8: Rank & EXP — dùng khi finish ván Multiplayer.
         Task<(long TotalExp, int Level)> GetExpAndLevelAsync(int userId);
         Task UpdateExpAndLevelAsync(int userId, long newTotalExp, int newLevel);
+
+        // v8+: cộng EXP nguyên tử. Trả (EXP trước, EXP sau, Level mới).
+        Task<(long OldExp, long NewExp, int NewLevel)> AddExpAsync(int userId, int expToAdd);
     }
 }

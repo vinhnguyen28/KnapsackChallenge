@@ -1011,21 +1011,16 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
 
                 try
                 {
-                    int expGain = RankRules.CalculateExpGain(
-                        entry.TotalScore, room.OptimalValue, CalculateStarsFromPercent(entry.OptimalPercent));
+                    int expGain = RankRules.CalculateExpGain(entry.TotalScore, room.OptimalValue, CalculateStarsFromPercent(entry.OptimalPercent));
 
-                    var (oldExp, _) = await _persistence.GetExpAndLevelAsync(entry.UserId);
-                    long newExp = oldExp + expGain;
-                    int newLevel = RankRules.GetLevelFromExp(newExp);
-
-                    await _persistence.UpdateExpAndLevelAsync(entry.UserId, newExp, newLevel);
+                    // Cộng EXP nguyên tử ở DB — không đọc-rồi-ghi ở C#.
+                    var (oldExp, _, newLevel) = await _persistence.AddExpAsync(entry.UserId, expGain);
 
                     // Bổ sung thông tin EXP cho entry để client hiển thị "+XX EXP".
                     entry.ExpGained = expGain;
                     entry.NewLevel = newLevel;
                     entry.OldLevel = RankRules.GetLevelFromExp(oldExp);
                     entry.RankTitle = RankRules.GetRankTitle(newLevel);
-                }
                 catch
                 {
                     // Nuốt lỗi DB — không để 1 user làm hỏng GameEnded của cả phòng.

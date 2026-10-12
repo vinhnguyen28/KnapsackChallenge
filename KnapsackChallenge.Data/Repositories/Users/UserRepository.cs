@@ -144,6 +144,80 @@ namespace KnapsackChallenge.Data.Repositories
             command.ExecuteNonQuery();
         }
 
+        // ---------- v7+: TIM NGUYÊN TỬ ----------
+
+        // CAS: chỉ ghi nếu (Hearts, LastHeartRefillAt) vẫn đúng như lúc đọc.
+        // Trả true nếu UPDATE thành công (1 dòng), false nếu có luồng khác đã sửa.
+        // Lưu ý: 2 tham số datetime phải là SqlDbType.DateTime2 để so sánh khớp
+        // với cột DATETIME2 (kiểu DateTime mặc định có độ chính xác thấp hơn, dễ sai).
+        public bool TrySetHeartsIfUnchanged(int userId,
+                                            int expectedHearts,
+                                            DateTime? expectedLast,
+                                            int newHearts,
+                                            DateTime? newLast)
+        {
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                UPDATE Users
+                SET Hearts = @NewHearts,
+                    LastHeartRefillAt = @NewLast
+                WHERE Id = @Id
+                  AND Hearts = @ExpectedHearts
+                  AND ((LastHeartRefillAt IS NULL AND @ExpectedLast IS NULL)
+                       OR LastHeartRefillAt = @ExpectedLast)";
+            AddParameter(command, "@Id", userId);
+            AddParameter(command, "@NewHearts", newHearts);
+            AddParameter(command, "@ExpectedHearts", expectedHearts);
+            AddDateTime2Parameter(command, "@NewLast", newLast);
+            AddDateTime2Parameter(command, "@ExpectedLast", expectedLast);
+            return command.ExecuteNonQuery() == 1;
+        }
+
+        // Trừ tim nguyên tử: chỉ thành công nếu Hearts > 0.
+        // - Nếu đang max hoặc chưa có mốc hồi → LastHeartRefillAt = @Now (bắt đầu đếm).
+        // - Ngược lại → giữ nguyên LastHeartRefillAt cũ.
+        // (Trong 1 câu UPDATE của SQL Server, mọi tham chiếu cột ở SET/WHERE đều dùng
+        //  giá trị TRƯỚC khi update, nên CASE bên dưới là ngữ nghĩa "trước khi trừ".)
+        public (bool Success, int Hearts, DateTime? LastRefillAt) TryConsumeHeart(
+            int userId, int maxHearts, DateTime nowUtc)
+        {
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                UPDATE Users
+                SET Hearts = Hearts - 1,
+                    LastHeartRefillAt = CASE
+                        WHEN Hearts >= @Max OR LastHeartRefillAt IS NULL THEN @Now
+                        ELSE LastHeartRefillAt
+                    END
+                OUTPUT inserted.Hearts, inserted.LastHeartRefillAt
+                WHERE Id = @Id AND Hearts > 0";
+            AddParameter(command, "@Id", userId);
+            AddParameter(command, "@Max", maxHearts);
+            AddDateTime2Parameter(command, "@Now", nowUtc);
+
+            using var reader = command.ExecuteReader();
+            if (!reader.Read()) return (false, 0, null);
+
+            int hearts = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+            DateTime? last = reader.IsDBNull(1) ? null : reader.GetDateTime(1);
+            return (true, hearts, last);
+        }
+
+        // Helper tạo SqlParameter tường minh cho cột DATETIME2.
+        // Không dùng AddParameter cũ vì CreateParameter() sẽ suy luận SqlDbType.DateTime.
+        private static void AddDateTime2Parameter(IDbCommand command, string name, DateTime? value)
+        {
+            var p = new SqlParameter(name, SqlDbType.DateTime2)
+            {
+                Value = (object?)value ?? DBNull.Value
+            };
+            command.Parameters.Add(p);
+        }
+
         // ---------- v8: RANK & EXP ----------
 
         // Đọc TotalExp + Level hiện tại. Trả (0, 1) nếu user không tồn tại.
@@ -178,6 +252,57 @@ namespace KnapsackChallenge.Data.Repositories
             AddParameter(command, "@Id", userId);
             AddParameter(command, "@Exp", newTotalExp);
             AddParameter(command, "@Level", newLevel);
+            command.ExecuteNonQuery();
+        }
+
+        // ---------- v8+: EXP NGUYÊN TỬ ----------
+
+        // Cộng EXP nguyên tử bằng OUTPUT. Trả (EXP trước, EXP sau) hoặc null nếu user không tồn tại.
+        // Không dùng read-then-write để tránh mất EXP khi 2 ván cùng kết thúc.
+        public (long OldExp, long NewExp)? AddExpAtomic(int userId, int expToAdd)
+        {
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                UPDATE Users
+                SET TotalExp = TotalExp + @Gain
+                OUTPUT deleted.TotalExp, inserted.TotalExp
+                WHERE Id = @Id";
+            AddParameter(command, "@Id", userId);
+            AddParameter(command, "@Gain", expToAdd);
+
+            using var reader = command.ExecuteReader();
+            if (!reader.Read()) return null;
+
+            long oldExp = reader.IsDBNull(0) ? 0L : reader.GetInt64(0);
+            long newExp = reader.IsDBNull(1) ? 0L : reader.GetInt64(1);
+            return (oldExp, newExp);
+        }
+
+        // Chỉ NÂNG Level, không hạ cấp. Dùng cho luồng cộng EXP để một luồng chậm
+        // không ghi đè Level thấp hơn lên Level cao hơn đã được luồng khác set.
+        public void RaiseLevelTo(int userId, int level)
+        {
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = "UPDATE Users SET Level = @Level WHERE Id = @Id AND Level < @Level";
+            AddParameter(command, "@Id", userId);
+            AddParameter(command, "@Level", level);
+            command.ExecuteNonQuery();
+        }
+
+        // Chỉ cập nhật Level, TUYỆT ĐỐI không đụng TotalExp.
+        // Dùng cho RankService.GetStatus khi phát hiện DB lệch Level so với EXP.
+        public void SetLevel(int userId, int level)
+        {
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = "UPDATE Users SET Level = @Level WHERE Id = @Id";
+            AddParameter(command, "@Id", userId);
+            AddParameter(command, "@Level", level);
             command.ExecuteNonQuery();
         }
 

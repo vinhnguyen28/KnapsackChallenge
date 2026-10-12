@@ -21,8 +21,9 @@ namespace KnapsackChallenge.Core.Services.Player
             int computedLevel = RankRules.GetLevelFromExp(exp);
             if (computedLevel != level)
             {
-                // Tự sửa Level nếu DB không đồng bộ (không phải trường hợp thường).
-                _userRepo.UpdateExpAndLevel(userId, exp, computedLevel);
+                // Tự sửa Level nếu DB không đồng bộ. CHỈ ghi cột Level,
+                // KHÔNG ghi đè TotalExp để tránh xoá EXP vừa cộng từ luồng khác.
+                _userRepo.SetLevel(userId, computedLevel);
                 level = computedLevel;
             }
 
@@ -40,25 +41,41 @@ namespace KnapsackChallenge.Core.Services.Player
 
         public ExpAwardResultDto AwardExp(int userId, int expToAdd)
         {
-            var (oldExp, oldLevel) = _userRepo.GetExpAndLevel(userId);
-
             if (expToAdd <= 0)
             {
-                // Vẫn trả về thông tin hiện tại để UI hiển thị đúng.
+                // Nhánh "không cộng gì" vẫn cần đọc dữ liệu để UI hiển thị đúng.
+                var (expNow, levelNow) = _userRepo.GetExpAndLevel(userId);
                 return new ExpAwardResultDto
                 {
                     ExpGained = 0,
-                    OldLevel = oldLevel,
-                    NewLevel = oldLevel,
-                    NewTotalExp = oldExp,
-                    RankTitle = RankRules.GetRankTitle(oldLevel),
+                    OldLevel = levelNow,
+                    NewLevel = levelNow,
+                    NewTotalExp = expNow,
+                    RankTitle = RankRules.GetRankTitle(levelNow),
                 };
             }
 
-            long newExp = oldExp + expToAdd;
+            // Cộng EXP nguyên tử ở DB, không đọc-rồi-ghi ở C#.
+            var added = _userRepo.AddExpAtomic(userId, expToAdd);
+            if (added == null)
+            {
+                // User không tồn tại — trả về trạng thái mặc định an toàn.
+                return new ExpAwardResultDto
+                {
+                    ExpGained = 0,
+                    OldLevel = 1,
+                    NewLevel = 1,
+                    NewTotalExp = 0,
+                    RankTitle = RankRules.GetRankTitle(1),
+                };
+            }
+
+            var (prevExp, newExp) = added.Value;
+            int oldLevel = RankRules.GetLevelFromExp(prevExp);
             int newLevel = RankRules.GetLevelFromExp(newExp);
 
-            _userRepo.UpdateExpAndLevel(userId, newExp, newLevel);
+            // Level chỉ tăng: nếu luồng khác đã set Level cao hơn thì giữ nguyên.
+            _userRepo.RaiseLevelTo(userId, newLevel);
 
             return new ExpAwardResultDto
             {

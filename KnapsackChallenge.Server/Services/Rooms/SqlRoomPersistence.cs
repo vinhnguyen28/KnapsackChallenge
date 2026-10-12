@@ -55,5 +55,17 @@ namespace KnapsackChallenge.Server.Services.Rooms
 
         public Task UpdateExpAndLevelAsync(int userId, long newTotalExp, int newLevel)
             => Task.Run(() => _repo.UpdateExpAndLevel(userId, newTotalExp, newLevel));
+
+        public Task<(long OldExp, long NewExp, int NewLevel)> AddExpAsync(int userId, int expToAdd)
+    => Task.Run(() =>
+    {
+        var added = _repo.AddExpAtomic(userId, expToAdd);
+        if (added == null) return (0L, 0L, 1);
+
+        var (oldExp, newExp) = added.Value;
+        int level = KnapsackChallenge.Core.Algorithms.RankRules.GetLevelFromExp(newExp);
+        _repo.RaiseLevelTo(userId, level);
+        return (oldExp, newExp, level);
+    });
     }
 }

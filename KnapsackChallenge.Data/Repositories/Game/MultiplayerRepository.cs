@@ -476,5 +476,14 @@ namespace KnapsackChallenge.Data.Repositories
             int level = reader.IsDBNull(1) ? 1 : reader.GetInt32(1);
             return (exp, level);
         }
+
+        // v8+: bọc sang UserRepository để dùng chung logic EXP nguyên tử.
+        private readonly UserRepository _userRepoForExp = new();
+
+        public (long OldExp, long NewExp)? AddExpAtomic(int userId, int expToAdd)
+            => _userRepoForExp.AddExpAtomic(userId, expToAdd);
+
+        public void RaiseLevelTo(int userId, int level)
+            => _userRepoForExp.RaiseLevelTo(userId, level);
     }
 }
