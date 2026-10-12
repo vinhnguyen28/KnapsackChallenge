@@ -1,5 +1,12 @@
 
 
+-- 1. Tạo cơ sở dữ liệu mới
+
+
+-- 2. Chuyển sang sử dụng cơ sở dữ liệu vừa tạo
+USE KnapsackChallenge;
+GO
+
 -- 1. Bảng Users (Tài khoản)
 CREATE TABLE Users (
     Id INT IDENTITY(1,1) PRIMARY KEY,

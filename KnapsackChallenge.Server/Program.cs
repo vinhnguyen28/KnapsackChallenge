@@ -1,14 +1,14 @@
-﻿using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.IdentityModel.Tokens;
-using KnapsackChallenge.Core.Services.Admin;
+﻿using KnapsackChallenge.Core.Services.Admin;
 using KnapsackChallenge.Core.Services.Auth;
 using KnapsackChallenge.Core.Services.Player.Multiplayer;
 using KnapsackChallenge.Data.Repositories;
 using KnapsackChallenge.Server.Hubs;
 using KnapsackChallenge.Server.Services.Auth;
 using KnapsackChallenge.Server.Services.Rooms;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -135,5 +135,18 @@ app.MapGet("/health", () => Results.Ok(new
     utc = DateTime.UtcNow,
     service = "KnapsackChallenge.Server"
 }));
+
+// GET /api/version — client kiểm tra phiên bản tối thiểu.
+// Đọc từ cấu hình Client:LatestVersion / Client:MinVersion, mặc định "1.0.0".
+app.MapGet("/api/version", (IConfiguration config) =>
+{
+    var latest = config["Client:LatestVersion"];
+    var min = config["Client:MinVersion"];
+
+    if (string.IsNullOrWhiteSpace(latest)) latest = "1.0.0";
+    if (string.IsNullOrWhiteSpace(min)) min = "1.0.0";
+
+    return Results.Ok(new { latest, min });
+}).AllowAnonymous();
 
 app.Run();

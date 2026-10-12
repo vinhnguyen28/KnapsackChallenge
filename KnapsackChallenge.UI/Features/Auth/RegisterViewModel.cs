@@ -1,9 +1,7 @@
-﻿using System;
-using System.Windows.Input;
-using KnapsackChallenge.Core.Factories;
-using KnapsackChallenge.Core.Services.Auth;
+﻿using KnapsackChallenge.Core.Services.Auth;
+using KnapsackChallenge.UI.Services;
 using KnapsackChallenge.UI.Shared;
-using Microsoft.Data.SqlClient;
+using System.Windows.Input;
 
 namespace KnapsackChallenge.UI.Features.Auth
 {
@@ -40,8 +38,8 @@ namespace KnapsackChallenge.UI.Features.Auth
 
         public RegisterViewModel()
         {
-            _authService = ServiceFactory.GetAuthService();
-            
+            _authService = ClientServiceFactory.GetAuthService();
+
             RegisterCommand = new RelayCommand<object>(_ => ExecuteRegister());
 
             BackToLoginCommand = new RelayCommand<object>(_ => BackRequested?.Invoke());
@@ -76,9 +74,13 @@ namespace KnapsackChallenge.UI.Features.Auth
                     ErrorMessage = message;
                 }
             }
-            catch (SqlException)
+            catch (ServerUnavailableException ex)
             {
-                ErrorMessage = "Không kết nối được cơ sở dữ liệu! Kiểm tra lại connection string.";
+                ErrorMessage = ex.Message;
+            }
+            catch (ApiException ex)
+            {
+                ErrorMessage = ex.Message;
             }
         }
     }

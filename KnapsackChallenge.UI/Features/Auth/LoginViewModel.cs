@@ -1,10 +1,7 @@
-﻿
-using KnapsackChallenge.Core.Factories;
-using KnapsackChallenge.Core.Services.Auth;
+﻿using KnapsackChallenge.Core.Services.Auth;
 using KnapsackChallenge.Data.Entities;
-using KnapsackChallenge.UI.Features.Player;
+using KnapsackChallenge.UI.Services;
 using KnapsackChallenge.UI.Shared;
-using Microsoft.Data.SqlClient;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -36,20 +33,16 @@ namespace KnapsackChallenge.UI.Features.Auth
             set { _infoMessage = value; OnPropertyChanged(); }
         }
 
-        // Lệnh được gọi khi bấm nút Đăng nhập
         public ICommand LoginCommand { get; }
-
-        // Lệnh được gọi khi bấm "Chưa có tài khoản? Đăng ký"
         public ICommand RegisterCommand { get; }
 
-        // Sự kiện báo cho MainWindow biết để chuyển màn hình
         public event Action<UserEntity>? LoginSucceeded;
         public event Action? RegisterRequested;
 
         public LoginViewModel()
         {
-            // Lấy Service từ Core (UI không hề biết Data Layer)
-            _authService = ServiceFactory.GetAuthService();
+            // RemoteAuthService: gọi REST, tự SetToken + MultiplayerSession sau khi login thành công.
+            _authService = ClientServiceFactory.GetAuthService();
 
             LoginCommand = new RelayCommand<object>(ExecuteLogin);
             RegisterCommand = new RelayCommand<object>(_ => RegisterRequested?.Invoke());
@@ -73,52 +66,19 @@ namespace KnapsackChallenge.UI.Features.Auth
                 }
 
                 ErrorMessage = "";
-
-                // v-Phase2: đăng nhập REST song song để lấy JWT cho Multiplayer.
-                // Best-effort: Server chết -> JWT null -> Solo vẫn chạy, Multiplayer sẽ báo lỗi.
-                TryFetchMultiplayerToken(Username, password);
-
                 LoginSucceeded?.Invoke(user);
             }
             catch (AccountBannedException ex)
             {
                 ErrorMessage = ex.Message;
             }
-            catch (SqlException)
+            catch (ServerUnavailableException ex)
             {
-                ErrorMessage = "Không kết nối được cơ sở dữ liệu! Kiểm tra lại connection string.";
+                ErrorMessage = ex.Message;
             }
-        }
-
-        // Blocking trên UI thread nhưng chỉ ~10-50ms (localhost).
-        // Gọi trước LoginSucceeded để Lobby có JWT sẵn khi user vào.
-        private static void TryFetchMultiplayerToken(string username, string password)
-        {
-            try
+            catch (ApiException ex)
             {
-                var url = MultiplayerServerConfig.ServerUrl;
-
-                // Timeout 3s để không treo UI khi Server chết hoàn toàn.
-                var task = Task.Run(() => MultiplayerAuthClient.LoginAsync(username, password, url));
-                if (!task.Wait(TimeSpan.FromSeconds(3)))
-                {
-                    MultiplayerSession.Instance.Clear();
-                    return;
-                }
-
-                var (token, userId, apiUsername, _) = task.Result;
-                if (string.IsNullOrEmpty(token))
-                {
-                    MultiplayerSession.Instance.Clear();
-                    return;
-                }
-
-                MultiplayerSession.Instance.Set(token, userId, apiUsername ?? username);
-            }
-            catch
-            {
-                // Bất kỳ lỗi nào cũng coi như không có JWT — Solo vẫn dùng bình thường.
-                MultiplayerSession.Instance.Clear();
+                ErrorMessage = ex.Message;
             }
         }
     }

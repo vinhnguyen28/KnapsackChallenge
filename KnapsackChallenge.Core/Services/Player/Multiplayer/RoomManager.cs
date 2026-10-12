@@ -1021,6 +1021,7 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                     entry.NewLevel = newLevel;
                     entry.OldLevel = RankRules.GetLevelFromExp(oldExp);
                     entry.RankTitle = RankRules.GetRankTitle(newLevel);
+                }
                 catch
                 {
                     // Nuốt lỗi DB — không để 1 user làm hỏng GameEnded của cả phòng.

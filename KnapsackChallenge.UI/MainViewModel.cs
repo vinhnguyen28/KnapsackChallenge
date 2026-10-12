@@ -1,8 +1,9 @@
 ﻿using KnapsackChallenge.Data.Entities;
-using KnapsackChallenge.UI.Shared;
-using KnapsackChallenge.UI.Features.Auth;
 using KnapsackChallenge.UI.Features.Admin;
+using KnapsackChallenge.UI.Features.Auth;
 using KnapsackChallenge.UI.Features.Player;
+using KnapsackChallenge.UI.Services;
+using KnapsackChallenge.UI.Shared;
 
 namespace KnapsackChallenge.UI
 {
@@ -23,6 +24,11 @@ namespace KnapsackChallenge.UI
 
         private void ShowLogin(string? username = null, string? info = null)
         {
+            // Đăng xuất: xoá JWT khỏi HttpClient + MultiplayerSession
+            // để request sau không mang Bearer cũ và SignalR không dùng lại token cũ.
+            ApiClient.SetToken(null);
+            MultiplayerSession.Instance.Clear();
+
             var vm = new LoginViewModel();
 
             if (username != null)

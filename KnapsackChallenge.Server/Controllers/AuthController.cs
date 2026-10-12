@@ -1,9 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using KnapsackChallenge.Common.Constants;
+﻿using KnapsackChallenge.Common.Constants;
 using KnapsackChallenge.Common.DTOs;
 using KnapsackChallenge.Core.Services.Auth;
 using KnapsackChallenge.Server.Services.Auth;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace KnapsackChallenge.Server.Controllers
 {
@@ -57,6 +57,30 @@ namespace KnapsackChallenge.Server.Controllers
                 return StatusCode(StatusCodes.Status403Forbidden,
                     new { reason = ex.Message });
             }
+        }
+
+        // POST /api/auth/register
+        // - Body null / thiếu field → 400 ApiResult { Success = false }.
+        // - Service từ chối (trùng username, validate sai) → 400 kèm Message của service.
+        // - Thành công → 200 ApiResult { Success = true }.
+        // - KHÔNG log mật khẩu dưới bất kỳ hình thức nào.
+        [HttpPost("register")]
+        [AllowAnonymous]
+        public IActionResult Register([FromBody] RegisterRequestDto? req)
+        {
+            if (req == null
+                || string.IsNullOrWhiteSpace(req.Username)
+                || string.IsNullOrEmpty(req.Password))
+            {
+                return BadRequest(ApiResult.Fail("Vui lòng nhập đầy đủ tài khoản và mật khẩu."));
+            }
+
+            var (success, message) = _auth.Register(req.Username, req.Password);
+
+            if (!success)
+                return BadRequest(ApiResult.Fail(message));
+
+            return Ok(ApiResult.Ok("Đăng ký thành công."));
         }
     }
 }
