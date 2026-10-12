@@ -9,7 +9,11 @@ namespace KnapsackChallenge.Server.Hubs
     public static class GameHubValidation
     {
         // Mã phòng do server sinh ra luôn có dạng "M-XXXXXX" (8 ký tự) — giới hạn rộng rãi.
+        // Mã phòng do server sinh ra luôn có dạng "M-XXXXXX" (8 ký tự) — giới hạn rộng rãi.
         public const int MaxRoomCodeLength = 20;
+
+        public const int MinRoomTimeLimitSeconds = 30;
+        public const int MaxRoomTimeLimitSeconds = 3600;
 
         // Chặn client gửi list khổng lồ. Bộ đề thật hiện rất nhỏ (<100 items),
         // 500 là biên an toàn để tránh DoS bằng Distinct().
@@ -18,7 +22,29 @@ namespace KnapsackChallenge.Server.Hubs
         public static string? ValidateCreateRoom(CreateRoomRequest? req)
         {
             if (req == null) return Messages.RequestInvalid;
-            if (req.SetId <= 0) return "SetId không hợp lệ.";
+            if (req.SetId < 0) return "SetId không hợp lệ.";
+
+            // SetId = 0 → bắt buộc phải có Difficulty hợp lệ để server random.
+            if (req.SetId == 0)
+            {
+                var diff = (req.Difficulty ?? "").Trim();
+                bool validDiff =
+                    string.Equals(diff, "Easy", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(diff, "Medium", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(diff, "Hard", StringComparison.OrdinalIgnoreCase);
+                if (!validDiff)
+                    return "Độ khó không hợp lệ (Easy, Medium hoặc Hard).";
+            }
+
+            if (req.TimeLimitSeconds.HasValue)
+            {
+                int t = req.TimeLimitSeconds.Value;
+                bool ok = t == 0
+                    || (t >= MinRoomTimeLimitSeconds && t <= MaxRoomTimeLimitSeconds);
+                if (!ok)
+                    return $"Thời gian phòng phải là 0 (không giới hạn) hoặc từ {MinRoomTimeLimitSeconds} đến {MaxRoomTimeLimitSeconds} giây.";
+            }
+
             return null;
         }
 

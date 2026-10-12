@@ -288,8 +288,9 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
         }
 
         public async Task<HubResult<RoomStateDto>> StartGameAsync(
-            int userId, int maxPlayers, int timeLimitSeconds)
+    int userId, int maxPlayers, int timeLimitSeconds)
         {
+            // timeLimitSeconds không còn dùng: thời gian đã chốt lúc tạo phòng (room.TimeLimitSeconds)
             if (!TryGetRoomOfUser(userId, out var room, out var code))
                 return HubResult<RoomStateDto>.Fail(
                     ErrorCodes.RoomNotInRoom, Messages.RoomNotInRoom);
@@ -321,14 +322,13 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                 room.OptimalItemIds = optimalIds;
 
                 room.MaxPlayers = maxPlayers;
-                room.TimeLimitSeconds = timeLimitSeconds;
 
                 var now = _clock.GetUtcNow().UtcDateTime;
                 room.Status = RoomStatus.Playing;
                 room.StartedAtUtc = now;
 
-                DateTime? endTime = timeLimitSeconds > 0
-                    ? now.AddSeconds(timeLimitSeconds)
+                DateTime? endTime = room.TimeLimitSeconds > 0
+                    ? now.AddSeconds(room.TimeLimitSeconds)
                     : null;
 
                 startDto = new GameStartDto
@@ -339,7 +339,7 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                     SetName = room.SetName,
                     Difficulty = room.Difficulty,
                     MaxWeight = room.MaxWeight,
-                    TimeLimitSeconds = timeLimitSeconds,
+                    TimeLimitSeconds = room.TimeLimitSeconds,
                     StartTimeUtc = now,
                     EndTimeUtc = endTime,
                     Items = room.CachedItems.ToList(),

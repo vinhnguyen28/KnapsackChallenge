@@ -107,11 +107,11 @@ namespace KnapsackChallenge.UI.Features.Player
         // =========================================================
 
         public async Task<HubResult<CreateRoomResultDto>?> CreateRoomAsync(
-            int setId, CancellationToken ct = default)
+                CreateRoomRequest request, CancellationToken ct = default)
         {
             if (_connection.State != HubConnectionState.Connected) return null;
             return await _connection.InvokeAsync<HubResult<CreateRoomResultDto>>(
-                "CreateRoom", new CreateRoomRequest { SetId = setId }, ct);
+                "CreateRoom", request, ct);
         }
 
         public async Task<HubResult<JoinRoomResultDto>?> JoinRoomAsync(

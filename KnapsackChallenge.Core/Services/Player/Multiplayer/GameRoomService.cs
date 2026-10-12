@@ -26,7 +26,7 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
         }
 
         public async Task<HubResult<CreateRoomResultDto>> CreateRoomAsync(
-            int userId, string username, int setId)
+            int userId, string username, CreateRoomRequest req)
         {
             var banMsg = CheckBan(userId);
             if (banMsg != null)
@@ -41,13 +41,27 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
             int maxPlayers = mode.MaxPlayers.GetValueOrDefault(FallbackMaxPlayers);
             if (maxPlayers < MinMultiplayers) maxPlayers = MinMultiplayers;
 
-            var setInfo = _setInfo.Load(setId);
+            // SetId > 0 → dùng đúng bộ đề; SetId = 0 → server random theo Difficulty.
+            SetInfo? setInfo = req.SetId > 0
+                ? _setInfo.Load(req.SetId)
+                : _setInfo.LoadRandomByDifficulty(req.Difficulty);
             if (setInfo == null || setInfo.Items.Count == 0)
                 return HubResult<CreateRoomResultDto>.Fail(
                     ErrorCodes.RoomSetEmpty, Messages.RoomSetEmpty);
 
+            int timeLimit = ResolveTimeLimit(req.TimeLimitSeconds, mode.TimeLimitSeconds);
             return await _rooms.CreateRoomAsync(
-                userId, username, setId, setInfo, maxPlayers, mode.TimeLimitSeconds);
+                userId, username, setInfo.SetId, setInfo, maxPlayers, timeLimit);
+        }
+
+        // adminMax = GameModes.TimeLimitSeconds của Multiplayer, nay đóng vai trò TRẦN (0 = admin không giới hạn).
+        private static int ResolveTimeLimit(int? requested, int adminMax)
+        {
+            if (!requested.HasValue) return adminMax;       // host không chọn → mặc định hệ thống
+            int r = requested.Value;
+            if (adminMax <= 0) return r;                    // admin không đặt trần → theo host (0 = không giới hạn)
+            if (r <= 0) return adminMax;                    // host muốn không giới hạn nhưng admin có trần
+            return Math.Min(r, adminMax);
         }
 
         public async Task<HubResult<JoinRoomResultDto>> JoinRoomAsync(

@@ -146,7 +146,7 @@ namespace KnapsackChallenge.Server.Hubs
                     ErrorCodes.AuthAccountBanned,
                     string.Format(Messages.AuthAccountBannedFmt, "(không có)"));
 
-            var result = await _rooms.CreateRoomAsync(userId, user.Username!, req!.SetId);
+            var result = await _rooms.CreateRoomAsync(userId, user.Username!, req!);
 
             // Chỉ add group khi tạo phòng THÀNH CÔNG — nếu Fail, client không ở trong group nào.
             if (result.Success && result.Data != null)

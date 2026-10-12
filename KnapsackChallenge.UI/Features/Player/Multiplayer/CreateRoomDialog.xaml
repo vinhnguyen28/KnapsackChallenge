@@ -1,9 +1,44 @@
 ﻿<Window x:Class="KnapsackChallenge.UI.Features.Player.CreateRoomDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Tạo phòng" Width="520" SizeToContent="Height"
+        Title="Tạo phòng" Width="560" SizeToContent="Height"
         ResizeMode="NoResize" WindowStartupLocation="CenterOwner"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent">
+
+    <Window.Resources>
+        <!-- Style cục bộ cho RadioButton dạng "card". -->
+        <Style x:Key="ChoiceCard" TargetType="RadioButton">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="Foreground" Value="{DynamicResource BrushInk}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="bd"
+                                Background="{DynamicResource BrushSurface}"
+                                BorderBrush="{DynamicResource BrushRule}"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="10">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="bd" Property="BorderBrush"
+                                        Value="{DynamicResource BrushAccent}"/>
+                                <Setter TargetName="bd" Property="Background"
+                                        Value="{DynamicResource BrushAccentSoft}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
 
     <Border Background="{DynamicResource BrushSurface}"
             BorderBrush="{DynamicResource BrushRule}"
@@ -21,12 +56,122 @@
 
             <Rectangle Height="1" Fill="{DynamicResource BrushRule}" Margin="0,10,0,16"/>
 
-            <TextBlock Text="Chọn bộ đề cho phòng" Style="{DynamicResource FieldLabel}"/>
+            <!-- =========================================================
+                 BƯỚC 1: ĐỘ KHÓ
+                 ========================================================= -->
+            <TextBlock Text="1. Độ khó" Style="{DynamicResource FieldLabel}"/>
+
+            <UniformGrid Columns="3" Margin="0,0,0,14">
+                <RadioButton x:Name="RbEasy" GroupName="Diff" Tag="Easy"
+                             Style="{StaticResource ChoiceCard}"
+                             Checked="Difficulty_Checked">
+                    <StackPanel>
+                        <TextBlock Text="🌱 Dễ"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeBody}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushInk}"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="TxtEasyCount"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   Foreground="{DynamicResource BrushInkMuted}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,4,0,0"/>
+                    </StackPanel>
+                </RadioButton>
+
+                <RadioButton x:Name="RbMedium" GroupName="Diff" Tag="Medium"
+                             Style="{StaticResource ChoiceCard}"
+                             Checked="Difficulty_Checked">
+                    <StackPanel>
+                        <TextBlock Text="⚖️ Bình thường"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeBody}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushInk}"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="TxtMediumCount"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   Foreground="{DynamicResource BrushInkMuted}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,4,0,0"/>
+                    </StackPanel>
+                </RadioButton>
+
+                <RadioButton x:Name="RbHard" GroupName="Diff" Tag="Hard"
+                             Style="{StaticResource ChoiceCard}"
+                             Margin="0"
+                             Checked="Difficulty_Checked">
+                    <StackPanel>
+                        <TextBlock Text="🔥 Khó"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeBody}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushInk}"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="TxtHardCount"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   Foreground="{DynamicResource BrushInkMuted}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,4,0,0"/>
+                    </StackPanel>
+                </RadioButton>
+            </UniformGrid>
+
+            <!-- =========================================================
+                 BƯỚC 2: BỘ ĐỀ
+                 ========================================================= -->
+            <TextBlock Text="2. Bộ đề" Style="{DynamicResource FieldLabel}"/>
+
+            <UniformGrid Columns="2" Margin="0,0,0,8">
+                <RadioButton x:Name="RbRandom" GroupName="Pick"
+                             Style="{StaticResource ChoiceCard}"
+                             Checked="PickMode_Changed">
+                    <TextBlock Text="🎲 Random trong mức này"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeBody}"
+                               Foreground="{DynamicResource BrushInk}"
+                               HorizontalAlignment="Center"/>
+                </RadioButton>
+
+                <RadioButton x:Name="RbPick" GroupName="Pick"
+                             Style="{StaticResource ChoiceCard}"
+                             Margin="0"
+                             Checked="PickMode_Changed">
+                    <TextBlock Text="Chọn đề cụ thể"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeBody}"
+                               Foreground="{DynamicResource BrushInk}"
+                               HorizontalAlignment="Center"/>
+                </RadioButton>
+            </UniformGrid>
 
             <ComboBox x:Name="SetsCombo"
                       Style="{DynamicResource DarkComboBox}"
                       DisplayMemberPath="DisplayText"
+                      Height="34"
+                      Visibility="Collapsed"
+                      Margin="0,0,0,14"/>
+
+            <!-- =========================================================
+                 BƯỚC 3: THỜI GIAN
+                 ========================================================= -->
+            <TextBlock Text="3. Thời gian" Style="{DynamicResource FieldLabel}"/>
+
+            <ComboBox x:Name="TimeCombo"
+                      Style="{DynamicResource DarkComboBox}"
+                      DisplayMemberPath="Label"
                       Height="34"/>
+
+            <TextBlock Text="Thời gian tối đa có thể bị giới hạn bởi quản trị viên."
+                       FontFamily="{DynamicResource FontSans}"
+                       FontSize="{DynamicResource FontSizeSmall}"
+                       Foreground="{DynamicResource BrushInkMuted}"
+                       TextWrapping="Wrap"
+                       Margin="0,6,0,0"/>
 
             <Grid MinHeight="36" Margin="0,10,0,12">
                 <TextBlock x:Name="ErrorText"
@@ -48,7 +193,8 @@
                         Click="Cancel_Click"
                         Style="{DynamicResource ButtonSecondary}"/>
 
-                <Button Grid.Column="2" Content="Tạo phòng"
+                <Button x:Name="CreateButton"
+                        Grid.Column="2" Content="Tạo phòng"
                         Click="Confirm_Click"
                         Style="{DynamicResource ButtonPrimary}"/>
             </Grid>

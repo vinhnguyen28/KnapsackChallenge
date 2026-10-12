@@ -32,5 +32,19 @@ namespace KnapsackChallenge.Server.Services.Rooms
 
             return new SetInfo(set.Id, set.SetName, set.Difficulty, set.MaxWeight, itemDtos);
         }
+
+        public SetInfo? LoadRandomByDifficulty(string difficulty)
+        {
+            if (string.IsNullOrWhiteSpace(difficulty)) return null;
+
+            var all = _gameRepo.GetAvailableSets();
+            var matches = all
+                .Where(s => string.Equals(s.Difficulty, difficulty, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (matches.Count == 0) return null;
+
+            int idx = Random.Shared.Next(matches.Count);
+            return Load(matches[idx].SetId);
+        }
     }
 }

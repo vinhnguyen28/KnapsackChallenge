@@ -225,19 +225,19 @@ namespace KnapsackChallenge.UI.Features.Player
             }
 
             var dlg = new CreateRoomDialog(sets) { Owner = Application.Current.MainWindow };
-            if (dlg.ShowDialog() != true) return;
+            if (dlg.ShowDialog() != true || dlg.Request == null) return;
 
-            _ = CreateRoomAsync(dlg.SelectedSetId);
+            _ = CreateRoomAsync(dlg.Request);
         }
 
-        private async System.Threading.Tasks.Task CreateRoomAsync(int setId)
+        private async System.Threading.Tasks.Task CreateRoomAsync(CreateRoomRequest request)
         {
             if (_connection == null) return;
 
             RunOnUi(() => { IsBusy = true; ErrorMessage = ""; InfoMessage = ""; });
             try
             {
-                var result = await _connection.CreateRoomAsync(setId);
+                var result = await _connection.CreateRoomAsync(request);
 
                 if (result == null)
                 {

@@ -16,5 +16,8 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
     {
         // Trả null nếu set không tồn tại hoặc không có item.
         SetInfo? Load(int setId);
+
+        // Random 1 bộ đề (có vật phẩm) thuộc độ khó. Trả null nếu mức đó chưa có bộ đề nào.
+        SetInfo? LoadRandomByDifficulty(string difficulty);
     }
 }

@@ -7,7 +7,7 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
     {
         // ===== Người chơi =====
         Task<HubResult<CreateRoomResultDto>> CreateRoomAsync(
-            int userId, string username, int setId);
+            int userId, string username, CreateRoomRequest req);
         Task<HubResult<JoinRoomResultDto>> JoinRoomAsync(
             int userId, string username, string roomCode);
         Task<HubResult<RoomStateDto>> LeaveRoomAsync(int userId);
