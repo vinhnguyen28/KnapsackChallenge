@@ -59,6 +59,18 @@ namespace KnapsackChallenge.UI.Services
             => Task.Run(() => PostAsync<TReq, TRes>(path, body)).GetAwaiter().GetResult();
 
         // =========================================================
+        // POST KHÔNG BODY — dùng cho heartbeat / offline.
+        // =========================================================
+
+        // POST không body, không cần đọc kết quả.
+        public static void PostEmpty(string path)
+            => Task.Run(() => PostEmptyAsync(path)).GetAwaiter().GetResult();
+
+        // POST không body, đọc kết quả kiểu TRes.
+        public static TRes PostEmpty<TRes>(string path)
+            => Task.Run(() => PostEmptyAsync<TRes>(path)).GetAwaiter().GetResult();
+
+        // =========================================================
         // INTERNAL
         // =========================================================
 
@@ -113,6 +125,46 @@ namespace KnapsackChallenge.UI.Services
             }
         }
 
+        // POST không body — kiểu void.
+        private static async Task PostEmptyAsync(string path)
+        {
+            try
+            {
+                using var resp = await _http.PostAsync(path, null).ConfigureAwait(false);
+                await EnsureSuccessAsync(resp).ConfigureAwait(false);
+            }
+            catch (HttpRequestException)
+            {
+                throw new ServerUnavailableException(
+                    "Không kết nối được máy chủ. Hãy thử lại sau.");
+            }
+            catch (TaskCanceledException)
+            {
+                throw new ServerUnavailableException(
+                    "Không kết nối được máy chủ. Hãy thử lại sau.");
+            }
+        }
+
+        // POST không body — có kiểu trả về.
+        private static async Task<T> PostEmptyAsync<T>(string path)
+        {
+            try
+            {
+                using var resp = await _http.PostAsync(path, null).ConfigureAwait(false);
+                return await ReadAsync<T>(resp).ConfigureAwait(false);
+            }
+            catch (HttpRequestException)
+            {
+                throw new ServerUnavailableException(
+                    "Không kết nối được máy chủ. Hãy thử lại sau.");
+            }
+            catch (TaskCanceledException)
+            {
+                throw new ServerUnavailableException(
+                    "Không kết nối được máy chủ. Hãy thử lại sau.");
+            }
+        }
+
         private static async Task<T> ReadAsync<T>(HttpResponseMessage resp)
         {
             var raw = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -128,6 +180,16 @@ namespace KnapsackChallenge.UI.Services
 
             var data = JsonSerializer.Deserialize<T>(raw, _json);
             return data!;
+        }
+
+        // Đảm bảo response thành công cho case void (204/200).
+        private static async Task EnsureSuccessAsync(HttpResponseMessage resp)
+        {
+            if (resp.IsSuccessStatusCode) return;
+
+            var raw = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var msg = ExtractMessage(raw) ?? $"Lỗi máy chủ ({(int)resp.StatusCode}).";
+            throw new ApiException((int)resp.StatusCode, msg);
         }
 
         private static string? ExtractMessage(string raw)

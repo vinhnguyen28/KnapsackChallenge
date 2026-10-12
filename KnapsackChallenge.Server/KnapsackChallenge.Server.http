@@ -51,3 +51,26 @@ Content-Type: application/json
   "userId": {{targetUserId}},
   "reason": "Vi phạm quy tắc phòng."
 }
+
+### 8. Player: heartbeat (cập nhật LastSeenAt + hồi tim)
+POST {{host}}/api/player/heartbeat
+Authorization: Bearer {{token}}
+
+### 9. Player: trạng thái tim hiện tại
+GET {{host}}/api/player/hearts
+Authorization: Bearer {{token}}
+
+### 10. Player: báo offline (đóng app / đăng xuất)
+POST {{host}}/api/player/offline
+Authorization: Bearer {{token}}
+
+### 11. Player: kiểm tra trạng thái ban (dùng cho heartbeat)
+GET {{host}}/api/player/status
+Authorization: Bearer {{token}}
+
+### 12. Player: xem Rank/EXP hiện tại
+GET {{host}}/api/player/rank
+Authorization: Bearer {{token}}
+
+### 13. Player: thiếu token — phải trả 401
+GET {{host}}/api/player/rank

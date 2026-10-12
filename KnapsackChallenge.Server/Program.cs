@@ -1,5 +1,7 @@
-﻿using KnapsackChallenge.Core.Services.Admin;
+﻿using KnapsackChallenge.Core.Factories;
+using KnapsackChallenge.Core.Services.Admin;
 using KnapsackChallenge.Core.Services.Auth;
+using KnapsackChallenge.Core.Services.Player;
 using KnapsackChallenge.Core.Services.Player.Multiplayer;
 using KnapsackChallenge.Data.Repositories;
 using KnapsackChallenge.Server.Hubs;
@@ -40,6 +42,13 @@ builder.Services.AddSingleton<IAuthService>(sp =>
 
 builder.Services.AddSingleton<IGameModeService>(sp =>
     new GameModeService(sp.GetRequiredService<GameModeRepository>()));
+
+// ---- Player session + Rank (REST endpoints cho WPF client) ----
+builder.Services.AddSingleton<IPlayerSessionService>(_ =>
+    ServiceFactory.GetPlayerSessionService());
+
+builder.Services.AddSingleton<IRankService>(_ =>
+    ServiceFactory.GetRankService());
 
 // =========================================================
 // 3. Cổng cho RoomManager + ConnectionTracker
