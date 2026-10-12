@@ -10,11 +10,11 @@ namespace KnapsackChallenge.UI.Services
     // - GetAuthService      -> RemoteAuthService (REST).
     // - GetPlayerSession    -> RemotePlayerSessionService (REST).
     // - GetRankService      -> RemoteRankService (REST).
+    // - GetSoloGameService  -> RemoteSoloGameService (REST).
     // - Các service khác TẠM THỜI gọi thẳng Core (TODO remote).
     //
-    // LƯU Ý: PlayerSession + Rank dùng INSTANCE DÙNG CHUNG (Lazy singleton)
-    // để cache tim trong RemotePlayerSessionService hoạt động xuyên suốt
-    // vòng đời ứng dụng. KHÔNG new mỗi lần gọi.
+    // LƯU Ý: PlayerSession + Rank + Solo dùng INSTANCE DÙNG CHUNG (Lazy singleton)
+    // để cache nội bộ (vd: tim) hoạt động xuyên suốt vòng đời ứng dụng.
     public static class ClientServiceFactory
     {
         // ---- Remote instances dùng chung ----
@@ -25,6 +25,9 @@ namespace KnapsackChallenge.UI.Services
         private static readonly Lazy<IRankService> _rankService =
             new(() => new RemoteRankService());
 
+        private static readonly Lazy<ISoloGameService> _soloGameService =
+            new(() => new RemoteSoloGameService());
+
         // ĐÃ CHUYỂN SANG REST.
         public static IAuthService GetAuthService() => new RemoteAuthService();
 
@@ -33,6 +36,9 @@ namespace KnapsackChallenge.UI.Services
 
         // ĐÃ CHUYỂN SANG REST — instance dùng chung.
         public static IRankService GetRankService() => _rankService.Value;
+
+        // ĐÃ CHUYỂN SANG REST — instance dùng chung.
+        public static ISoloGameService GetSoloGameService() => _soloGameService.Value;
 
         // TODO remote: chuyển sang REST endpoint tương ứng.
         public static IItemService GetItemService() =>
@@ -49,10 +55,6 @@ namespace KnapsackChallenge.UI.Services
         // TODO remote.
         public static IHeartService GetHeartService() =>
             KnapsackChallenge.Core.Factories.ServiceFactory.GetHeartService();
-
-        // TODO remote.
-        public static ISoloGameService GetSoloGameService() =>
-            KnapsackChallenge.Core.Factories.ServiceFactory.GetSoloGameService();
 
         // TODO remote.
         public static IAdminStatsService GetAdminStatsService() =>

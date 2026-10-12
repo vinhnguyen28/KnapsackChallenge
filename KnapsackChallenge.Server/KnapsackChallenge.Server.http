@@ -74,3 +74,60 @@ Authorization: Bearer {{token}}
 
 ### 13. Player: thiếu token — phải trả 401
 GET {{host}}/api/player/rank
+
+### =========================================================
+### SOLO — 6 endpoint dưới /api/solo
+### =========================================================
+
+### 14. Solo: trạng thái chế độ Solo (enabled + time limit)
+GET {{host}}/api/solo/status
+Authorization: Bearer {{token}}
+
+### 15. Solo: danh sách bộ đề có ít nhất 1 vật phẩm
+GET {{host}}/api/solo/sets
+Authorization: Bearer {{token}}
+
+### 16. Solo: bắt đầu ván — thất bại nghiệp vụ vẫn trả 200 với success=false
+POST {{host}}/api/solo/start
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "setId": 1
+}
+
+### 17. Solo: nộp bài
+POST {{host}}/api/solo/submit
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "setId": 1,
+  "selectedItemIds": [1, 3, 5],
+  "timeSpentSeconds": 42,
+  "isTimeout": false
+}
+
+### 18. Solo: lịch sử ván chơi của chính mình
+GET {{host}}/api/solo/history?limit=20
+Authorization: Bearer {{token}}
+
+### 19. Solo: bảng xếp hạng (setId bỏ trống = toàn bộ bộ đề)
+GET {{host}}/api/solo/leaderboard?topN=20
+Authorization: Bearer {{token}}
+
+### 20. Solo: bảng xếp hạng lọc theo bộ đề
+GET {{host}}/api/solo/leaderboard?setId=1&topN=20
+Authorization: Bearer {{token}}
+
+### 21. Solo: submit với SetId sai — phải trả 400
+POST {{host}}/api/solo/submit
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "setId": 0,
+  "selectedItemIds": [],
+  "timeSpentSeconds": 0,
+  "isTimeout": false
+}

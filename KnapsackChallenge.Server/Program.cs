@@ -43,12 +43,15 @@ builder.Services.AddSingleton<IAuthService>(sp =>
 builder.Services.AddSingleton<IGameModeService>(sp =>
     new GameModeService(sp.GetRequiredService<GameModeRepository>()));
 
-// ---- Player session + Rank (REST endpoints cho WPF client) ----
+// ---- Player session + Rank + Solo (REST endpoints cho WPF client) ----
 builder.Services.AddSingleton<IPlayerSessionService>(_ =>
     ServiceFactory.GetPlayerSessionService());
 
 builder.Services.AddSingleton<IRankService>(_ =>
     ServiceFactory.GetRankService());
+
+builder.Services.AddSingleton<ISoloGameService>(_ =>
+    ServiceFactory.GetSoloGameService());
 
 // =========================================================
 // 3. Cổng cho RoomManager + ConnectionTracker
