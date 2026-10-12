@@ -13,5 +13,9 @@ namespace KnapsackChallenge.Common.DTOs
         public int MaxPlayers { get; set; }
         public DateTime CreatedAtUtc { get; set; }
         public DateTime? StartedAtUtc { get; set; }
+
+        // Bổ sung cho Lobby: hiển thị độ khó + thời gian của phòng ngay trên danh sách.
+        public string Difficulty { get; set; } = "";
+        public int TimeLimitSeconds { get; set; }
     }
 }

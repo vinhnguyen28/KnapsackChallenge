@@ -262,6 +262,7 @@
         </Grid>
 
         <!-- CỘT PHẢI: top người chơi -->
+        <!-- CỘT PHẢI: top 10 theo cấp độ (EXP) -->
         <Border Grid.Column="4"
                 Background="{DynamicResource BrushSurface}"
                 BorderBrush="{DynamicResource BrushRule}"
@@ -281,7 +282,7 @@
                         BorderThickness="0,0,0,1"
                         Padding="12,10">
                     <Grid>
-                        <TextBlock Text="🏆  Bảng xếp hạng"
+                        <TextBlock Text="🏆  Top cấp độ"
                                    FontFamily="{DynamicResource FontSans}"
                                    FontSize="{DynamicResource FontSizeSmall}"
                                    FontWeight="SemiBold"
@@ -298,44 +299,68 @@
                 </Border>
 
                 <ScrollViewer Grid.Row="1"
-                              MaxHeight="336"
+                              MaxHeight="360"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
                     <ItemsControl ItemsSource="{Binding TopPlayers}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Grid Height="33" Margin="10,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="26"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
+                                <!-- Bọc Grid trong Border để có thể tô nền khi IsMe=True. -->
+                                <Border CornerRadius="3">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsMe}" Value="True">
+                                                    <Setter Property="Background"
+                                                            Value="{DynamicResource BrushAccentSoft}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
 
-                                    <TextBlock Grid.Column="0"
-                                               Text="{Binding Rank}"
-                                               FontFamily="{DynamicResource FontMono}"
-                                               FontSize="{DynamicResource FontSizeSmall}"
-                                               Foreground="{DynamicResource BrushInkMuted}"
-                                               VerticalAlignment="Center"/>
+                                    <Grid Height="33" Margin="10,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="34"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
 
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding Username}"
-                                               FontFamily="{DynamicResource FontSans}"
-                                               FontSize="{DynamicResource FontSizeSmall}"
-                                               Foreground="{DynamicResource BrushInk}"
-                                               VerticalAlignment="Center"
-                                               TextTrimming="CharacterEllipsis"
-                                               Margin="4,0,6,0"/>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding RankText}"
+                                                   FontFamily="{DynamicResource FontMono}"
+                                                   FontSize="{DynamicResource FontSizeSmall}"
+                                                   Foreground="{DynamicResource BrushInkMuted}"
+                                                   VerticalAlignment="Center"/>
 
-                                    <TextBlock Grid.Column="2"
-                                               Text="{Binding BestScore}"
-                                               FontFamily="{DynamicResource FontMono}"
-                                               FontSize="{DynamicResource FontSizeSmall}"
-                                               FontWeight="SemiBold"
-                                               Foreground="{DynamicResource BrushInk}"
-                                               VerticalAlignment="Center"
-                                               HorizontalAlignment="Right"/>
-                                </Grid>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Username}"
+                                                   FontFamily="{DynamicResource FontSans}"
+                                                   FontSize="{DynamicResource FontSizeSmall}"
+                                                   Foreground="{DynamicResource BrushInk}"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Margin="4,0,6,0"/>
+
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding LevelText}"
+                                                   FontFamily="{DynamicResource FontMono}"
+                                                   FontSize="{DynamicResource FontSizeSmall}"
+                                                   Foreground="{DynamicResource BrushInkMuted}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="6,0"/>
+
+                                        <TextBlock Grid.Column="3"
+                                                   Text="{Binding ExpText}"
+                                                   FontFamily="{DynamicResource FontMono}"
+                                                   FontSize="{DynamicResource FontSizeSmall}"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource BrushInk}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Right"/>
+                                    </Grid>
+                                </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -363,17 +388,28 @@
                                Margin="0,6,0,0"/>
                 </StackPanel>
 
-                <Border Grid.Row="2"
-                        BorderBrush="{DynamicResource BrushRule}"
-                        BorderThickness="0,1,0,0"
-                        Padding="10,6">
-                    <TextBlock Text="Cuộn xem tiếp tối đa 100 người"
+                <StackPanel Grid.Row="2">
+                    <!-- Dòng ghim hạng của tôi (chỉ hiện khi ngoài top 10). -->
+                    <TextBlock Text="{Binding MyRankLine}"
                                FontFamily="{DynamicResource FontSans}"
                                FontSize="{DynamicResource FontSizeCaption}"
-                               Foreground="{DynamicResource BrushInkMuted}"
-                               HorizontalAlignment="Center"
-                               TextWrapping="Wrap"/>
-                </Border>
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource BrushInk}"
+                               TextWrapping="Wrap"
+                               Margin="10,6,10,0"
+                               Visibility="{Binding HasMyRankLine,
+                                            Converter={StaticResource BoolToVisibility}}"/>
+
+                    <Border BorderBrush="{DynamicResource BrushRule}"
+                            BorderThickness="0,1,0,0"
+                            Padding="10,6"
+                            Margin="0,4,0,0">
+                        <Button Command="{Binding OpenLeaderboardCommand}"
+                                Style="{DynamicResource ButtonGhost}"
+                                HorizontalAlignment="Center"
+                                Content="Xem toàn bộ bảng xếp hạng →"/>
+                    </Border>
+                </StackPanel>
             </Grid>
         </Border>
     </Grid>

@@ -164,6 +164,7 @@ namespace KnapsackChallenge.Data.Repositories
         }
 
         // Cập nhật TotalExp + Level (Level đã tính sẵn ở Core).
+        // Cập nhật TotalExp + Level (Level đã tính sẵn ở Core).
         public void UpdateExpAndLevel(int userId, long newTotalExp, int newLevel)
         {
             using var connection = _dbHelper.CreateConnection();
@@ -180,46 +181,73 @@ namespace KnapsackChallenge.Data.Repositories
             command.ExecuteNonQuery();
         }
 
-        // Cộng EXP và cập nhật Level. Trả về (NewTotalExp, NewLevel).
-        // Level được tính lại ở Core, KHÔNG tin số liệu từ caller.
-        //public (long NewTotalExp, int NewLevel) AddExp(int userId, int expToAdd)
-        //{
-        //    using var connection = _dbHelper.CreateConnection();
-        //    connection.Open();
+        // ---------- v9: BẢNG XẾP HẠNG EXP ----------
+
+        // Top người chơi theo TotalExp giảm dần. Loại Admin + tài khoản bị ban + chưa có EXP.
+        // KHÔNG điền RankTitle — Core sẽ tính (RankRules nằm ở Core).
+        public List<ExpLeaderboardEntryDto> GetExpLeaderboard(int topN)
+        {
+            if (topN < 1) topN = 100;
+
+            var list = new List<ExpLeaderboardEntryDto>();
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT TOP (@TopN)
+                       ROW_NUMBER() OVER (ORDER BY TotalExp DESC, Id ASC) AS Pos,
+                       Id, Username, TotalExp, Level
+                FROM Users
+                WHERE IsBanned = 0 AND Role <> N'Admin' AND TotalExp > 0
+                ORDER BY TotalExp DESC, Id ASC";
+            AddParameter(command, "@TopN", topN);
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                list.Add(new ExpLeaderboardEntryDto
+                {
+                    Rank = reader.IsDBNull(0) ? 0 : (int)reader.GetInt64(0),
+                    UserId = reader.IsDBNull(1) ? 0 : reader.GetInt32(1),
+                    Username = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    TotalExp = reader.IsDBNull(3) ? 0L : reader.GetInt64(3),
+                    Level = reader.IsDBNull(4) ? 1 : reader.GetInt32(4),
+                });
+            }
+            return list;
+        }
+
+        // Hạng EXP của 1 người. Trả null nếu user không tồn tại / bị ban / chưa có EXP.
+        // Pos = COUNT(*) những người xếp trên + 1 (tie-break theo Id ASC cho ổn định).
+        public ExpLeaderboardEntryDto? GetUserExpRank(int userId)
+        {
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT u.Id, u.Username, u.TotalExp, u.Level,
+                       (SELECT COUNT(*) FROM Users o
+                        WHERE o.IsBanned = 0 AND o.Role <> N'Admin' AND o.TotalExp > 0
+                          AND (o.TotalExp > u.TotalExp
+                               OR (o.TotalExp = u.TotalExp AND o.Id < u.Id))) + 1 AS Pos
+                FROM Users u
+                WHERE u.Id = @UserId AND u.IsBanned = 0 AND u.TotalExp > 0";
+            AddParameter(command, "@UserId", userId);
+
+            using var reader = command.ExecuteReader();
+            if (!reader.Read()) return null;
+
+            return new ExpLeaderboardEntryDto
+            {
+                Rank = reader.IsDBNull(4) ? 0 : reader.GetInt32(4),
+                UserId = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
+                Username = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                TotalExp = reader.IsDBNull(2) ? 0L : reader.GetInt64(2),
+                Level = reader.IsDBNull(3) ? 1 : reader.GetInt32(3),
+            };
+        }
 
 
-        //    long currentExp;
-        //    int currentLevel;
-        //    using (var read = connection.CreateCommand())
-        //    {
-        //        read.CommandText = "SELECT TotalExp, Level FROM Users WHERE Id = @Id";
-        //        AddParameter(read, "@Id", userId);
-        //        using var reader = read.ExecuteReader();
-        //        if (!reader.Read()) return (0L, 1);
-        //        currentExp = reader.IsDBNull(0) ? 0L : reader.GetInt64(0);
-        //        currentLevel = reader.IsDBNull(1) ? 1 : reader.GetInt32(1);
-        //    }
-
-        //    long newExp = currentExp + Math.Max(0, expToAdd);
-        //    int newLevel = Algorithms.RankRules.GetLevelFromExp(newExp);
-
-
-        //    if (newExp != currentExp || newLevel != currentLevel)
-        //    {
-        //        using var update = connection.CreateCommand();
-        //        update.CommandText = @"
-        //    UPDATE Users
-        //    SET TotalExp = @Exp,
-        //        Level    = @Level
-        //    WHERE Id = @Id";
-        //        AddParameter(update, "@Id", userId);
-        //        AddParameter(update, "@Exp", newExp);
-        //        AddParameter(update, "@Level", newLevel);
-        //        update.ExecuteNonQuery();
-        //    }
-
-        //    return (newExp, newLevel);
-        //}
 
         // ---------- ADMIN ----------
 

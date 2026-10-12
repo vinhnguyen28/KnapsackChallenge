@@ -42,6 +42,11 @@ namespace KnapsackChallenge.UI.Features.Player
         public ObservableCollection<MultiplayerPlayerRow> Players { get; } = new();
         public ObservableCollection<SoloGameSetDto> AvailableSets { get; } = new();
 
+        // Danh sách bộ đề đã lọc theo _setDifficultyFilter (chỉ host dùng).
+        public ObservableCollection<SoloGameSetDto> FilteredSets { get; } = new();
+
+        private string _setDifficultyFilter = "";
+
         // Phase 4: báo cho vỏ điều hướng khi ván bắt đầu.
         public event Action<GameStartDto>? GameStartedReceived;
 
@@ -60,10 +65,9 @@ namespace KnapsackChallenge.UI.Features.Player
 
             LeaveRoomCommand = new RelayCommand<object>(_ => _ = LeaveRoomAsync());
             StartGameCommand = new RelayCommand<object>(_ => _ = StartGameAsync(), _ => CanStartGame);
-            ChangeSetCommand = new RelayCommand<object>(_ => _ = ChangeSetAsync(),
-                _ => IsHost && CanChangeSet && SelectedSet != null);
-            KickPlayerCommand = new RelayCommand<MultiplayerPlayerRow>(
-                row => _ = KickAsync(row), row => CanKick(row));
+            ChangeSetCommand = new RelayCommand<object>(_ => _ = ChangeSetAsync(), _ => IsHost && CanChangeSet && SelectedSet != null);
+            RandomSetCommand = new RelayCommand<object>(_ => _ = RandomSetAsync(), _ => IsHost && CanChangeSet && FilteredSets.Count > 0);
+            KickPlayerCommand = new RelayCommand<MultiplayerPlayerRow>(row => _ = KickAsync(row), row => CanKick(row));
             CopyCodeCommand = new RelayCommand<object>(_ => CopyCode());
 
             _ = InitAsync();
@@ -128,6 +132,53 @@ namespace KnapsackChallenge.UI.Features.Player
             }
         }
 
+        // ===== Bộ lọc độ khó cho ComboBox bộ đề (chỉ host) =====
+        public bool IsSetFilterEasy
+        {
+            get => _setDifficultyFilter == "Easy";
+            set { if (value) SetSetDifficultyFilter("Easy"); }
+        }
+        public bool IsSetFilterMedium
+        {
+            get => _setDifficultyFilter == "Medium";
+            set { if (value) SetSetDifficultyFilter("Medium"); }
+        }
+        public bool IsSetFilterHard
+        {
+            get => _setDifficultyFilter == "Hard";
+            set { if (value) SetSetDifficultyFilter("Hard"); }
+        }
+
+        private void SetSetDifficultyFilter(string value)
+        {
+            _setDifficultyFilter = value;
+            RebuildFilteredSets();
+            SelectedSet = FilteredSets.FirstOrDefault(s => s.SetId == _state.SetId)
+                       ?? FilteredSets.FirstOrDefault();
+            OnPropertyChanged(nameof(IsSetFilterEasy));
+            OnPropertyChanged(nameof(IsSetFilterMedium));
+            OnPropertyChanged(nameof(IsSetFilterHard));
+        }
+
+        private void RebuildFilteredSets()
+        {
+            FilteredSets.Clear();
+            foreach (var s in AvailableSets)
+            {
+                if (string.Equals(s.Difficulty, _setDifficultyFilter,
+                                  StringComparison.OrdinalIgnoreCase))
+                    FilteredSets.Add(s);
+            }
+        }
+
+        // Chuẩn hoá độ khó về 3 giá trị cố định; mặc định "Easy" khi giá trị lạ/rỗng.
+        private static string NormalizeDifficulty(string? d)
+        {
+            if (string.Equals(d, "Medium", StringComparison.OrdinalIgnoreCase)) return "Medium";
+            if (string.Equals(d, "Hard", StringComparison.OrdinalIgnoreCase)) return "Hard";
+            return "Easy";
+        }
+
         // =========================================================
         // BANNERS
         // =========================================================
@@ -153,6 +204,7 @@ namespace KnapsackChallenge.UI.Features.Player
         public ICommand LeaveRoomCommand { get; }
         public ICommand StartGameCommand { get; }
         public ICommand ChangeSetCommand { get; }
+        public ICommand RandomSetCommand { get; }
         public ICommand KickPlayerCommand { get; }
         public ICommand CopyCodeCommand { get; }
 
@@ -206,7 +258,17 @@ namespace KnapsackChallenge.UI.Features.Player
                 _suppressSetChange = true;
                 AvailableSets.Clear();
                 foreach (var s in sets) AvailableSets.Add(s);
-                SelectedSet = AvailableSets.FirstOrDefault(s => s.SetId == _state.SetId);
+
+                if (_setDifficultyFilter == "")
+                    _setDifficultyFilter = NormalizeDifficulty(_state.Difficulty);
+                RebuildFilteredSets();
+                SelectedSet = FilteredSets.FirstOrDefault(s => s.SetId == _state.SetId)
+                           ?? FilteredSets.FirstOrDefault();
+
+                OnPropertyChanged(nameof(IsSetFilterEasy));
+                OnPropertyChanged(nameof(IsSetFilterMedium));
+                OnPropertyChanged(nameof(IsSetFilterHard));
+
                 _suppressSetChange = false;
             }
             catch { /* best-effort */ }
@@ -220,9 +282,12 @@ namespace KnapsackChallenge.UI.Features.Player
 
         private void ApplyState(RoomStateDto state)
         {
+            var prevSetId = _state.SetId;
+
             _state = state;
 
             Players.Clear();
+
             foreach (var p in state.Players)
                 Players.Add(new MultiplayerPlayerRow(p));
 
@@ -243,11 +308,21 @@ namespace KnapsackChallenge.UI.Features.Player
             OnPropertyChanged(nameof(HostHintText));
 
             // Đồng bộ ComboBox với set hiện tại của server (không trigger command).
-            if (!_suppressSetChange)
+            // Chỉ đồng bộ ComboBox khi bộ đề của phòng THẬT SỰ đổi
+            // (hoặc khi lần đầu vào phòng vì _setDifficultyFilter còn rỗng).
+            // Nhờ vậy host đang duyệt ComboBox sẽ không bị nhảy về đề cũ
+            // khi có người khác vào/ra phòng.
+            bool serverSetChanged = prevSetId != state.SetId || _setDifficultyFilter == "";
+            if (serverSetChanged && !_suppressSetChange)
             {
+                _setDifficultyFilter = NormalizeDifficulty(state.Difficulty);
+                RebuildFilteredSets();
                 _suppressSetChange = true;
-                SelectedSet = AvailableSets.FirstOrDefault(s => s.SetId == state.SetId);
+                SelectedSet = FilteredSets.FirstOrDefault(s => s.SetId == state.SetId);
                 _suppressSetChange = false;
+                OnPropertyChanged(nameof(IsSetFilterEasy));
+                OnPropertyChanged(nameof(IsSetFilterMedium));
+                OnPropertyChanged(nameof(IsSetFilterHard));
             }
 
             CommandManager.InvalidateRequerySuggested();
@@ -355,6 +430,20 @@ namespace KnapsackChallenge.UI.Features.Player
             {
                 RunOnUi(() => ErrorMessage = $"Lỗi: {ex.Message}");
             }
+        }
+
+        // Random 1 bộ đề trong mức đang lọc (khác đề hiện tại nếu có từ 2 đề trở lên),
+        // rồi gọi ChangeSetAsync — server vẫn kiểm tra setId hợp lệ.
+        private async System.Threading.Tasks.Task RandomSetAsync()
+        {
+            if (_connection == null || FilteredSets.Count == 0) return;
+
+            var candidates = FilteredSets.Where(s => s.SetId != _state.SetId).ToList();
+            if (candidates.Count == 0) candidates = FilteredSets.ToList();
+            if (candidates.Count == 0) return;
+
+            SelectedSet = candidates[Random.Shared.Next(candidates.Count)];
+            await ChangeSetAsync();
         }
 
         private bool CanKick(MultiplayerPlayerRow? row)

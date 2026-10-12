@@ -17,6 +17,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -134,6 +135,12 @@
                         <TextBlock Text="Vào phòng" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
+
+                <Button Command="{Binding JoinSelectedCommand}"
+                        Style="{DynamicResource ButtonPrimary}"
+                        Padding="14,8"
+                        Margin="8,0,0,0"
+                        Content="Vào phòng đã chọn"/>
             </StackPanel>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
@@ -164,7 +171,49 @@
             </StackPanel>
         </Grid>
 
-        <!-- ============ BANNERS ============ -->
+
+        <!-- ============ THANH LỌC ============ -->
+        <Grid Grid.Row="2" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <RadioButton Content="Tất cả"
+                             GroupName="LobbyDiff"
+                             Style="{DynamicResource FilterTabRadio}"
+                             IsChecked="{Binding IsFilterAll, Mode=TwoWay}"/>
+                <RadioButton Content="🌱 Dễ"
+                             GroupName="LobbyDiff"
+                             Style="{DynamicResource FilterTabRadio}"
+                             IsChecked="{Binding IsFilterEasy, Mode=TwoWay}"/>
+                <RadioButton Content="⚖️ Bình thường"
+                             GroupName="LobbyDiff"
+                             Style="{DynamicResource FilterTabRadio}"
+                             IsChecked="{Binding IsFilterMedium, Mode=TwoWay}"/>
+                <RadioButton Content="🔥 Khó"
+                             GroupName="LobbyDiff"
+                             Style="{DynamicResource FilterTabRadio}"
+                             IsChecked="{Binding IsFilterHard, Mode=TwoWay}"/>
+            </StackPanel>
+
+            <TextBox Grid.Column="1"
+                     Style="{DynamicResource InputTextBox}"
+                     Margin="12,0"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     ToolTip="Tìm theo mã phòng, chủ phòng hoặc bộ đề"
+                     VerticalAlignment="Center"/>
+
+            <CheckBox Grid.Column="2"
+                      Style="{DynamicResource InputCheckBox}"
+                      Content="Hiện cả phòng đang chơi"
+                      IsChecked="{Binding ShowPlaying, Mode=TwoWay}"
+                      VerticalAlignment="Center"/>
+        </Grid>
+
+            <!-- ============ BANNERS ============ -->
         <Grid Grid.Row="2" Margin="0,0,0,10" MinHeight="42">
             <Border Style="{DynamicResource InfoBanner}" Margin="0" VerticalAlignment="Top">
                 <TextBlock Text="{Binding InfoMessage}"
@@ -183,9 +232,10 @@
         </Grid>
 
         <!-- ============ DANH SÁCH PHÒNG ============ -->
-        <Border Grid.Row="3" Style="{DynamicResource Card}" Padding="0">
+        <Border Grid.Row="4" Style="{DynamicResource Card}" Padding="0">
             <Grid>
                 <DataGrid ItemsSource="{Binding Rooms}"
+                          SelectedItem="{Binding SelectedRoom, Mode=TwoWay}"
                           AutoGenerateColumns="False"
                           IsReadOnly="True"
                           SelectionMode="Single"
@@ -203,6 +253,12 @@
                           ColumnHeaderStyle="{DynamicResource GridColumnHeader}"
                           RowStyle="{StaticResource LobbyRow}"
                           CellStyle="{DynamicResource GridCell}">
+
+                    <DataGrid.InputBindings>
+                        <MouseBinding MouseAction="LeftDoubleClick"
+                                      Command="{Binding JoinSelectedCommand}"/>
+                    </DataGrid.InputBindings>
+
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="MÃ PHÒNG"
                                             Binding="{Binding RoomCode}"
@@ -216,11 +272,21 @@
 
                         <DataGridTextColumn Header="CHỦ PHÒNG"
                                             Binding="{Binding HostUsername}"
-                                            Width="180"/>
+                                            Width="150"/>
 
                         <DataGridTextColumn Header="BỘ ĐỀ"
                                             Binding="{Binding SetName}"
                                             Width="*"/>
+
+                        <DataGridTextColumn Header="ĐỘ KHÓ"
+                                            Binding="{Binding DifficultyText}"
+                                            Width="110"
+                                            ElementStyle="{StaticResource MutedCellText}"/>
+
+                        <DataGridTextColumn Header="THỜI GIAN"
+                                            Binding="{Binding TimeLimitText}"
+                                            Width="110"
+                                            ElementStyle="{StaticResource MutedCellText}"/>
 
                         <DataGridTextColumn Header="NGƯỜI"
                                             Binding="{Binding PlayerCountText}"
@@ -229,11 +295,6 @@
 
                         <DataGridTextColumn Header="TRẠNG THÁI"
                                             Binding="{Binding StatusText}"
-                                            Width="110"
-                                            ElementStyle="{StaticResource MutedCellText}"/>
-
-                        <DataGridTextColumn Header="TẠO LÚC"
-                                            Binding="{Binding CreatedAtText}"
                                             Width="110"
                                             ElementStyle="{StaticResource MutedCellText}"/>
                     </DataGrid.Columns>

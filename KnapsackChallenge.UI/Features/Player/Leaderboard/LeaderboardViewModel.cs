@@ -9,31 +9,152 @@ using System.Windows.Input;
 
 namespace KnapsackChallenge.UI.Features.Player
 {
-    // Trang Xếp hạng tách từ tab cũ trong SoloGameView.
-    // Nguồn dữ liệu vẫn là ISoloGameService.GetLeaderboard(setId?, topN).
+    // Trang Xếp hạng (v9): 2 tab — Cấp độ (EXP) và Theo bộ đề.
+    // Tab EXP: top 100 toàn hệ thống + hạng của tôi.
+    // Tab bộ đề: lọc theo độ khó / bộ đề cụ thể / chế độ / thời gian + hạng của tôi.
     public class LeaderboardViewModel : ViewModelBase
     {
-        // Ở đây là màn chuyên dụng, có thể nạp nhiều hơn HomePage (chỉ nạp 100 cho mini-board).
-        private const int TopCount = 100;
+        private readonly UserEntity _user;
+        private readonly ILeaderboardService _lb;
+        private readonly ISoloGameService _solo;
 
-        private readonly ISoloGameService _soloService;
+        private List<SoloGameSetDto> _allSets = new();
+        private bool _suppressReload;
+        private int _loadVersion;
 
-        public ObservableCollection<LeaderboardEntryDto> Leaderboard { get; } = new();
-        public ObservableCollection<LeaderboardFilterOption> LeaderboardFilters { get; } = new();
+        public ObservableCollection<SetBoardRow> SetRows { get; } = new();
+        public ObservableCollection<ExpBoardRow> ExpRows { get; } = new();
 
-        private LeaderboardFilterOption? _selectedFilter;
-        public LeaderboardFilterOption? SelectedFilter
+        public IReadOnlyList<LbModeOption> ModeOptions { get; } = new List<LbModeOption>
         {
-            get => _selectedFilter;
+            new("Mọi chế độ", null),
+            new("Solo", "Solo"),
+            new("Multiplayer", "Multiplayer"),
+        };
+
+        public IReadOnlyList<LbTimeOption> TimeOptions { get; } = new List<LbTimeOption>
+        {
+            new("Mọi thời gian", null),
+            new("7 ngày qua", 7),
+            new("30 ngày qua", 30),
+        };
+
+        public ObservableCollection<LbSetOption> SetOptions { get; } = new();
+
+        // =========================================================
+        // TAB
+        // =========================================================
+        private bool _isExpTab = true;
+        public bool IsExpTab
+        {
+            get => _isExpTab;
+            set { if (value) SetTab(true); }
+        }
+
+        public bool IsSetTab
+        {
+            get => !_isExpTab;
+            set { if (value) SetTab(false); }
+        }
+
+        private void SetTab(bool isExp)
+        {
+            if (_isExpTab == isExp) return;
+            _isExpTab = isExp;
+            OnPropertyChanged(nameof(IsExpTab));
+            OnPropertyChanged(nameof(IsSetTab));
+            _ = LoadAsync();
+        }
+
+        // =========================================================
+        // CHIP ĐỘ KHÓ
+        // =========================================================
+        private string _difficulty = ""; // "" | "Easy" | "Medium" | "Hard"
+
+        public bool IsDiffAll
+        {
+            get => _difficulty == "";
+            set { if (value) SetDifficulty(""); }
+        }
+        public bool IsDiffEasy
+        {
+            get => _difficulty == "Easy";
+            set { if (value) SetDifficulty("Easy"); }
+        }
+        public bool IsDiffMedium
+        {
+            get => _difficulty == "Medium";
+            set { if (value) SetDifficulty("Medium"); }
+        }
+        public bool IsDiffHard
+        {
+            get => _difficulty == "Hard";
+            set { if (value) SetDifficulty("Hard"); }
+        }
+
+        private void SetDifficulty(string value)
+        {
+            if (_difficulty == value) return;
+            _difficulty = value;
+
+            OnPropertyChanged(nameof(IsDiffAll));
+            OnPropertyChanged(nameof(IsDiffEasy));
+            OnPropertyChanged(nameof(IsDiffMedium));
+            OnPropertyChanged(nameof(IsDiffHard));
+            OnPropertyChanged(nameof(HasSetFilter));
+
+            RebuildSetOptions();
+            _ = LoadAsync();
+        }
+
+        // Chỉ hiện ComboBox chọn bộ đề khi đã chọn một mức độ khó cụ thể.
+        public bool HasSetFilter => _difficulty != "";
+
+        // =========================================================
+        // BỘ LỌC
+        // =========================================================
+        private LbModeOption _selectedMode;
+        public LbModeOption SelectedMode
+        {
+            get => _selectedMode;
             set
             {
-                if (ReferenceEquals(_selectedFilter, value)) return;
-                _selectedFilter = value;
+                if (value == null || ReferenceEquals(_selectedMode, value)) return;
+                _selectedMode = value;
                 OnPropertyChanged();
-                _ = LoadAsync();
+                if (!_suppressReload) _ = LoadAsync();
             }
         }
 
+        private LbTimeOption _selectedTime;
+        public LbTimeOption SelectedTime
+        {
+            get => _selectedTime;
+            set
+            {
+                if (value == null || ReferenceEquals(_selectedTime, value)) return;
+                _selectedTime = value;
+                OnPropertyChanged();
+                if (!_suppressReload) _ = LoadAsync();
+            }
+        }
+
+        private LbSetOption? _selectedSetOption;
+        public LbSetOption? SelectedSetOption
+        {
+            get => _selectedSetOption;
+            set
+            {
+                if (ReferenceEquals(_selectedSetOption, value)) return;
+                _selectedSetOption = value;
+                OnPropertyChanged();
+                if (!_suppressReload) _ = LoadAsync();
+            }
+        }
+
+        // =========================================================
+        // TRẠNG THÁI
+        // =========================================================
         private bool _isLoading;
         public bool IsLoading
         {
@@ -48,71 +169,161 @@ namespace KnapsackChallenge.UI.Features.Player
             set { _errorMessage = value; OnPropertyChanged(); }
         }
 
+        private string _myRankText = "";
+        public string MyRankText
+        {
+            get => _myRankText;
+            private set
+            {
+                _myRankText = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasMyRank));
+            }
+        }
+
+        public bool HasMyRank => !string.IsNullOrEmpty(_myRankText);
+
+        // =========================================================
+        // COMMANDS / EVENTS
+        // =========================================================
         public ICommand RefreshCommand { get; }
         public ICommand BackCommand { get; }
 
         public event Action? BackRequested;
 
-        // user hiện không dùng trong luồng tải BXH, nhưng giữ tham số để sau này
-        // highlight dòng của chính mình mà không phải đổi constructor.
+        // =========================================================
+        // CONSTRUCTOR
+        // =========================================================
         public LeaderboardViewModel(UserEntity user)
         {
-            _ = user;
-            _soloService = ServiceFactory.GetSoloGameService();
+            _user = user;
+            _lb = ServiceFactory.GetLeaderboardService();
+            _solo = ServiceFactory.GetSoloGameService();
+
+            _selectedMode = ModeOptions[0];
+            _selectedTime = TimeOptions[0];
 
             RefreshCommand = new RelayCommand<object>(_ => _ = LoadAsync());
             BackCommand = new RelayCommand<object>(_ => BackRequested?.Invoke());
 
-            _ = LoadFiltersThenDataAsync();
+            _ = InitAsync();
         }
 
-        private async System.Threading.Tasks.Task LoadFiltersThenDataAsync()
+        // Nạp danh sách bộ đề 1 lần rồi load dữ liệu bảng.
+        private async Task InitAsync()
         {
-            // Nạp danh sách bộ đề cho filter (dùng SoloGameService.GetAvailableSets).
             try
             {
-                var sets = await System.Threading.Tasks.Task.Run(() => _soloService.GetAvailableSets());
-
-                LeaderboardFilters.Clear();
-                LeaderboardFilters.Add(new LeaderboardFilterOption
-                {
-                    SetId = null,
-                    DisplayText = "Tất cả bộ đề",
-                });
-                foreach (var s in sets)
-                {
-                    LeaderboardFilters.Add(new LeaderboardFilterOption
-                    {
-                        SetId = s.SetId,
-                        DisplayText = s.DisplayText,
-                    });
-                }
-                _selectedFilter = LeaderboardFilters.FirstOrDefault();
-                OnPropertyChanged(nameof(SelectedFilter));
+                var sets = await Task.Run(() => _solo.GetAvailableSets());
+                _allSets = sets ?? new List<SoloGameSetDto>();
             }
             catch (SqlException) { ErrorMessage = "Không kết nối được cơ sở dữ liệu!"; }
             catch (InvalidOperationException ex) { ErrorMessage = ex.Message; }
 
+            RebuildSetOptions();
             await LoadAsync();
         }
 
-        private async System.Threading.Tasks.Task LoadAsync()
+        // Xây lại danh sách bộ đề theo _difficulty. Không trigger LoadAsync trong lúc build.
+        private void RebuildSetOptions()
         {
-            if (IsLoading) return;
-            IsLoading = true;
+            _suppressReload = true;
             try
             {
-                int? setId = _selectedFilter?.SetId;
-                var list = await System.Threading.Tasks.Task.Run(
-                    () => _soloService.GetLeaderboard(setId, TopCount));
+                SetOptions.Clear();
+                SetOptions.Add(new LbSetOption("Tất cả bộ đề trong mức", null));
 
-                Leaderboard.Clear();
-                foreach (var e in list) Leaderboard.Add(e);
+                if (_difficulty != "")
+                {
+                    foreach (var s in _allSets.Where(s =>
+                        string.Equals(s.Difficulty, _difficulty, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        SetOptions.Add(new LbSetOption(s.SetName, s.SetId));
+                    }
+                }
 
-                ErrorMessage = "";
+                // Chọn lại mục đầu; gán field trực tiếp để bỏ qua setter.
+                _selectedSetOption = SetOptions.FirstOrDefault();
+                OnPropertyChanged(nameof(SelectedSetOption));
             }
-            catch (SqlException) { ErrorMessage = "Không kết nối được cơ sở dữ liệu!"; }
-            finally { IsLoading = false; }
+            finally
+            {
+                _suppressReload = false;
+            }
+        }
+
+        // =========================================================
+        // LOAD
+        // Dùng _loadVersion để tránh kết quả cũ ghi đè khi user bấm liên tiếp.
+        // KHÔNG dùng "if (IsLoading) return;" — vì sẽ bỏ mất lần lọc mới.
+        // =========================================================
+        private async Task LoadAsync()
+        {
+            var version = ++_loadVersion;
+            IsLoading = true;
+            ErrorMessage = "";
+
+            try
+            {
+                if (IsExpTab)
+                {
+                    var list = await Task.Run(() => _lb.GetByExp(100));
+                    var me = await Task.Run(() => _lb.GetMyExpRank(_user.Id));
+
+                    if (version != _loadVersion) return;
+
+                    ExpRows.Clear();
+                    foreach (var e in list)
+                        ExpRows.Add(new ExpBoardRow(e, _user.Id));
+
+                    MyRankText = me != null
+                        ? $"Hạng của bạn: #{me.Rank} · {me.LevelBadge} · {me.TotalExp:N0} EXP"
+                        : "Bạn chưa có EXP — hãy chơi ván đầu tiên!";
+                }
+                else
+                {
+                    var q = new LeaderboardQuery
+                    {
+                        Mode = SelectedMode?.Value,
+                        Difficulty = _difficulty == "" ? null : _difficulty,
+                        SetId = SelectedSetOption?.SetId,
+                        SinceUtc = SelectedTime?.Days is int d
+                            ? DateTime.UtcNow.AddDays(-d)
+                            : (DateTime?)null,
+                        TopN = 100,
+                    };
+
+                    var list = await Task.Run(() => _lb.GetBySet(q));
+                    var me = await Task.Run(() => _lb.GetMySetRank(_user.Id, q));
+
+                    if (version != _loadVersion) return;
+
+                    SetRows.Clear();
+                    foreach (var e in list)
+                        SetRows.Add(new SetBoardRow(e, _user.Id));
+
+                    MyRankText = me != null
+                        ? $"Hạng của bạn: #{me.Rank} · {me.OptimalPercent:0.0}% · {me.TimeText}"
+                        : "Bạn chưa có thứ hạng trong phạm vi này.";
+                }
+            }
+            catch (SqlException)
+            {
+                if (version == _loadVersion) ErrorMessage = "Không kết nối được cơ sở dữ liệu!";
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (version == _loadVersion) ErrorMessage = ex.Message;
+            }
+            finally
+            {
+                if (version == _loadVersion) IsLoading = false;
+            }
         }
     }
+
+    // ---- Option records cho ComboBox ----
+    public sealed record LbModeOption(string Label, string? Value);
+    public sealed record LbTimeOption(string Label, int? Days);
+    public sealed record LbSetOption(string Label, int? SetId);
 }

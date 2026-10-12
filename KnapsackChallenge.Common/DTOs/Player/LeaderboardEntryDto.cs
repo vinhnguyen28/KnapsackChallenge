@@ -13,5 +13,13 @@
         public int SetId { get; set; }
         public string SetName { get; set; } = "";
         public System.DateTime? AchievedAt { get; set; }
+
+        // Bổ sung cho bảng xếp hạng theo bộ đề (v9).
+        public int? TimeSpentSeconds { get; set; }
+        public string Difficulty { get; set; } = "";
+        public string Mode { get; set; } = "";
+
+        // Chuỗi thời gian tiện binding: "mm:ss" hoặc "—".
+        public string TimeText => TimeSpentSeconds.HasValue ? System.TimeSpan.FromSeconds(TimeSpentSeconds.Value).ToString(@"mm\:ss") : "—";
     }
 }

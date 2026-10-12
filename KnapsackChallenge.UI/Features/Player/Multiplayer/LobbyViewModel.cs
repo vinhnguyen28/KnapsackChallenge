@@ -34,8 +34,24 @@ namespace KnapsackChallenge.UI.Features.Player
             : Data.CreatedAtUtc.ToLocalTime().ToString("dd/MM HH:mm");
 
         public string StartedAtText => Data.StartedAtUtc.HasValue
-            ? Data.StartedAtUtc.Value.ToLocalTime().ToString("dd/MM HH:mm")
-            : "—";
+    ? Data.StartedAtUtc.Value.ToLocalTime().ToString("dd/MM HH:mm")
+    : "—";
+
+        public string Difficulty => Data.Difficulty;
+        public string DifficultyText => (Data.Difficulty ?? "").ToLowerInvariant() switch
+        {
+            "easy" => "Dễ",
+            "medium" => "Bình thường",
+            "hard" => "Khó",
+            _ => "—"
+        };
+        public string TimeLimitText => Data.TimeLimitSeconds <= 0
+            ? "Không giới hạn"
+            : TimeSpan.FromSeconds(Data.TimeLimitSeconds).ToString(@"mm\:ss");
+
+        public bool CanJoin =>
+            Data.Status == RoomStatus.Waiting
+            && Data.PlayerCount < Data.MaxPlayers;
     }
 
     public class LobbyViewModel : ViewModelBase, IPageLifecycle
@@ -45,6 +61,9 @@ namespace KnapsackChallenge.UI.Features.Player
 
         private MultiplayerConnectionService? _connection;
         private bool _disposed;
+
+        // Từ giờ Rooms chỉ chứa kết quả ĐÃ LỌC; _allRooms giữ toàn bộ snapshot mới nhất.
+        private List<RoomSummaryDto> _allRooms = new();
 
         public ObservableCollection<RoomRowViewModel> Rooms { get; } = new();
 
@@ -86,9 +105,82 @@ namespace KnapsackChallenge.UI.Features.Player
         }
         public bool HasInfo => !string.IsNullOrEmpty(_infoMessage);
 
+        // ===== Bộ lọc Lobby =====
+        private string _difficultyFilter = ""; // "" = tất cả
+        public bool IsFilterAll
+        {
+            get => _difficultyFilter == "";
+            set { if (value) SetDifficultyFilter(""); }
+        }
+        public bool IsFilterEasy
+        {
+            get => _difficultyFilter == "Easy";
+            set { if (value) SetDifficultyFilter("Easy"); }
+        }
+        public bool IsFilterMedium
+        {
+            get => _difficultyFilter == "Medium";
+            set { if (value) SetDifficultyFilter("Medium"); }
+        }
+        public bool IsFilterHard
+        {
+            get => _difficultyFilter == "Hard";
+            set { if (value) SetDifficultyFilter("Hard"); }
+        }
+
+        private void SetDifficultyFilter(string value)
+        {
+            _difficultyFilter = value;
+            OnPropertyChanged(nameof(IsFilterAll));
+            OnPropertyChanged(nameof(IsFilterEasy));
+            OnPropertyChanged(nameof(IsFilterMedium));
+            OnPropertyChanged(nameof(IsFilterHard));
+            ApplyFilter();
+        }
+
+        private string _searchText = "";
+        public string SearchText
+        {
+            get => _searchText;
+            set
+            {
+                if (_searchText == value) return;
+                _searchText = value;
+                OnPropertyChanged();
+                ApplyFilter();
+            }
+        }
+
+        private bool _showPlaying;
+        public bool ShowPlaying
+        {
+            get => _showPlaying;
+            set
+            {
+                if (_showPlaying == value) return;
+                _showPlaying = value;
+                OnPropertyChanged();
+                ApplyFilter();
+            }
+        }
+
+        private RoomRowViewModel? _selectedRoom;
+        public RoomRowViewModel? SelectedRoom
+        {
+            get => _selectedRoom;
+            set
+            {
+                if (ReferenceEquals(_selectedRoom, value)) return;
+                _selectedRoom = value;
+                OnPropertyChanged();
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+
         public ICommand RefreshCommand { get; }
         public ICommand CreateRoomCommand { get; }
         public ICommand JoinRoomCommand { get; }
+        public ICommand JoinSelectedCommand { get; }
         public ICommand BackCommand { get; }
 
         public event Action? BackRequested;
@@ -105,6 +197,9 @@ namespace KnapsackChallenge.UI.Features.Player
             RefreshCommand = new RelayCommand<object>(_ => _ = RefreshAsync(), _ => IsConnected && !IsBusy);
             CreateRoomCommand = new RelayCommand<object>(_ => ExecuteCreateRoom(), _ => IsConnected && !IsBusy);
             JoinRoomCommand = new RelayCommand<object>(_ => ExecuteJoinRoom(), _ => IsConnected && !IsBusy);
+            JoinSelectedCommand = new RelayCommand<object>(
+                _ => { if (SelectedRoom != null) _ = JoinRoomAsync(SelectedRoom.RoomCode); },
+                _ => IsConnected && !IsBusy && SelectedRoom?.CanJoin == true);
             BackCommand = new RelayCommand<object>(_ => BackRequested?.Invoke());
 
             _ = InitAsync();
@@ -170,6 +265,61 @@ namespace KnapsackChallenge.UI.Features.Player
         }
 
         // =========================================================
+        // FILTER
+        // =========================================================
+
+        // Áp dụng bộ lọc hiện tại lên _allRooms → rebuild Rooms.
+        // Luôn chạy trên UI thread: chỉ được gọi từ setter property (UI thread) hoặc từ RefreshAsync (đã bọc RunOnUi).
+        private void ApplyFilter()
+        {
+            IEnumerable<RoomSummaryDto> q = _allRooms;
+
+            if (!ShowPlaying)
+                q = q.Where(r => r.Status == RoomStatus.Waiting);
+
+            if (!string.IsNullOrEmpty(_difficultyFilter))
+                q = q.Where(r => string.Equals(r.Difficulty, _difficultyFilter,
+                                                StringComparison.OrdinalIgnoreCase));
+
+            var search = (_searchText ?? "").Trim();
+            if (search.Length > 0)
+            {
+                q = q.Where(r =>
+                    (r.RoomCode ?? "").Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    (r.HostUsername ?? "").Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    (r.SetName ?? "").Contains(search, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Phòng đang chờ luôn lên trước; trong cùng nhóm sắp theo CreatedAtUtc giảm dần.
+            var ordered = q
+                .OrderBy(r => r.Status == RoomStatus.Waiting ? 0 : 1)
+                .ThenByDescending(r => r.CreatedAtUtc)
+                .ToList();
+
+            var prevCode = _selectedRoom?.RoomCode;
+
+            Rooms.Clear();
+            foreach (var r in ordered)
+                Rooms.Add(new RoomRowViewModel(r));
+
+            SelectedRoom = prevCode == null
+                ? null
+                : Rooms.FirstOrDefault(x => string.Equals(x.RoomCode, prevCode,
+                                                          StringComparison.OrdinalIgnoreCase));
+
+            if (_allRooms.Count == 0)
+            {
+                InfoMessage = "Chưa có phòng nào. Hãy tạo phòng đầu tiên!";
+            }
+            else
+            {
+                var msg = $"Hiển thị {Rooms.Count}/{_allRooms.Count} phòng.";
+                if (Rooms.Count == 0) msg += " Thử đổi bộ lọc.";
+                InfoMessage = msg;
+            }
+        }
+
+        // =========================================================
         // REFRESH
         // =========================================================
 
@@ -185,12 +335,8 @@ namespace KnapsackChallenge.UI.Features.Player
 
                 RunOnUi(() =>
                 {
-                    Rooms.Clear();
-                    foreach (var r in list) Rooms.Add(new RoomRowViewModel(r));
-
-                    InfoMessage = list.Count == 0
-                        ? "Chưa có phòng nào. Hãy tạo phòng đầu tiên!"
-                        : $"Đang có {list.Count} phòng hoạt động.";
+                    _allRooms = list.ToList();
+                    ApplyFilter();
                 });
             }
             catch (Exception ex)

@@ -1,6 +1,6 @@
-﻿using System.Data;
-using KnapsackChallenge.Common.DTOs;
+﻿using KnapsackChallenge.Common.DTOs;
 using KnapsackChallenge.Data.Entities;
+using System.Data;
 
 namespace KnapsackChallenge.Data.Repositories
 {
@@ -198,6 +198,8 @@ namespace KnapsackChallenge.Data.Repositories
                     LEFT  JOIN KnapsackSets ks ON ks.Id = gs.SetId
                     WHERE rp.IsSubmitted = 1
                       AND gs.Mode = 'Solo'
+                      AND u.IsBanned = 0
+                      AND u.Role <> N'Admin'
                       AND (@SetId IS NULL OR gs.SetId = @SetId)
                 )
                 SELECT TOP (@TopN)
@@ -233,6 +235,135 @@ namespace KnapsackChallenge.Data.Repositories
                 });
             }
             return list;
+        }
+
+
+        // =========================================================
+        // 4. Bảng xếp hạng theo bộ đề (v9)
+        //    - Chỉ tính ván đã nộp, TotalScore > 0, OptimalValue > 0.
+        //    - Loại tài khoản bị ban + Admin.
+        //    - rn=1: lấy ván tốt nhất của MỖI người trong phạm vi lọc.
+        //    - Pos : thứ hạng cuối, xếp theo % tối ưu DESC, thời gian ít hơn ASC,
+        //            ngày nộp ASC, UserId ASC (tie-break tất định).
+        // =========================================================
+        private const string SetBoardCte = @"
+            WITH Best AS (
+                SELECT rp.UserId,
+                       u.Username,
+                       rp.TotalScore,
+                       rp.TotalWeight,
+                       gs.OptimalValue,
+                       gs.SetId,
+                       ks.SetName,
+                       ks.Difficulty,
+                       gs.Mode,
+                       COALESCE(rp.TimeSpentSeconds, gs.TimeSpentSeconds) AS TimeSpent,
+                       gs.CreatedAt,
+                       CAST(rp.TotalScore AS float) / gs.OptimalValue AS Pct,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY rp.UserId
+                           ORDER BY CAST(rp.TotalScore AS float) / gs.OptimalValue DESC,
+                                    COALESCE(rp.TimeSpentSeconds, gs.TimeSpentSeconds, 2147483647) ASC,
+                                    gs.CreatedAt ASC, gs.Id ASC) AS rn
+                FROM RoomPlayers rp
+                INNER JOIN GameSessions gs ON gs.Id = rp.SessionId
+                INNER JOIN KnapsackSets ks ON ks.Id = gs.SetId
+                INNER JOIN Users u ON u.Id = rp.UserId
+                WHERE rp.IsSubmitted = 1
+                  AND rp.TotalScore > 0
+                  AND gs.OptimalValue > 0
+                  AND u.IsBanned = 0
+                  AND u.Role <> N'Admin'
+                  AND (@Mode IS NULL OR gs.Mode = @Mode)
+                  AND (@Difficulty IS NULL OR ks.Difficulty = @Difficulty)
+                  AND (@SetId IS NULL OR gs.SetId = @SetId)
+                  AND (@Since IS NULL OR gs.CreatedAt >= @Since)
+            ),
+            Ranked AS (
+                SELECT *,
+                       ROW_NUMBER() OVER (
+                           ORDER BY Pct DESC,
+                                    COALESCE(TimeSpent, 2147483647) ASC,
+                                    CreatedAt ASC, UserId ASC) AS Pos
+                FROM Best
+                WHERE rn = 1
+            )";
+
+        public List<LeaderboardEntryDto> GetSetLeaderboard(LeaderboardQuery q)
+        {
+            var list = new List<LeaderboardEntryDto>();
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+
+            int topN = q.TopN < 1 ? 100 : q.TopN;
+
+            command.CommandText = SetBoardCte + @"
+                SELECT TOP (@TopN)
+                       UserId, Username, TotalScore, TotalWeight, OptimalValue,
+                       SetId, SetName, Difficulty, Mode, TimeSpent, CreatedAt, Pos
+                FROM Ranked
+                ORDER BY Pos";
+
+            AddParameter(command, "@Mode", (object?)q.Mode ?? DBNull.Value);
+            AddParameter(command, "@Difficulty", (object?)q.Difficulty ?? DBNull.Value);
+            AddParameter(command, "@SetId", (object?)q.SetId ?? DBNull.Value);
+            AddParameter(command, "@Since", (object?)q.SinceUtc ?? DBNull.Value);
+            AddParameter(command, "@TopN", topN);
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+                list.Add(MapSetBoardRow(reader));
+
+            return list;
+        }
+
+        public LeaderboardEntryDto? GetUserSetRank(int userId, LeaderboardQuery q)
+        {
+            using var connection = _dbHelper.CreateConnection();
+            connection.Open();
+            using var command = connection.CreateCommand();
+
+            command.CommandText = SetBoardCte + @"
+                SELECT UserId, Username, TotalScore, TotalWeight, OptimalValue,
+                       SetId, SetName, Difficulty, Mode, TimeSpent, CreatedAt, Pos
+                FROM Ranked
+                WHERE UserId = @UserId";
+
+            AddParameter(command, "@Mode", (object?)q.Mode ?? DBNull.Value);
+            AddParameter(command, "@Difficulty", (object?)q.Difficulty ?? DBNull.Value);
+            AddParameter(command, "@SetId", (object?)q.SetId ?? DBNull.Value);
+            AddParameter(command, "@Since", (object?)q.SinceUtc ?? DBNull.Value);
+            AddParameter(command, "@UserId", userId);
+
+            using var reader = command.ExecuteReader();
+            return reader.Read() ? MapSetBoardRow(reader) : null;
+        }
+
+        // Map chung cho GetSetLeaderboard + GetUserSetRank.
+        // Thứ tự cột PHẢI khớp SELECT ở 2 method trên.
+        private static LeaderboardEntryDto MapSetBoardRow(IDataRecord reader)
+        {
+            int score = reader.IsDBNull(2) ? 0 : reader.GetInt32(2);
+            int optimalValue = reader.IsDBNull(4) ? 0 : reader.GetInt32(4);
+
+            return new LeaderboardEntryDto
+            {
+                // Pos trả về bigint (ROW_NUMBER) — ép int.
+                Rank = reader.IsDBNull(11) ? 0 : (int)reader.GetInt64(11),
+                UserId = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
+                Username = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                BestScore = score,
+                BestWeight = reader.IsDBNull(3) ? 0 : reader.GetInt32(3),
+                OptimalValue = optimalValue,
+                OptimalPercent = optimalValue > 0 ? (double)score / optimalValue * 100.0 : 0,
+                SetId = reader.IsDBNull(5) ? 0 : reader.GetInt32(5),
+                SetName = reader.IsDBNull(6) ? "" : reader.GetString(6),
+                Difficulty = reader.IsDBNull(7) ? "" : reader.GetString(7),
+                Mode = reader.IsDBNull(8) ? "" : reader.GetString(8),
+                TimeSpentSeconds = reader.IsDBNull(9) ? (int?)null : reader.GetInt32(9),
+                AchievedAt = reader.IsDBNull(10) ? (DateTime?)null : reader.GetDateTime(10),
+            };
         }
 
         // =========================================================

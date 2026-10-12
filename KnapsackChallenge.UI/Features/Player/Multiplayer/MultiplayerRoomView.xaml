@@ -297,13 +297,33 @@
                         <TextBlock Text="Bộ đề của phòng"
                                    Style="{DynamicResource FieldLabel}"/>
 
-                        <ComboBox ItemsSource="{Binding AvailableSets}"
+                        <WrapPanel Margin="0,0,0,8">
+                            <RadioButton Content="🌱 Dễ"
+                                         GroupName="RoomSetDiff"
+                                         Style="{DynamicResource FilterTabRadio}"
+                                         IsChecked="{Binding IsSetFilterEasy, Mode=TwoWay}"/>
+                            <RadioButton Content="⚖️ Bình thường"
+                                         GroupName="RoomSetDiff"
+                                         Style="{DynamicResource FilterTabRadio}"
+                                         IsChecked="{Binding IsSetFilterMedium, Mode=TwoWay}"/>
+                            <RadioButton Content="🔥 Khó"
+                                         GroupName="RoomSetDiff"
+                                         Style="{DynamicResource FilterTabRadio}"
+                                         IsChecked="{Binding IsSetFilterHard, Mode=TwoWay}"/>
+                        </WrapPanel>
+
+                        <ComboBox ItemsSource="{Binding FilteredSets}"
                                   SelectedItem="{Binding SelectedSet, Mode=TwoWay}"
                                   DisplayMemberPath="DisplayText"
                                   IsEnabled="{Binding CanChangeSet}"
                                   Style="{DynamicResource DarkComboBox}"
                                   Height="34"
                                   Margin="0,0,0,8"/>
+
+                        <Button Command="{Binding RandomSetCommand}"
+                                Content="🎲 Random trong mức này"
+                                Style="{DynamicResource ButtonSecondary}"
+                                Margin="0,0,0,8"/>
 
                         <Button Command="{Binding ChangeSetCommand}"
                                 Content="Áp dụng bộ đề"

@@ -645,12 +645,14 @@ namespace KnapsackChallenge.Core.Services.Player.Multiplayer
                             SessionId = r.SessionId,
                             Status = r.Status,
                             HostUsername = r.Players
-                                .FirstOrDefault(p => p.IsHost && p.IsActive)?.Username ?? "",
+                                    .FirstOrDefault(p => p.IsHost && p.IsActive)?.Username ?? "",
                             SetName = r.SetName,
                             PlayerCount = r.Players.Count(p => p.IsActive),
                             MaxPlayers = r.MaxPlayers,
                             CreatedAtUtc = r.CreatedAtUtc,
                             StartedAtUtc = r.StartedAtUtc,
+                            Difficulty = r.Difficulty,
+                            TimeLimitSeconds = r.TimeLimitSeconds,
                         };
                     }
                 })

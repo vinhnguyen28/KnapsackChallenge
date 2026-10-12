@@ -23,6 +23,10 @@ namespace KnapsackChallenge.Core.Factories
         private static readonly Lazy<IRankService> _rankService =
             new(() => new RankService(_userRepository.Value));
 
+        // v9: bảng xếp hạng theo bộ đề + EXP.
+        private static readonly Lazy<ILeaderboardService> _leaderboardService =
+            new(() => new LeaderboardService(_gameRepository.Value, _userRepository.Value));
+
         public static IAuthService GetAuthService() => new AuthService(_userRepository.Value);
 
         public static IItemService GetItemService() => new ItemService(_itemRepository.Value);
@@ -55,5 +59,7 @@ namespace KnapsackChallenge.Core.Factories
 
 
         public static IRankService GetRankService() => _rankService.Value;
+
+        public static ILeaderboardService GetLeaderboardService() => _leaderboardService.Value;
     }
 }
