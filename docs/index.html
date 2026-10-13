@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knapsack Challenge – Game xếp balo cho Windows</title>
+<meta name="description" content="Knapsack Challenge: game giải đố chọn vật phẩm tối ưu cho Windows, viết bằng C# WPF. Tải miễn phí, giải nén và chơi ngay.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="logo" href="#top">🎒 Knapsack Challenge</a>
+    <nav>
+      <a href="#gioi-thieu">Giới thiệu</a>
+      <a href="#cach-choi">Cách chơi</a>
+      <a href="#cau-hinh">Cấu hình</a>
+      <a href="#source">Mã nguồn</a>
+      <a href="#faq">Hỏi đáp</a>
+      <a class="btn primary dl-link" href="#tai-game">Tải game</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+<section class="hero">
+  <div class="wrap grid">
+    <div>
+      <h1>Nhét đúng đồ vào balo, giành điểm cao nhất.</h1>
+      <p class="lead">Knapsack Challenge là game giải đố cho Windows. Mỗi vật phẩm có cân nặng và giá trị riêng, balo thì có sức chứa giới hạn. Bạn chọn thế nào để tổng giá trị lớn nhất?</p>
+      <div class="cta">
+        <a class="btn primary dl-link" href="#">⬇ Tải game miễn phí</a>
+        <a class="btn ghost repo-link" href="#" target="_blank" rel="noopener">Xem mã nguồn</a>
+      </div>
+      <p class="meta" id="relinfo">Phiên bản mới nhất · Windows 10/11 · Giải nén và chơi ngay</p>
+    </div>
+
+    <div class="demo" aria-label="Chơi thử">
+      <h3>Chơi thử ngay tại đây</h3>
+      <small>Balo chứa tối đa 15 kg. Bấm vào vật phẩm để bỏ vào hoặc lấy ra.</small>
+      <div class="items" id="items"></div>
+      <div class="bar" id="bar"><i></i></div>
+      <div class="stats"><span id="w">Nặng: 0 / 15 kg</span><span id="v">Giá trị: 0</span></div>
+      <p id="msg" role="status"></p>
+    </div>
+  </div>
+</section>
+
+<section id="gioi-thieu" class="alt">
+  <div class="wrap">
+    <h2>Game này có gì?</h2>
+    <p class="lead">Bài toán cái túi (Knapsack) nổi tiếng trong lập trình, được làm thành trò chơi trực quan để ai cũng chơi được.</p>
+    <div class="cards">
+      <div class="card"><div class="ic">🧩</div><h3>Giải đố trí tuệ</h3><p>Mỗi màn là một bộ vật phẩm khác nhau. Càng về sau càng khó chọn.</p></div>
+      <div class="card"><div class="ic">📊</div><h3>Chấm điểm rõ ràng</h3><p>Game so sánh kết quả của bạn với đáp án tối ưu để bạn biết mình còn thiếu bao nhiêu.</p></div>
+      <div class="card"><div class="ic">⚡</div><h3>Nhẹ và nhanh</h3><p>Không cần cài đặt. Tải về, giải nén, bấm chạy.</p></div>
+      <div class="card"><div class="ic">🔓</div><h3>Mã nguồn mở</h3><p>Toàn bộ code C# WPF công khai trên GitHub để bạn đọc và học hỏi.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="cach-choi">
+  <div class="wrap">
+    <h2>Cách chơi</h2>
+    <p class="lead">Chỉ bốn bước là bạn đã vào trận.</p>
+    <ol class="steps">
+      <li><b>Tải file .zip</b> bằng nút tải game bên dưới.</li>
+      <li><b>Giải nén</b> ra một thư mục bất kỳ (bấm chuột phải, chọn Extract All).</li>
+      <li><b>Mở KnapsackChallenge.exe</b> để bắt đầu.</li>
+      <li><b>Chọn vật phẩm</b> sao cho tổng cân nặng không vượt sức chứa và tổng giá trị cao nhất.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="cau-hinh" class="alt">
+  <div class="wrap">
+    <h2>Cấu hình yêu cầu</h2>
+    <table>
+      <tr><th>Hệ điều hành</th><td>Windows 10 hoặc Windows 11 (64-bit)</td></tr>
+      <tr><th>Nền tảng</th><td>.NET Desktop Runtime (nếu bản phát hành không kèm sẵn)</td></tr>
+      <tr><th>RAM</th><td>Tối thiểu 2 GB</td></tr>
+      <tr><th>Dung lượng</th><td id="size">Nhẹ, dưới vài chục MB</td></tr>
+      <tr><th>Giá</th><td>Miễn phí</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="tai-game">
+  <div class="wrap">
+    <div class="dl">
+      <h2>Sẵn sàng thử thách?</h2>
+      <p>Bấm nút bên dưới, trình duyệt sẽ tự tải file game về máy bạn.</p>
+      <a class="btn primary dl-link" href="#" id="bigdl">⬇ Tải Knapsack Challenge cho Windows</a>
+      <p class="meta" id="dlinfo">Đang lấy thông tin phiên bản…</p>
+    </div>
+  </div>
+</section>
+
+<section id="source" class="alt">
+  <div class="wrap">
+    <h2>Xem mã nguồn</h2>
+    <p class="lead">Duyệt code ngay trên trang này, không cần rời khỏi web. Muốn tải hoặc đóng góp thì mở repo trên GitHub.</p>
+    <div class="viewer">
+      <div class="vhead">
+        <button class="btn ghost" style="padding:6px 12px" id="up">↑ Lên</button>
+        <code id="path">/</code>
+        <a class="repo-link" href="#" target="_blank" rel="noopener" style="margin-left:auto">Mở trên GitHub</a>
+      </div>
+      <div class="vbody">
+        <div id="tree">Đang tải danh sách tệp…</div>
+        <pre id="code">Chọn một tệp ở bên trái để xem nội dung.</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <h2>Câu hỏi thường gặp</h2>
+    <details><summary>Windows báo “Windows protected your PC” thì sao?</summary><p>Đây là cảnh báo chung cho phần mềm chưa có chứng chỉ ký số. Bấm “More info”, rồi “Run anyway”. Bạn có thể tự đọc mã nguồn ở trên để yên tâm.</p></details>
+    <details><summary>Game báo thiếu .NET?</summary><p>Cài .NET Desktop Runtime từ trang chính thức của Microsoft rồi mở lại game.</p></details>
+    <details><summary>Game có chạy trên macOS hay Linux không?</summary><p>Chưa. WPF chỉ chạy trên Windows.</p></details>
+    <details><summary>Tôi muốn góp ý hoặc báo lỗi?</summary><p>Mở một Issue trên trang GitHub của dự án.</p></details>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="cols">
+      <div><h4>🎒 Knapsack Challenge</h4><p>Game giải đố bài toán cái túi<br>viết bằng C# và WPF.</p></div>
+      <div><h4>Liên kết</h4><a href="#gioi-thieu">Giới thiệu</a><a href="#cach-choi">Cách chơi</a><a href="#tai-game">Tải game</a><a href="#faq">Hỏi đáp</a></div>
+      <div><h4>Dự án</h4><a class="repo-link" href="#" target="_blank" rel="noopener">Mã nguồn GitHub</a><a class="rel-link" href="#" target="_blank" rel="noopener">Các bản phát hành</a><a class="iss-link" href="#" target="_blank" rel="noopener">Báo lỗi</a></div>
+    </div>
+    <p class="copy">© <span id="yr"></span> Knapsack Challenge. Làm bằng C# WPF.</p>
+  </div>
+</footer>
+
+<script src="js/config.js"></script>
+<script src="js/main.js"></script>
+<script src="js/release.js"></script>
+<script src="js/demo.js"></script>
+<script src="js/source-viewer.js"></script>
+</body>
+</html>

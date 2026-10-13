@@ -18,6 +18,7 @@
     <ProjectReference Include="..\KnapsackChallenge.Common\KnapsackChallenge.Common.csproj" />
     <ProjectReference Include="..\KnapsackChallenge.Core\KnapsackChallenge.Core.csproj" />
     <ProjectReference Include="..\KnapsackChallenge.Server\KnapsackChallenge.Server.csproj" />
+    <ProjectReference Include="..\KnapsackChallenge.UI\KnapsackChallenge.UI.csproj" />
   </ItemGroup>
 
 </Project>

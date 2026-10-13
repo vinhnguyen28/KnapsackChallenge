@@ -10,9 +10,10 @@
     <ProjectReference Include="..\KnapsackChallenge.Common\KnapsackChallenge.Common.csproj" />
   </ItemGroup>
 
-<ItemGroup>
-  <Content Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
-</ItemGroup>
+	<ItemGroup>
+		<Content Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
+		<Content Include="appsettings.Local.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" Condition="Exists('appsettings.Local.json')" />
+	</ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.0" />
