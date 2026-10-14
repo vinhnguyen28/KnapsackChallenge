@@ -109,11 +109,7 @@
     <Style x:Key="RoundedButton" TargetType="Button" BasedOn="{StaticResource ButtonPrimary}"/>
 
     <!-- =========================================================
-         [BƯỚC 5] GAME CARD BUTTON
-         Nút card lớn (Home + SetSelection). Có animation scale khi hover/nhấn.
-         - Dùng chung cho 2 màn; View override Min/Max + BorderThickness.
-         - RenderTransform PHẢI là ScaleTransform mới ở Setter, nếu không
-           DoubleAnimation trong Style.Triggers sẽ không chạy.
+         GAME CARD BUTTON (giu nguyen)
          ========================================================= -->
     <Style x:Key="GameCardButton" TargetType="Button">
         <Setter Property="Cursor" Value="Hand"/>
@@ -163,7 +159,6 @@
         </Setter>
 
         <Style.Triggers>
-            <!-- Hover: phóng nhẹ 4% trong 150ms. -->
             <EventTrigger RoutedEvent="MouseEnter">
                 <BeginStoryboard>
                     <Storyboard>
@@ -184,7 +179,6 @@
                     </Storyboard>
                 </BeginStoryboard>
             </EventTrigger>
-            <!-- Nhấn: thu nhẹ để có cảm giác "bấm". -->
             <EventTrigger RoutedEvent="PreviewMouseDown">
                 <BeginStoryboard>
                     <Storyboard>
@@ -195,7 +189,6 @@
                     </Storyboard>
                 </BeginStoryboard>
             </EventTrigger>
-            <!-- Nhả: trở về 1.04 (vẫn hover) - nếu rời chuột, MouseLeave sẽ đưa về 1.0. -->
             <EventTrigger RoutedEvent="PreviewMouseUp">
                 <BeginStoryboard>
                     <Storyboard>
@@ -210,8 +203,7 @@
     </Style>
 
     <!-- =========================================================
-         [BƯỚC 5] SHORTCUT BUTTON
-         Nút dạng link (dùng ở HomePage: "Xếp hạng", "Lịch sử").
+         SHORTCUT BUTTON (giu nguyen cho cac trang khac)
          ========================================================= -->
     <Style x:Key="ShortcutButton" TargetType="Button" BasedOn="{StaticResource ButtonSecondary}">
         <Setter Property="HorizontalContentAlignment" Value="Left"/>
@@ -221,8 +213,7 @@
     </Style>
 
     <!-- =========================================================
-         [BƯỚC 5] GAME STAT CARD
-         Thẻ thống kê trong HomePage; có thể dùng lại ở trang khác.
+         GAME STAT CARD (giu nguyen)
          ========================================================= -->
     <Style x:Key="GameStatCard" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource BrushSurface}"/>
@@ -235,8 +226,7 @@
     </Style>
 
     <!-- =========================================================
-         [BƯỚC 5] MENU POPUP ITEM
-         Item trong popup Settings của MainPlayerView.
+         MENU POPUP ITEM (giu nguyen)
          ========================================================= -->
     <Style x:Key="MenuPopupItem" TargetType="Button">
         <Setter Property="HorizontalContentAlignment" Value="Left"/>
@@ -696,6 +686,115 @@
                 <Setter Property="Height" Value="10"/>
             </Trigger>
         </Style.Triggers>
+    </Style>
+
+    <!-- =========================================================
+         [HOME] HERO BUTTON — nut card lon cho trang chu Player.
+         Khong tai su dung template cua GameCardButton (hover cua no
+         doi nen sang mau sang -> se lam lech chu trang).
+         - Border bo goc 18, lay Background tu TemplateBinding.
+         - DropShadowEffect (BlurRadius 28, ShadowDepth 0, Opacity .45).
+         - Vien trang mo 1px, hover sang hon + lop phu trang ~12%.
+         - IsEnabled=False: Opacity .45, bo do bong.
+         - Animation phong 1.04 khi hover NHUNG chi khi IsEnabled=True
+           (dung MultiTrigger 2 dieu kien).
+         ========================================================= -->
+    <Style x:Key="HomeHeroButton" TargetType="Button">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Foreground" Value="{StaticResource HomeTextOnDark}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="#33FFFFFF"/>
+        <Setter Property="Padding" Value="18"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1" ScaleY="1"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <Border x:Name="bd"
+                                CornerRadius="18"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="28"
+                                                  ShadowDepth="0"
+                                                  Opacity="0.45"
+                                                  Color="Black"/>
+                            </Border.Effect>
+                        </Border>
+
+                        <!-- Lop phu trang ~12% khi hover -->
+                        <Border x:Name="overlay"
+                                CornerRadius="18"
+                                Background="#1FFFFFFF"
+                                Opacity="0"
+                                IsHitTestVisible="False"/>
+
+                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="overlay" Property="Opacity" Value="1"/>
+                            <Setter TargetName="bd" Property="BorderBrush" Value="#88FFFFFF"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45"/>
+                            <Setter TargetName="bd" Property="Effect" Value="{x:Null}"/>
+                            <Setter TargetName="overlay" Property="Opacity" Value="0"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+
+        <Style.Triggers>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsMouseOver" Value="True"/>
+                    <Condition Property="IsEnabled" Value="True"/>
+                </MultiTrigger.Conditions>
+                <MultiTrigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX"
+                                             To="1.04" Duration="0:0:0.15"/>
+                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY"
+                                             To="1.04" Duration="0:0:0.15"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </MultiTrigger.EnterActions>
+                <MultiTrigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX"
+                                             To="1.0" Duration="0:0:0.15"/>
+                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY"
+                                             To="1.0" Duration="0:0:0.15"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </MultiTrigger.ExitActions>
+            </MultiTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- =========================================================
+         [HOME] GLASS CARD — the kinh cho trang chu Player.
+         ========================================================= -->
+    <Style x:Key="HomeGlassCard" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource HomeGlassFill}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource HomeGlassBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="14"/>
+        <Setter Property="Padding" Value="16,14"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
 
 </ResourceDictionary>

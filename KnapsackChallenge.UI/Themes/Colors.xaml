@@ -44,4 +44,52 @@
     <SolidColorBrush x:Key="SuccessGradient"    Color="#2F6B3F"/>
     <SolidColorBrush x:Key="AppBackgroundBrush" Color="#EFEBE3"/>
 
+    <!-- =========================================================
+         HOME (Player) — bo brush rieng cho trang chu Player.
+         Tien to "Home" de khong dung do brush cu.
+         ========================================================= -->
+
+    <!-- Lop nen du phong khi khong nap duoc anh -->
+    <LinearGradientBrush x:Key="HomeBackdropFallback"
+                         StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#0F172A" Offset="0"/>
+        <GradientStop Color="#1E1B4B" Offset="0.5"/>
+        <GradientStop Color="#3B1D5A" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- Lop phu toi de chu trang noi len tren anh -->
+    <LinearGradientBrush x:Key="HomeOverlay"
+                         StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#CC0B1020" Offset="0"/>
+        <GradientStop Color="#B3141B3A" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- Kinh (gia lap): nen + vien trang alpha thap -->
+    <SolidColorBrush x:Key="HomeGlassFill"      Color="#1FFFFFFF"/>
+    <SolidColorBrush x:Key="HomeGlassBorder"    Color="#33FFFFFF"/>
+    <SolidColorBrush x:Key="HomeGlassFillHover" Color="#2EFFFFFF"/>
+
+    <!-- Chu tren nen toi -->
+    <SolidColorBrush x:Key="HomeTextOnDark"       Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="HomeTextOnDarkMuted"  Color="#C7CCE0"/>
+
+    <!-- Gradient nut Hero -->
+    <LinearGradientBrush x:Key="HomeSoloGradient"
+                         StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FF9A3D" Offset="0"/>
+        <GradientStop Color="#E8590C" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="HomeMultiGradient"
+                         StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#7C6CFF" Offset="0"/>
+        <GradientStop Color="#3B82F6" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- Mau hang / trang thai -->
+    <SolidColorBrush x:Key="HomeGold"       Color="#FBBF24"/>
+    <SolidColorBrush x:Key="HomeSilver"     Color="#CBD5E1"/>
+    <SolidColorBrush x:Key="HomeBronze"     Color="#D97706"/>
+    <SolidColorBrush x:Key="HomeOnlineDot"  Color="#34D399"/>
+
 </ResourceDictionary>

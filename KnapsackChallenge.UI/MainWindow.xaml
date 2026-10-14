@@ -8,28 +8,8 @@
         xmlns:player="clr-namespace:KnapsackChallenge.UI.Features.Player"
         Title="Knapsack Challenge"
         Background="{DynamicResource BrushBackground}"
-        WindowStartupLocation="CenterScreen">
-
-    <Window.Style>
-        <Style TargetType="Window">
-            <Setter Property="Width"     Value="1200"/>
-            <Setter Property="Height"    Value="720"/>
-            <Setter Property="MinWidth"  Value="1000"/>
-            <Setter Property="MinHeight" Value="600"/>
-
-            <Style.Triggers>
-                <!-- Không phải Admin -> size gọn cho Login/Register/MainPlayer -->
-                <DataTrigger Binding="{Binding CurrentViewModel.AdminUsername,
-                                      FallbackValue=''}"
-                             Value="">
-                    <Setter Property="Width"     Value="900"/>
-                    <Setter Property="Height"    Value="620"/>
-                    <Setter Property="MinWidth"  Value="760"/>
-                    <Setter Property="MinHeight" Value="540"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-    </Window.Style>
+        WindowStartupLocation="CenterScreen"
+        Width="900" Height="620" MinWidth="760" MinHeight="540">
 
     <Window.DataContext>
         <vm:MainViewModel />

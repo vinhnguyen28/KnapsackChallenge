@@ -5,412 +5,795 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              d:DesignHeight="620" d:DesignWidth="900"
-             Background="{DynamicResource BrushBackground}">
+             Background="Transparent">
 
     <UserControl.Resources>
-        <!-- Nút card Home: kế thừa GameCardButton, thêm ràng buộc kích thước cho layout 3 cột. -->
-        <Style x:Key="HomeActionButton"
-               TargetType="Button"
-               BasedOn="{StaticResource GameCardButton}">
-            <Setter Property="MinWidth"  Value="140"/>
-            <Setter Property="MaxWidth"  Value="320"/>
-            <Setter Property="MinHeight" Value="180"/>
-            <Setter Property="MaxHeight" Value="280"/>
-            <Setter Property="Margin" Value="8"/>
-            <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="VerticalAlignment"   Value="Center"/>
+
+        <!-- Nút "kính" cho cột trái + cột phải -->
+        <Style x:Key="HomeQuickButton" TargetType="Button">
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{StaticResource HomeTextOnDark}"/>
+            <Setter Property="FontFamily" Value="{StaticResource FontSans}"/>
+            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd"
+                                Background="{StaticResource HomeGlassFill}"
+                                BorderBrush="{StaticResource HomeGlassBorder}"
+                                BorderThickness="1"
+                                CornerRadius="10"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Left"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background"
+                                        Value="{StaticResource HomeGlassFillHover}"/>
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#66FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
+
+        <!-- Nút kính kiểu link cho "Xem toàn bộ bảng xếp hạng →" -->
+        <Style x:Key="HomeLinkGlassButton" TargetType="Button"
+               BasedOn="{StaticResource HomeQuickButton}">
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+        </Style>
+
+        <!-- ProgressBar EXP: track trắng alpha 20%, fill gradient cam -> vàng -->
+        <Style x:Key="HomeExpProgressBar" TargetType="ProgressBar">
+            <Setter Property="Height" Value="8"/>
+            <Setter Property="Maximum" Value="100"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="#33FFFFFF"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                ClipToBounds="True">
+                            <Grid>
+                                <Border x:Name="PART_Indicator"
+                                        HorizontalAlignment="Left"
+                                        CornerRadius="4">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#FF9A3D" Offset="0"/>
+                                            <GradientStop Color="#FBBF24" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Halo: 3 vòng sáng radial để tạo chiều sâu -->
+        <RadialGradientBrush x:Key="HomeHaloOrange"
+                             GradientOrigin="0.5,0.5"
+                             Center="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+            <GradientStop Color="#FF9A3D" Offset="0"/>
+            <GradientStop Color="#00FF9A3D" Offset="1"/>
+        </RadialGradientBrush>
+
+        <RadialGradientBrush x:Key="HomeHaloPurple"
+                             GradientOrigin="0.5,0.5"
+                             Center="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+            <GradientStop Color="#7C6CFF" Offset="0"/>
+            <GradientStop Color="#007C6CFF" Offset="1"/>
+        </RadialGradientBrush>
+
+        <RadialGradientBrush x:Key="HomeHaloBlue"
+                             GradientOrigin="0.5,0.5"
+                             Center="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+            <GradientStop Color="#3B82F6" Offset="0"/>
+            <GradientStop Color="#003B82F6" Offset="1"/>
+        </RadialGradientBrush>
+
     </UserControl.Resources>
 
-    <Grid Margin="20">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="22*" MinWidth="180" MaxWidth="340"/>
-            <ColumnDefinition Width="12"/>
-            <ColumnDefinition Width="56*" MinWidth="320"/>
-            <ColumnDefinition Width="12"/>
-            <ColumnDefinition Width="22*" MinWidth="180" MaxWidth="340"/>
-        </Grid.ColumnDefinitions>
+    <!-- Grid gốc: 3 lớp nền (solid fallback + ảnh + overlay) + halo + nội dung -->
+    <Grid>
 
-        <!-- CỘT TRÁI: thống kê + shortcut -->
-        <ScrollViewer Grid.Column="0"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled">
-            <StackPanel VerticalAlignment="Top">
+        <!-- Lớp 1: nền gradient dự phòng khi ảnh không nạp được -->
+        <Rectangle Fill="{StaticResource HomeBackdropFallback}"/>
 
-                <TextBlock Text="Thống kê của bạn"
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="{DynamicResource FontSizeSmall}"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource BrushInkMuted}"
-                           Margin="4,0,0,10"/>
+        <!-- Lớp 2: ảnh nền (nếu file có trong Assets/Backgrounds/home-bg.jpg) -->
+        <Rectangle>
+            <Rectangle.Fill>
+                <ImageBrush ImageSource="pack://application:,,,/Assets/Backgrounds/home-bg.jpg"
+                            Stretch="UniformToFill"/>
+            </Rectangle.Fill>
+        </Rectangle>
 
-                <Border Style="{StaticResource GameStatCard}">
-                    <StackPanel>
-                        <TextBlock Text="SỐ VÁN ĐÃ CHƠI"
-                                   FontFamily="{DynamicResource FontSans}"
-                                   FontSize="{DynamicResource FontSizeCaption}"
-                                   Foreground="{DynamicResource BrushInkMuted}"
-                                   TextWrapping="Wrap"/>
-                        <TextBlock Text="{Binding GamesPlayedText}"
+        <!-- Lớp 3: overlay tối để chữ trắng nổi lên -->
+        <Rectangle Fill="{StaticResource HomeOverlay}"/>
+
+        <!-- Halo trang trí (lệch góc) — không nhận chuột -->
+        <Ellipse Width="620" Height="620"
+                 HorizontalAlignment="Left" VerticalAlignment="Top"
+                 Margin="-220,-220,0,0"
+                 Fill="{StaticResource HomeHaloOrange}"
+                 Opacity="0.28"
+                 IsHitTestVisible="False"/>
+        <Ellipse Width="520" Height="520"
+                 HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                 Margin="0,0,-180,-180"
+                 Fill="{StaticResource HomeHaloPurple}"
+                 Opacity="0.28"
+                 IsHitTestVisible="False"/>
+        <Ellipse Width="420" Height="420"
+                 HorizontalAlignment="Right" VerticalAlignment="Top"
+                 Margin="0,-140,-120,0"
+                 Fill="{StaticResource HomeHaloBlue}"
+                 Opacity="0.22"
+                 IsHitTestVisible="False"/>
+
+        <!-- Nội dung 3 cột -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Auto"
+                      Background="Transparent">
+            <Grid MinWidth="1000" MinHeight="560" Margin="28,24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="24*" MinWidth="240" MaxWidth="340"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="52*" MinWidth="420"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="24*" MinWidth="260" MaxWidth="360"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- ============================================================
+                     CỘT TRÁI: 3 thẻ thống kê (kính) + shortcut (kính)
+                     ============================================================ -->
+                <StackPanel Grid.Column="0" VerticalAlignment="Top">
+
+                    <!-- ============ HEADER: THỐNG KÊ CỦA BẠN ============ -->
+                    <Grid Margin="2,0,2,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Chip icon tròn màu cam -->
+                        <Border Grid.Column="0"
+                                Width="28" Height="28"
+                                CornerRadius="9"
+                                Background="#40FF9A3D"
+                                BorderBrush="#80FF9A3D"
+                                BorderThickness="1"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="📈"
+                                       FontSize="14"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+
+                        <!-- Tiêu đề in hoa, mono, có letter-space cảm giác -->
+                        <TextBlock Grid.Column="1"
+                                   Text="THỐNG KÊ CỦA BẠN"
                                    FontFamily="{DynamicResource FontMono}"
-                                   FontSize="24"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource BrushInk}"
-                                   Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Style="{StaticResource GameStatCard}">
-                    <StackPanel>
-                        <TextBlock Text="ĐIỂM CAO NHẤT"
-                                   FontFamily="{DynamicResource FontSans}"
-                                   FontSize="{DynamicResource FontSizeCaption}"
-                                   Foreground="{DynamicResource BrushInkMuted}"
-                                   TextWrapping="Wrap"/>
-                        <TextBlock Text="{Binding BestScoreText}"
-                                   FontFamily="{DynamicResource FontMono}"
-                                   FontSize="24"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource BrushInk}"
-                                   Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Style="{StaticResource GameStatCard}">
-                    <StackPanel>
-                        <TextBlock Text="CẤP ĐỘ &amp; EXP"
-                   FontFamily="{DynamicResource FontSans}"
-                   FontSize="{DynamicResource FontSizeCaption}"
-                   Foreground="{DynamicResource BrushInkMuted}"/>
-                        <TextBlock Text="{Binding LevelBadge}"
-                   FontFamily="{DynamicResource FontMono}"
-                   FontSize="20"
-                   FontWeight="SemiBold"
-                   Foreground="{DynamicResource BrushAccent}"
-                   Margin="0,4,0,0"/>
-                        <ProgressBar Height="6"
-                     Maximum="100"
-                     Value="{Binding ExpProgressPercent, Mode=OneWay}"
-                     Foreground="{DynamicResource BrushAccent}"
-                     Background="{DynamicResource BrushRule}"
-                     Margin="0,6,0,4"
-                     BorderThickness="0"/>
-                        <TextBlock Text="{Binding ExpProgressText}"
-                   FontFamily="{DynamicResource FontMono}"
-                   FontSize="{DynamicResource FontSizeCaption}"
-                   Foreground="{DynamicResource BrushInkMuted}"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Style="{StaticResource GameStatCard}">
-                    <StackPanel>
-                        <TextBlock Text="HẠNG HIỆN TẠI"
-                                   FontFamily="{DynamicResource FontSans}"
-                                   FontSize="{DynamicResource FontSizeCaption}"
-                                   Foreground="{DynamicResource BrushInkMuted}"
-                                   TextWrapping="Wrap"/>
-                        <TextBlock Text="{Binding CurrentRankText}"
-                                   FontFamily="{DynamicResource FontMono}"
-                                   FontSize="18"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource BrushAccent}"
-                                   Margin="0,4,0,0"
-                                   TextTrimming="CharacterEllipsis"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Style="{StaticResource GameStatCard}">
-                    <StackPanel>
-                        <TextBlock Text="CẤP ĐỘ &amp; EXP"
-                   FontFamily="{DynamicResource FontSans}"
-                   FontSize="{DynamicResource FontSizeCaption}"
-                   Foreground="{DynamicResource BrushInkMuted}"
-                   TextWrapping="Wrap"/>
-                        <TextBlock Text="{Binding LevelBadge}"
-                   FontFamily="{DynamicResource FontMono}"
-                   FontSize="20"
-                   FontWeight="SemiBold"
-                   Foreground="{DynamicResource BrushAccent}"
-                   Margin="0,4,0,0"/>
-                        <ProgressBar Height="6"
-                     Maximum="100"
-                     Value="{Binding ExpProgressPercent, Mode=OneWay}"
-                     Foreground="{DynamicResource BrushAccent}"
-                     Background="{DynamicResource BrushRule}"
-                     Margin="0,6,0,4"
-                     BorderThickness="0"/>
-                        <TextBlock Text="{Binding ExpProgressText}"
-                   FontFamily="{DynamicResource FontMono}"
-                   FontSize="{DynamicResource FontSizeCaption}"
-                   Foreground="{DynamicResource BrushInkMuted}"/>
-                    </StackPanel>
-                </Border>
-
-                <TextBlock Text="Truy cập nhanh"
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="{DynamicResource FontSizeSmall}"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource BrushInkMuted}"
-                           Margin="4,10,0,10"/>
-
-                <Button Style="{StaticResource ShortcutButton}"
-                        Command="{Binding OpenLeaderboardCommand}">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="🏆" Width="24" FontSize="14" VerticalAlignment="Center"/>
-                        <TextBlock Text="Xếp hạng" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
-
-                <Button Style="{StaticResource ShortcutButton}"
-                        Command="{Binding OpenHistoryCommand}">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="📜" Width="24" FontSize="14" VerticalAlignment="Center"/>
-                        <TextBlock Text="Lịch sử" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
-            </StackPanel>
-        </ScrollViewer>
-
-        <!-- CỘT GIỮA: welcome + 2 nút lớn -->
-        <Grid Grid.Column="2">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-
-            <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,20,0,6">
-                <TextBlock Text="{Binding WelcomeText}"
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="{DynamicResource FontSizeTitle}"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource BrushInk}"
-                           TextAlignment="Center"
-                           TextWrapping="Wrap"
-                           HorizontalAlignment="Center"/>
-                <TextBlock Text="Hãy chọn một chế độ để bắt đầu."
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="{DynamicResource FontSizeSmall}"
-                           Foreground="{DynamicResource BrushInkMuted}"
-                           HorizontalAlignment="Center"
-                           Margin="0,4,0,0"/>
-            </StackPanel>
-
-            <UniformGrid Grid.Row="1"
-                         Columns="2"
-                         Rows="1"
-                         MaxWidth="680"
-                         HorizontalAlignment="Stretch"
-                         VerticalAlignment="Center">
-
-                <Button Style="{StaticResource HomeActionButton}"
-                        Command="{Binding PlaySoloCommand}">
-                    <StackPanel>
-                        <TextBlock Text="🎯"
-                                   FontSize="44"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,0,0,6"/>
-                        <TextBlock Text="CHƠI SOLO"
-                                   FontFamily="{DynamicResource FontSans}"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource BrushInk}"
-                                   HorizontalAlignment="Center"
-                                   TextWrapping="Wrap"/>
-                        <TextBlock Text="Chinh phục bài toán cái túi"
-                                   FontFamily="{DynamicResource FontSans}"
-                                   FontSize="{DynamicResource FontSizeCaption}"
-                                   Foreground="{DynamicResource BrushInkMuted}"
-                                   HorizontalAlignment="Center"
-                                   TextAlignment="Center"
-                                   TextWrapping="Wrap"
-                                   Margin="0,4,0,0"/>
-                        <TextBlock Text="{Binding SoloStatusText}"
-                                   FontFamily="{DynamicResource FontMono}"
-                                   FontSize="{DynamicResource FontSizeCaption}"
-                                   Foreground="{DynamicResource BrushInkMuted}"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,8,0,0"/>
-                    </StackPanel>
-                </Button>
-
-                <Button Style="{StaticResource HomeActionButton}"
-                        Command="{Binding PlayMultiplayerCommand}"
-                        ToolTip="Tạo hoặc vào phòng chơi cùng người khác.">
-                    <StackPanel>
-                        <TextBlock Text="🎮"
-                                   FontSize="44"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,0,0,6"/>
-                        <TextBlock Text="MULTIPLAYER"
-                                   FontFamily="{DynamicResource FontSans}"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource BrushInk}"
-                                   HorizontalAlignment="Center"
-                                   TextWrapping="Wrap"/>
-                        <TextBlock Text="{Binding MultiplayerSubtitle}"
-                                   FontFamily="{DynamicResource FontSans}"
-                                   FontSize="{DynamicResource FontSizeCaption}"
-                                   Foreground="{DynamicResource BrushInkMuted}"
-                                   HorizontalAlignment="Center"
-                                   TextAlignment="Center"
-                                   TextWrapping="Wrap"
-                                   Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Button>
-            </UniformGrid>
-        </Grid>
-
-        <!-- CỘT PHẢI: top người chơi -->
-        <!-- CỘT PHẢI: top 10 theo cấp độ (EXP) -->
-        <Border Grid.Column="4"
-                Background="{DynamicResource BrushSurface}"
-                BorderBrush="{DynamicResource BrushRule}"
-                BorderThickness="1"
-                CornerRadius="6"
-                HorizontalAlignment="Stretch"
-                VerticalAlignment="Top">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-
-                <Border Grid.Row="0"
-                        BorderBrush="{DynamicResource BrushRule}"
-                        BorderThickness="0,0,0,1"
-                        Padding="12,10">
-                    <Grid>
-                        <TextBlock Text="🏆  Top cấp độ"
-                                   FontFamily="{DynamicResource FontSans}"
                                    FontSize="{DynamicResource FontSizeSmall}"
                                    FontWeight="SemiBold"
-                                   Foreground="{DynamicResource BrushInk}"
-                                   TextWrapping="Wrap"/>
-                        <TextBlock Text="Đang tải..."
-                                   FontFamily="{DynamicResource FontSans}"
-                                   FontSize="{DynamicResource FontSizeCaption}"
-                                   Foreground="{DynamicResource BrushInkMuted}"
-                                   HorizontalAlignment="Right"
-                                   Visibility="{Binding IsLoadingTopPlayers,
-                                                Converter={StaticResource BoolToVisibility}}"/>
-                    </Grid>
-                </Border>
+                                   Foreground="{StaticResource HomeTextOnDark}"
+                                   VerticalAlignment="Center"
+                                   Margin="10,0,12,0"/>
 
-                <ScrollViewer Grid.Row="1"
-                              MaxHeight="360"
-                              VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled">
-                    <ItemsControl ItemsSource="{Binding TopPlayers}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <!-- Bọc Grid trong Border để có thể tô nền khi IsMe=True. -->
-                                <Border CornerRadius="3">
+                        <!-- Đường gradient mờ kéo sang phải -->
+                        <Rectangle Grid.Column="2"
+                                   Height="1"
+                                   VerticalAlignment="Center"
+                                   Opacity="0.7">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#99FF9A3D" Offset="0"/>
+                                    <GradientStop Color="#00FFFFFF" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                        </Rectangle>
+                    </Grid>
+
+                    <!-- SỐ VÁN ĐÃ CHƠI -->
+                    <Border Style="{StaticResource HomeGlassCard}" Margin="0,0,0,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0"
+                                    Width="38" Height="38"
+                                    CornerRadius="19"
+                                    Background="#33FF9A3D"
+                                    BorderBrush="#55FF9A3D"
+                                    BorderThickness="1"
+                                    VerticalAlignment="Center">
+                                <TextBlock Text="📊"
+                                           FontSize="18"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                                <TextBlock Text="SỐ VÁN ĐÃ CHƠI"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="{DynamicResource FontSizeCaption}"
+                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                           TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding GamesPlayedText}"
+                                           FontFamily="{DynamicResource FontMono}"
+                                           FontSize="26"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource HomeTextOnDark}"
+                                           Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- ĐIỂM CAO NHẤT -->
+                    <Border Style="{StaticResource HomeGlassCard}" Margin="0,0,0,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0"
+                                    Width="38" Height="38"
+                                    CornerRadius="19"
+                                    Background="#33FBBF24"
+                                    BorderBrush="#55FBBF24"
+                                    BorderThickness="1"
+                                    VerticalAlignment="Center">
+                                <TextBlock Text="🏅"
+                                           FontSize="18"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                                <TextBlock Text="ĐIỂM CAO NHẤT"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="{DynamicResource FontSizeCaption}"
+                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                           TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding BestScoreText}"
+                                           FontFamily="{DynamicResource FontMono}"
+                                           FontSize="26"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource HomeTextOnDark}"
+                                           Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- CẤP ĐỘ & EXP -->
+                    <Border Style="{StaticResource HomeGlassCard}" Margin="0,0,0,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0"
+                                    Width="38" Height="38"
+                                    CornerRadius="19"
+                                    Background="#337C6CFF"
+                                    BorderBrush="#557C6CFF"
+                                    BorderThickness="1"
+                                    VerticalAlignment="Top">
+                                <TextBlock Text="⭐"
+                                           FontSize="18"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                                <TextBlock Text="CẤP ĐỘ &amp; EXP"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="{DynamicResource FontSizeCaption}"
+                                           Foreground="{StaticResource HomeTextOnDarkMuted}"/>
+                                <TextBlock Text="{Binding LevelBadge}"
+                                           FontFamily="{DynamicResource FontMono}"
+                                           FontSize="20"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource HomeGold}"
+                                           Margin="0,4,0,0"/>
+                                <ProgressBar Style="{StaticResource HomeExpProgressBar}"
+                                             Value="{Binding ExpProgressPercent, Mode=OneWay}"
+                                             Margin="0,8,0,4"/>
+                                <TextBlock Text="{Binding ExpProgressText}"
+                                           FontFamily="{DynamicResource FontMono}"
+                                           FontSize="{DynamicResource FontSizeCaption}"
+                                           Foreground="{StaticResource HomeTextOnDarkMuted}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- ============ HEADER: TRUY CẬP NHANH ============ -->
+                    <Grid Margin="2,14,2,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Chip icon tròn màu tím -->
+                        <Border Grid.Column="0"
+                                Width="28" Height="28"
+                                CornerRadius="9"
+                                Background="#407C6CFF"
+                                BorderBrush="#807C6CFF"
+                                BorderThickness="1"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="⚡"
+                                       FontSize="14"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+
+                        <TextBlock Grid.Column="1"
+                                   Text="TRUY CẬP NHANH"
+                                   FontFamily="{DynamicResource FontMono}"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource HomeTextOnDark}"
+                                   VerticalAlignment="Center"
+                                   Margin="10,0,12,0"/>
+
+                        <Rectangle Grid.Column="2"
+                                   Height="1"
+                                   VerticalAlignment="Center"
+                                   Opacity="0.7">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#997C6CFF" Offset="0"/>
+                                    <GradientStop Color="#00FFFFFF" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                        </Rectangle>
+                    </Grid>
+
+                    <Button Style="{StaticResource HomeQuickButton}"
+                            Command="{Binding OpenLeaderboardCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🏆" Width="24" FontSize="14" VerticalAlignment="Center"/>
+                            <TextBlock Text="Xếp hạng" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource HomeQuickButton}"
+                            Command="{Binding OpenHistoryCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📜" Width="24" FontSize="14" VerticalAlignment="Center"/>
+                            <TextBlock Text="Lịch sử" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- ============================================================
+                     CỘT GIỮA: welcome + 2 hero button (có khe 24px ở giữa)
+                     ============================================================ -->
+                <Grid Grid.Column="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,12,0,20">
+                        <TextBlock Text="{Binding WelcomeText}"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="30"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource HomeTextOnDark}"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   HorizontalAlignment="Center">
+                            <TextBlock.Effect>
+                                <DropShadowEffect BlurRadius="10"
+                                                  ShadowDepth="0"
+                                                  Opacity="0.6"
+                                                  Color="Black"/>
+                            </TextBlock.Effect>
+                        </TextBlock>
+                        <TextBlock Text="Hãy chọn một chế độ để bắt đầu."
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,6,0,0"/>
+                    </StackPanel>
+
+                    <Grid Grid.Row="1"
+                          MaxWidth="760"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="24"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- ============ SOLO ============ -->
+                        <Button Grid.Column="0"
+                                Style="{StaticResource HomeHeroButton}"
+                                Background="{StaticResource HomeSoloGradient}"
+                                Command="{Binding PlaySoloCommand}">
+                            <StackPanel>
+                                <TextBlock Text="🎯"
+                                           FontSize="56"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,8"/>
+                                <TextBlock Text="CHƠI SOLO"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="20"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource HomeTextOnDark}"
+                                           HorizontalAlignment="Center"
+                                           TextWrapping="Wrap"/>
+                                <TextBlock Text="Chinh phục bài toán cái túi"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="{DynamicResource FontSizeCaption}"
+                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                           HorizontalAlignment="Center"
+                                           TextAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           Margin="0,6,0,0"/>
+
+                                <!-- Viên thuốc trạng thái (đổi màu theo IsEnabled của Button) -->
+                                <Border HorizontalAlignment="Center"
+                                        Margin="0,12,0,0"
+                                        Padding="10,4"
+                                        CornerRadius="10"
+                                        Background="#26FFFFFF"
+                                        BorderBrush="#33FFFFFF"
+                                        BorderThickness="1">
                                     <Border.Style>
                                         <Style TargetType="Border">
-                                            <Setter Property="Background" Value="Transparent"/>
                                             <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsMe}" Value="True">
-                                                    <Setter Property="Background"
-                                                            Value="{DynamicResource BrushAccentSoft}"/>
+                                                <DataTrigger Binding="{Binding IsEnabled,
+                                                    RelativeSource={RelativeSource AncestorType=Button}}"
+                                                    Value="False">
+                                                    <Setter Property="Background" Value="#1A000000"/>
+                                                    <Setter Property="BorderBrush" Value="#33FFFFFF"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-
-                                    <Grid Height="33" Margin="10,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="34"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <TextBlock Grid.Column="0"
-                                                   Text="{Binding RankText}"
-                                                   FontFamily="{DynamicResource FontMono}"
-                                                   FontSize="{DynamicResource FontSizeSmall}"
-                                                   Foreground="{DynamicResource BrushInkMuted}"
-                                                   VerticalAlignment="Center"/>
-
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding Username}"
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse Width="8" Height="8" VerticalAlignment="Center">
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse">
+                                                    <Setter Property="Fill" Value="{StaticResource HomeOnlineDot}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsEnabled,
+                                                            RelativeSource={RelativeSource AncestorType=Button}}"
+                                                            Value="False">
+                                                            <Setter Property="Fill" Value="#88FFFFFF"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
+                                        <TextBlock Text="{Binding SoloStatusText}"
                                                    FontFamily="{DynamicResource FontSans}"
-                                                   FontSize="{DynamicResource FontSizeSmall}"
-                                                   Foreground="{DynamicResource BrushInk}"
+                                                   FontSize="{DynamicResource FontSizeCaption}"
                                                    VerticalAlignment="Center"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   Margin="4,0,6,0"/>
-
-                                        <TextBlock Grid.Column="2"
-                                                   Text="{Binding LevelText}"
-                                                   FontFamily="{DynamicResource FontMono}"
-                                                   FontSize="{DynamicResource FontSizeSmall}"
-                                                   Foreground="{DynamicResource BrushInkMuted}"
-                                                   VerticalAlignment="Center"
-                                                   Margin="6,0"/>
-
-                                        <TextBlock Grid.Column="3"
-                                                   Text="{Binding ExpText}"
-                                                   FontFamily="{DynamicResource FontMono}"
-                                                   FontSize="{DynamicResource FontSizeSmall}"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource BrushInk}"
-                                                   VerticalAlignment="Center"
-                                                   HorizontalAlignment="Right"/>
-                                    </Grid>
+                                                   Margin="8,0,0,0">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground"
+                                                            Value="{StaticResource HomeTextOnDark}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsEnabled,
+                                                            RelativeSource={RelativeSource AncestorType=Button}}"
+                                                            Value="False">
+                                                            <Setter Property="Foreground"
+                                                                    Value="{StaticResource HomeTextOnDarkMuted}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
                                 </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
+                            </StackPanel>
+                        </Button>
 
-                <StackPanel Grid.Row="1"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            IsHitTestVisible="False">
-                    <StackPanel.Style>
-                        <Style TargetType="StackPanel">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding TopPlayers.Count}" Value="0">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </StackPanel.Style>
-                    <TextBlock Text="🏆" FontSize="28" HorizontalAlignment="Center" Opacity="0.5"/>
-                    <TextBlock Text="Chưa có ai lọt bảng"
-                               FontFamily="{DynamicResource FontSans}"
-                               FontSize="{DynamicResource FontSizeCaption}"
-                               Foreground="{DynamicResource BrushInkMuted}"
-                               Margin="0,6,0,0"/>
-                </StackPanel>
+                        <!-- ============ MULTIPLAYER ============ -->
+                        <Button Grid.Column="2"
+                                Style="{StaticResource HomeHeroButton}"
+                                Background="{StaticResource HomeMultiGradient}"
+                                Command="{Binding PlayMultiplayerCommand}"
+                                ToolTip="Tạo hoặc vào phòng chơi cùng người khác.">
+                            <StackPanel>
+                                <TextBlock Text="🎮"
+                                           FontSize="56"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,8"/>
+                                <TextBlock Text="MULTIPLAYER"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="20"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource HomeTextOnDark}"
+                                           HorizontalAlignment="Center"
+                                           TextWrapping="Wrap"/>
+                                <TextBlock Text="Đấu trí cùng người chơi khác"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="{DynamicResource FontSizeCaption}"
+                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                           HorizontalAlignment="Center"
+                                           TextAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           Margin="0,6,0,0"/>
 
-                <StackPanel Grid.Row="2">
-                    <!-- Dòng ghim hạng của tôi (chỉ hiện khi ngoài top 10). -->
-                    <TextBlock Text="{Binding MyRankLine}"
-                               FontFamily="{DynamicResource FontSans}"
-                               FontSize="{DynamicResource FontSizeCaption}"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource BrushInk}"
-                               TextWrapping="Wrap"
-                               Margin="10,6,10,0"
-                               Visibility="{Binding HasMyRankLine,
-                                            Converter={StaticResource BoolToVisibility}}"/>
+                                <!-- Viên thuốc trạng thái cho Multiplayer -->
+                                <Border HorizontalAlignment="Center"
+                                        Margin="0,12,0,0"
+                                        Padding="10,4"
+                                        CornerRadius="10"
+                                        Background="#26FFFFFF"
+                                        BorderBrush="#33FFFFFF"
+                                        BorderThickness="1">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsEnabled,
+                                                    RelativeSource={RelativeSource AncestorType=Button}}"
+                                                    Value="False">
+                                                    <Setter Property="Background" Value="#1A000000"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse Width="8" Height="8" VerticalAlignment="Center">
+                                            <Ellipse.Style>
+                                                <Style TargetType="Ellipse">
+                                                    <Setter Property="Fill" Value="{StaticResource HomeOnlineDot}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsEnabled,
+                                                            RelativeSource={RelativeSource AncestorType=Button}}"
+                                                            Value="False">
+                                                            <Setter Property="Fill" Value="#88FFFFFF"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Ellipse.Style>
+                                        </Ellipse>
+                                        <TextBlock Text="{Binding MultiplayerSubtitle}"
+                                                   FontFamily="{DynamicResource FontSans}"
+                                                   FontSize="{DynamicResource FontSizeCaption}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="8,0,0,0">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground"
+                                                            Value="{StaticResource HomeTextOnDark}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsEnabled,
+                                                            RelativeSource={RelativeSource AncestorType=Button}}"
+                                                            Value="False">
+                                                            <Setter Property="Foreground"
+                                                                    Value="{StaticResource HomeTextOnDarkMuted}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Grid>
 
-                    <Border BorderBrush="{DynamicResource BrushRule}"
-                            BorderThickness="0,1,0,0"
-                            Padding="10,6"
-                            Margin="0,4,0,0">
-                        <Button Command="{Binding OpenLeaderboardCommand}"
-                                Style="{DynamicResource ButtonGhost}"
-                                HorizontalAlignment="Center"
-                                Content="Xem toàn bộ bảng xếp hạng →"/>
-                    </Border>
-                </StackPanel>
+                <!-- ============================================================
+                     CỘT PHẢI: Top cấp độ (kính)
+                     ============================================================ -->
+                <Border Grid.Column="4"
+                        Style="{StaticResource HomeGlassCard}"
+                        Padding="0"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Header panel -->
+                        <Border Grid.Row="0"
+                                BorderBrush="{StaticResource HomeGlassBorder}"
+                                BorderThickness="0,0,0,1"
+                                Padding="14,10">
+                            <Grid>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="🏆"
+                                               FontSize="16"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Text="Top cấp độ"
+                                               FontFamily="{DynamicResource FontSans}"
+                                               FontSize="{DynamicResource FontSizeSmall}"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource HomeTextOnDark}"
+                                               VerticalAlignment="Center"
+                                               Margin="8,0,0,0"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <TextBlock Text="Đang tải..."
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="{DynamicResource FontSizeCaption}"
+                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center"
+                                           Visibility="{Binding IsLoadingTopPlayers,
+                                                        Converter={StaticResource BoolToVisibility}}"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Danh sách -->
+                        <ScrollViewer Grid.Row="1"
+                                      MaxHeight="360"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding TopPlayers}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <!-- Mỗi dòng: Border để tô nền khi IsMe + vạch trái cam -->
+                                        <Border CornerRadius="4" Margin="6,2">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                    <Setter Property="BorderThickness" Value="3,0,0,0"/>
+                                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsMe}" Value="True">
+                                                            <Setter Property="Background" Value="#4DE8590C"/>
+                                                            <Setter Property="BorderBrush"
+                                                                    Value="{StaticResource BrushAccent}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+
+                                            <Grid Height="36" Margin="8,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="34"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding RankText}"
+                                                           FontFamily="{DynamicResource FontMono}"
+                                                           FontSize="{DynamicResource FontSizeSmall}"
+                                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                                           VerticalAlignment="Center"/>
+
+                                                <!-- Username: tô vàng/bạc/đồng theo Rank -->
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding Username}"
+                                                           FontFamily="{DynamicResource FontSans}"
+                                                           FontSize="{DynamicResource FontSizeSmall}"
+                                                           VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Margin="4,0,6,0">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground"
+                                                                    Value="{StaticResource HomeTextOnDark}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Rank}" Value="1">
+                                                                    <Setter Property="Foreground"
+                                                                            Value="{StaticResource HomeGold}"/>
+                                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Rank}" Value="2">
+                                                                    <Setter Property="Foreground"
+                                                                            Value="{StaticResource HomeSilver}"/>
+                                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Rank}" Value="3">
+                                                                    <Setter Property="Foreground"
+                                                                            Value="{StaticResource HomeBronze}"/>
+                                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+
+                                                <TextBlock Grid.Column="2"
+                                                           Text="{Binding LevelText}"
+                                                           FontFamily="{DynamicResource FontMono}"
+                                                           FontSize="{DynamicResource FontSizeSmall}"
+                                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                                           VerticalAlignment="Center"
+                                                           Margin="6,0"/>
+
+                                                <TextBlock Grid.Column="3"
+                                                           Text="{Binding ExpText}"
+                                                           FontFamily="{DynamicResource FontMono}"
+                                                           FontSize="{DynamicResource FontSizeSmall}"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{StaticResource HomeTextOnDark}"
+                                                           VerticalAlignment="Center"
+                                                           HorizontalAlignment="Right"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+
+                        <!-- Empty state -->
+                        <StackPanel Grid.Row="1"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    IsHitTestVisible="False">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding TopPlayers.Count}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <TextBlock Text="🏆"
+                                       FontSize="28"
+                                       HorizontalAlignment="Center"
+                                       Opacity="0.6"/>
+                            <TextBlock Text="Chưa có ai lọt bảng"
+                                       FontFamily="{DynamicResource FontSans}"
+                                       FontSize="{DynamicResource FontSizeCaption}"
+                                       Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                       Margin="0,6,0,0"/>
+                        </StackPanel>
+
+                        <!-- Footer -->
+                        <StackPanel Grid.Row="2">
+                            <!-- Dòng ghim hạng của tôi (chỉ hiện khi ngoài top) -->
+                            <TextBlock Text="{Binding MyRankLine}"
+                                       FontFamily="{DynamicResource FontSans}"
+                                       FontSize="{DynamicResource FontSizeCaption}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource HomeTextOnDark}"
+                                       TextWrapping="Wrap"
+                                       Margin="12,8,12,0"
+                                       Visibility="{Binding HasMyRankLine,
+                                                    Converter={StaticResource BoolToVisibility}}"/>
+
+                            <Border BorderBrush="{StaticResource HomeGlassBorder}"
+                                    BorderThickness="0,1,0,0"
+                                    Padding="10,8"
+                                    Margin="0,6,0,0">
+                                <Button Command="{Binding OpenLeaderboardCommand}"
+                                        Style="{StaticResource HomeLinkGlassButton}"
+                                        Content="Xem toàn bộ bảng xếp hạng →"/>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </Border>
             </Grid>
-        </Border>
+        </ScrollViewer>
     </Grid>
 </UserControl>
