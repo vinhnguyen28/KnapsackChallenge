@@ -298,6 +298,13 @@ namespace KnapsackChallenge.UI.Features.Player
                 if (Rooms.Count == 0) msg += " Thử đổi bộ lọc.";
                 InfoMessage = msg;
             }
+
+            //if (_allRooms.Count != 0)
+            //{
+            //    var msg = $"Hiển thị {Rooms.Count}/{_allRooms.Count} phòng.";
+            //    if (Rooms.Count == 0) msg += " Thử đổi bộ lọc.";
+            //    InfoMessage = msg;
+            //}
         }
 
         private async System.Threading.Tasks.Task RefreshAsync()

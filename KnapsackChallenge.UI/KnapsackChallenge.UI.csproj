@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+	  <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
@@ -9,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Assets\icon.ico" />
     <None Remove="Fonts\IBMPlexMono-Regular.ttf" />
     <None Remove="Fonts\IBMPlexMono-SemiBold.ttf" />
     <None Remove="Fonts\IBMPlexSans-Regular.ttf" />
@@ -26,6 +28,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Assets\icon.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+	  
     <Resource Include="Fonts\IBMPlexMono-Regular.ttf" />
     <Resource Include="Fonts\IBMPlexMono-SemiBold.ttf" />
     <Resource Include="Fonts\IBMPlexSans-Regular.ttf" />
@@ -33,9 +39,9 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.12" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.12" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.13" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.13" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.13" />
 	</ItemGroup>
-
+	
 </Project>

@@ -4,6 +4,7 @@
 
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
 
 namespace KnapsackChallenge.UI.Shared
 {
@@ -14,6 +15,7 @@ namespace KnapsackChallenge.UI.Shared
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            CommandManager.InvalidateRequerySuggested();
         }
     }
 }

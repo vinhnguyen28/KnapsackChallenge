@@ -13,6 +13,10 @@ namespace KnapsackChallenge.UI.Features.Player
     {
         private const bool MultiplayerImplemented = true;
 
+        // Cache trạng thái chế độ giữa các lần vào Home để tránh nháy "xám rồi mới sáng".
+        private static bool? _cachedSoloEnabled;
+        private static bool? _cachedMultiEnabled;
+
         private readonly UserEntity _user;
         private readonly IGameModeService _gameModeService;
         private readonly ISoloGameService _soloGameService;
@@ -158,6 +162,10 @@ namespace KnapsackChallenge.UI.Features.Player
             _rankService = ClientServiceFactory.GetRankService();
             _leaderboardService = ClientServiceFactory.GetLeaderboardService();
 
+            // Áp cache trước khi bind để tránh nháy "xám rồi mới sáng".
+            if (_cachedSoloEnabled.HasValue) _soloEnabled = _cachedSoloEnabled.Value;
+            if (_cachedMultiEnabled.HasValue) _multiplayerEnabled = _cachedMultiEnabled.Value;
+
             PlaySoloCommand = new RelayCommand<object>(
                 _ => PlaySoloRequested?.Invoke(),
                 _ => CanPlaySolo);
@@ -187,6 +195,10 @@ namespace KnapsackChallenge.UI.Features.Player
 
                 SoloEnabled = solo?.IsEnabled ?? true;
                 MultiplayerEnabled = multi?.IsEnabled ?? false;
+
+                // Lưu cache cho các lần tạo ViewModel sau.
+                _cachedSoloEnabled = SoloEnabled;
+                _cachedMultiEnabled = MultiplayerEnabled;
             }
             catch (Exception)
             {

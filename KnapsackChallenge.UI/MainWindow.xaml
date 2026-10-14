@@ -1,4 +1,5 @@
-﻿<Window x:Class="KnapsackChallenge.UI.MainWindow"
+﻿<Window Icon="Assets/icon.ico"
+        x:Class="KnapsackChallenge.UI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:KnapsackChallenge.UI"
