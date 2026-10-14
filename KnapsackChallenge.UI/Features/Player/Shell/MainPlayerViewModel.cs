@@ -17,6 +17,7 @@ namespace KnapsackChallenge.UI.Features.Player
         private readonly IRankService _rankService;
         private readonly IDialogService _dialog;
         private readonly DispatcherTimer _heartbeatTimer;
+        private readonly DispatcherTimer _heartTickTimer;
 
         private ViewModelBase _currentPage = null!;
         private PlayerNavItem? _selectedNavItem;
@@ -24,6 +25,11 @@ namespace KnapsackChallenge.UI.Features.Player
         // Cờ chống chạy chồng heartbeat (DispatcherTimer có thể tick khi lần
         // trước chưa hoàn tất do mạng chậm).
         private bool _heartbeatBusy;
+
+        // Trạng thái tim hiện tại + cờ chống gọi dồn khi countdown về 0.
+        private HeartStatusDto? _heart;
+        private bool _heartRefreshBusy;
+        private DateTime _lastHeartRefreshUtc = DateTime.MinValue;
 
         public IReadOnlyList<PlayerNavItem> NavItems { get; } = new List<PlayerNavItem>
         {
@@ -36,19 +42,56 @@ namespace KnapsackChallenge.UI.Features.Player
 
         public string PlayerUsername => _user.Username ?? "";
 
-        // v7: HeartsBadge động — cập nhật mỗi heartbeat 30s.
-        private string _heartsBadge = "❤ --/--";
-        public string HeartsBadge
-        {
-            get => _heartsBadge;
-            private set { _heartsBadge = value; OnPropertyChanged(); }
-        }
-
         private string _rankBadge = "Lv 1 · Đồng";
         public string RankBadge
         {
             get => _rankBadge;
             private set { _rankBadge = value; OnPropertyChanged(); }
+        }
+
+        // =========================================================
+        // HEART BADGE — các property chỉ-đọc dẫn xuất từ _heart.
+        // =========================================================
+
+        public string HeartCountText =>
+            _heart == null ? "--/--" : $"{_heart.Current}/{_heart.Max}";
+
+        public bool HeartIsEmpty => _heart?.IsEmpty == true;
+
+        public bool HeartIsLow =>
+            _heart != null
+            && !_heart.IsEmpty
+            && _heart.Current <= Math.Max(1, _heart.Max / 5);
+
+        public string HeartTooltipTitle => "Tim = lượt chơi";
+
+        public string HeartTooltipDescription =>
+            "Mỗi ván Solo tốn 1 tim. Hết tim bạn phải chờ hồi mới chơi tiếp được.";
+
+        public string HeartRefillRuleText =>
+            _heart == null ? "" : $"Cứ {_heart.RefillIntervalMinutes} phút hồi 1 tim.";
+
+        public string HeartCountdownText
+        {
+            get
+            {
+                if (_heart == null) return "Đang tải...";
+                if (_heart.IsFull) return "Tim đã đầy";
+                if (_heart.IsEmpty)
+                    return $"Hết tim — tim kế tiếp sau {_heart.CountdownText}";
+                return $"Tim kế tiếp sau {_heart.CountdownText}";
+            }
+        }
+
+        // Gán trạng thái tim mới + thông báo mọi property phụ thuộc.
+        private void ApplyHeart(HeartStatusDto status)
+        {
+            _heart = status;
+            OnPropertyChanged(nameof(HeartCountText));
+            OnPropertyChanged(nameof(HeartIsEmpty));
+            OnPropertyChanged(nameof(HeartIsLow));
+            OnPropertyChanged(nameof(HeartRefillRuleText));
+            OnPropertyChanged(nameof(HeartCountdownText));
         }
 
         private bool _isSettingsOpen;
@@ -58,10 +101,25 @@ namespace KnapsackChallenge.UI.Features.Player
             set { _isSettingsOpen = value; OnPropertyChanged(); }
         }
 
+        // Header chi hien tren Home va man chon muc do Solo.
+        // Cac trang khac (Solo game, Lobby, Room, Multiplayer game, Result,
+        // Leaderboard, History) an header.
+        public bool IsHeaderVisible =>
+            CurrentPage is HomePageViewModel || CurrentPage is SetSelectionViewModel;
+
         public ViewModelBase CurrentPage
         {
             get => _currentPage;
-            set { _currentPage = value; OnPropertyChanged(); }
+            set
+            {
+                _currentPage = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsHeaderVisible));
+
+                // Khi header an thi popup cai dat phai dong lai.
+                if (!IsHeaderVisible)
+                    IsSettingsOpen = false;
+            }
         }
 
         public PlayerNavItem? SelectedNavItem
@@ -112,13 +170,26 @@ namespace KnapsackChallenge.UI.Features.Player
             _heartbeatTimer.Tick += OnHeartbeat;
             _heartbeatTimer.Start();
 
+            // Timer riêng đếm ngược hồi tim — 1 giây/lần.
+            _heartTickTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _heartTickTimer.Tick += OnHeartTick;
+            _heartTickTimer.Start();
+
             SelectedNavItem = NavItems[0];
         }
 
         public void OnNavigatedFrom()
         {
-            _heartbeatTimer.Stop();
+            StopTimers();
             (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
+        }
+
+        // Dừng cả 2 timer (heartbeat + heart tick). Dùng chung ở mọi
+        // điểm thoát: OnNavigatedFrom, ExecuteLogout, bị ban, ForceLogout.
+        private void StopTimers()
+        {
+            _heartbeatTimer.Stop();
+            _heartTickTimer.Stop();
         }
 
         private void NavigateTo(string key)
@@ -182,7 +253,7 @@ namespace KnapsackChallenge.UI.Features.Player
             var game = new SoloGameViewModel(_user, setId);
 
             // Sau khi start ván, cập nhật lại badge tim ngay (không chờ 30s).
-            game.HeartsChanged += status => HeartsBadge = status.BadgeText;
+            game.HeartsChanged += ApplyHeart;
 
             game.ExpAwarded += award =>
             {
@@ -229,7 +300,7 @@ namespace KnapsackChallenge.UI.Features.Player
 
             lobby.ForceLogoutRequested += async _ =>
             {
-                _heartbeatTimer.Stop();
+                StopTimers();
                 (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
                 await MultiplayerSession.Instance.DisposeConnectionAsync();
                 MultiplayerSession.Instance.Clear();
@@ -251,7 +322,7 @@ namespace KnapsackChallenge.UI.Features.Player
 
             room.ForceLogoutRequested += () =>
             {
-                _heartbeatTimer.Stop();
+                StopTimers();
                 (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
                 _ = MultiplayerSession.Instance.DisposeConnectionAsync();
                 MultiplayerSession.Instance.Clear();
@@ -289,7 +360,7 @@ namespace KnapsackChallenge.UI.Features.Player
             // Bị ban giữa ván → logout toàn cục.
             game.ForceLogoutRequested += () =>
             {
-                _heartbeatTimer.Stop();
+                StopTimers();
                 (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
                 _ = MultiplayerSession.Instance.DisposeConnectionAsync();
                 MultiplayerSession.Instance.Clear();
@@ -336,11 +407,11 @@ namespace KnapsackChallenge.UI.Features.Player
             {
                 var status = await System.Threading.Tasks.Task.Run(
                     () => _session.GetHeartStatus(_user.Id));
-                HeartsBadge = status.BadgeText;
+                ApplyHeart(status);
             }
             catch (Exception)
             {
-                // Nuốt im lặng — badge giữ giá trị mặc định "❤ --/--".
+                // Nuốt im lặng — HeartCountText hiển thị "--/--".
             }
         }
 
@@ -355,6 +426,48 @@ namespace KnapsackChallenge.UI.Features.Player
             catch (Exception)
             {
                 // Nuốt im lặng — badge giữ giá trị mặc định "Lv 1 · Đồng".
+            }
+        }
+
+        // =========================================================
+        // HEART COUNTDOWN TICK — 1 giây/lần
+        // - Cập nhật text đếm ngược realtime trên tooltip.
+        // - Khi countdown về 0 (và chưa full) thì gọi server lấy lại tim,
+        //   có cờ chống chạy chồng và cooldown 5s để chống lệch đồng hồ.
+        // =========================================================
+        private void OnHeartTick(object? sender, EventArgs e)
+        {
+            OnPropertyChanged(nameof(HeartCountdownText));
+
+            if (_heart == null || _heart.IsFull) return;
+            if (_heart.SecondsUntilNextRefill > 0) return;
+            if (_heartRefreshBusy) return;
+
+            // Chống gọi dồn khi đồng hồ client lệch server.
+            if ((DateTime.UtcNow - _lastHeartRefreshUtc).TotalSeconds < 5) return;
+
+            _ = RefreshHeartFromServerAsync();
+        }
+
+        private async System.Threading.Tasks.Task RefreshHeartFromServerAsync()
+        {
+            if (_heartRefreshBusy) return;
+            _heartRefreshBusy = true;
+            _lastHeartRefreshUtc = DateTime.UtcNow;
+            try
+            {
+                var status = await System.Threading.Tasks.Task.Run(
+                    () => _session.GetHeartStatus(_user.Id));
+                if (status != null)
+                    ApplyHeart(status);
+            }
+            catch (Exception)
+            {
+                // Nuốt im lặng — lần tick sau sẽ thử lại.
+            }
+            finally
+            {
+                _heartRefreshBusy = false;
             }
         }
 
@@ -389,7 +502,7 @@ namespace KnapsackChallenge.UI.Features.Player
 
                 if (banned)
                 {
-                    _heartbeatTimer.Stop();
+                    StopTimers();
                     (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
 
                     MessageBox.Show(
@@ -418,7 +531,7 @@ namespace KnapsackChallenge.UI.Features.Player
                 if (!_heartbeatTimer.IsEnabled) return;
 
                 if (heartStatus != null)
-                    HeartsBadge = heartStatus.BadgeText;
+                    ApplyHeart(heartStatus);
             }
             finally
             {
@@ -437,7 +550,7 @@ namespace KnapsackChallenge.UI.Features.Player
             if (!_dialog.Confirm("Bạn có chắc muốn đăng xuất?", "Xác nhận đăng xuất"))
                 return;
 
-            _heartbeatTimer.Stop();
+            StopTimers();
             (CurrentPage as IPageLifecycle)?.OnNavigatedFrom();
 
             // Fire-and-forget: không await để không treo UI khi mạng chậm.

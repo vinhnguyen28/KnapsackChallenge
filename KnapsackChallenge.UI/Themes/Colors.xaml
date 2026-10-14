@@ -92,4 +92,26 @@
     <SolidColorBrush x:Key="HomeBronze"     Color="#D97706"/>
     <SolidColorBrush x:Key="HomeOnlineDot"  Color="#34D399"/>
 
+    <!-- =========================================================
+         HEADER (Player shell) — brush riêng cho thanh header mới.
+         Tien to "Header" de khong dung do brush cu.
+         ========================================================= -->
+    <LinearGradientBrush x:Key="HeaderBackground"
+                         StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#0F172A" Offset="0"/>
+        <GradientStop Color="#1E1B4B" Offset="1"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="HeaderBorder"        Color="#26FFFFFF"/>
+    <SolidColorBrush x:Key="HeaderPillFill"      Color="#1FFFFFFF"/>
+    <SolidColorBrush x:Key="HeaderPillFillHover" Color="#33FFFFFF"/>
+    <SolidColorBrush x:Key="HeaderIcon"          Color="#FFFFFF"/>
+
+    <!-- =========================================================
+         HEART BADGE — brush cho badge tim ở header Player.
+         ========================================================= -->
+    <SolidColorBrush x:Key="HeartFill"         Color="#FF4D6D"/>
+    <SolidColorBrush x:Key="HeartLow"          Color="#FBBF24"/>
+    <SolidColorBrush x:Key="HeartEmpty"        Color="#EF4444"/>
+    <SolidColorBrush x:Key="TooltipBackground" Color="#F20F172A"/>
+
 </ResourceDictionary>

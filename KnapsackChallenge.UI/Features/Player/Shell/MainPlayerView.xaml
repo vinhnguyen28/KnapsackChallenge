@@ -50,96 +50,292 @@
             <player:MultiplayerResultView />
         </DataTemplate>
 
+        <!-- =========================================================
+             HEADER ICON BUTTON
+             - 36x36, ControlTemplate hình tròn (Border CornerRadius=18)
+             - Background HeaderPillFill, hover HeaderPillFillHover
+             - Icon bánh răng vẽ BẰNG FILL (không Stroke), tự xoay
+               0 -> 45 độ trong 0.25s khi hover, trả về 0 khi rời chuột
+             - Focus visual bị loại bỏ để không có viền xấu
+             ========================================================= -->
+        <Style x:Key="HeaderIconButton" TargetType="Button">
+            <Setter Property="Width" Value="36"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="{DynamicResource HeaderPillFill}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd"
+                                CornerRadius="18"
+                                Background="{TemplateBinding Background}">
+                            <Path x:Name="iconPath"
+                                  Data="{DynamicResource IconGear}"
+                                  Fill="{DynamicResource HeaderIcon}"
+                                  Width="18" Height="18"
+                                  Stretch="Uniform"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  RenderTransformOrigin="0.5,0.5">
+                                <Path.RenderTransform>
+                                    <RotateTransform x:Name="GearRotate" Angle="0"/>
+                                </Path.RenderTransform>
+                            </Path>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background"
+                                        Value="{DynamicResource HeaderPillFillHover}"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="GearRotate"
+                                                             Storyboard.TargetProperty="Angle"
+                                                             To="45"
+                                                             Duration="0:0:0.25"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="GearRotate"
+                                                             Storyboard.TargetProperty="Angle"
+                                                             To="0"
+                                                             Duration="0:0:0.25"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
+    <!-- =========================================================
+         LAYOUT
+         - ContentControl TRẢI CẢ 2 ROW (Grid.RowSpan=2): để nền của
+           trang (ví dụ ảnh nền + overlay của HomePageView) phủ lên
+           toàn bộ vùng nội dung, kể cả dải phía trên nơi header nằm.
+         - Header nổi lên trên bằng Panel.ZIndex=1, nền Transparent
+           nên thấy xuyên qua được nền ảnh của trang.
+         ========================================================= -->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- HEADER -->
+        <!-- Content phủ toàn bộ grid (RowSpan=2) → nền ảnh kéo dài
+             lên tận mép trên, không còn bị "ngăn cách" bởi dải be. -->
+        <ContentControl Grid.Row="0" Grid.RowSpan="2"
+                        Content="{Binding CurrentPage}"/>
+
+        <!-- Header nổi trên content. Khi IsHeaderVisible=False → Collapsed,
+             không chiếm chỗ, không ảnh hưởng gì. -->
         <Border Grid.Row="0"
-                Background="{DynamicResource BrushSurface}"
-                BorderBrush="{DynamicResource BrushRule}"
-                BorderThickness="0,0,0,1"
-                Padding="20,0">
-            <Grid Height="52">
+                Visibility="{Binding IsHeaderVisible,
+                             Converter={StaticResource BoolToVisibility}}"
+                Background="Transparent"
+                BorderThickness="0"
+                Padding="20,0"
+                VerticalAlignment="Top"
+                Panel.ZIndex="1">
+            <Grid Height="48">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="KNAPSACK"
-                               FontFamily="{DynamicResource FontMono}"
-                               FontSize="14"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource BrushInk}"
-                               VerticalAlignment="Center"/>
+                <!-- Cot trai: trong -->
 
-                    <Rectangle Width="1" Height="18"
-                               Fill="{DynamicResource BrushRule}"
-                               Margin="14,0"
-                               VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
 
-                    <TextBlock Text="{Binding SelectedNavItem.Title}"
-                               FontFamily="{DynamicResource FontSans}"
-                               FontSize="{DynamicResource FontSizeBody}"
-                               Foreground="{DynamicResource BrushInkMuted}"
-                               VerticalAlignment="Center"/>
-                </StackPanel>
-
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Padding="10,4"
+                    <!-- =========================================================
+                         VIÊN THUỐC TIM
+                         ========================================================= -->
+                    <Border Background="{DynamicResource HeaderPillFill}"
+                            Padding="12,6"
+                            CornerRadius="18"
                             BorderThickness="1"
-                            CornerRadius="2"
-                            Background="Transparent"
-                            BorderBrush="{DynamicResource BrushDanger}"
+                            Margin="0,0,12,0"
                             VerticalAlignment="Center"
-                            Margin="0,0,10,0">
-                        <TextBlock Text="{Binding HeartsBadge}"
-                                   FontFamily="{DynamicResource FontMono}"
-                                   FontSize="{DynamicResource FontSizeSmall}"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource BrushDanger}"/>
-                    </Border>
+                            ToolTipService.InitialShowDelay="100"
+                            ToolTipService.ShowDuration="60000"
+                            ToolTipService.Placement="Bottom"
+                            ToolTipService.VerticalOffset="6">
 
-                    <Border Padding="10,4"
-                            BorderThickness="1"
-                            CornerRadius="2"
-                            Background="Transparent"
-                            BorderBrush="{DynamicResource BrushAccent}"
-                            VerticalAlignment="Center"
-                            Margin="0,0,16,0">
-                        <TextBlock Text="{Binding RankBadge}"
-                                   FontFamily="{DynamicResource FontMono}"
-                                   FontSize="{DynamicResource FontSizeSmall}"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource BrushAccent}"/>
-                    </Border>
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="BorderBrush" Value="#80FF4D6D"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HeartIsLow}" Value="True">
+                                        <Setter Property="BorderBrush"
+                                                Value="{DynamicResource HeartLow}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding HeartIsEmpty}" Value="True">
+                                        <Setter Property="BorderBrush"
+                                                Value="{DynamicResource HeartEmpty}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
 
-                    <TextBlock Text="{Binding PlayerUsername, Mode=OneWay}"
-                               FontFamily="{DynamicResource FontMono}"
-                               FontSize="{DynamicResource FontSizeSmall}"
-                               Foreground="{DynamicResource BrushInkMuted}"
-                               VerticalAlignment="Center"
-                               Margin="0,0,14,0"/>
+                        <Border.ToolTip>
+                            <ToolTip Placement="Bottom"
+                                     VerticalOffset="6"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     HasDropShadow="False"
+                                     DataContext="{Binding PlacementTarget.DataContext,
+                                                 RelativeSource={RelativeSource Self}}">
+                                <ToolTip.Template>
+                                    <ControlTemplate TargetType="ToolTip">
+                                        <Border Background="{DynamicResource TooltipBackground}"
+                                                BorderBrush="{DynamicResource HeaderBorder}"
+                                                BorderThickness="1"
+                                                CornerRadius="10"
+                                                Padding="14,12"
+                                                MaxWidth="280">
+                                            <Border.Effect>
+                                                <DropShadowEffect BlurRadius="12"
+                                                                  ShadowDepth="2"
+                                                                  Opacity="0.35"
+                                                                  Color="Black"/>
+                                            </Border.Effect>
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal"
+                                                            Margin="0,0,0,6">
+                                                    <Path Data="{DynamicResource IconHeart}"
+                                                          Fill="{DynamicResource HeartFill}"
+                                                          Width="14" Height="14"
+                                                          Stretch="Uniform"
+                                                          VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding HeartTooltipTitle}"
+                                                               FontFamily="{DynamicResource FontSans}"
+                                                               FontSize="13"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="White"
+                                                               VerticalAlignment="Center"
+                                                               Margin="6,0,0,0"/>
+                                                </StackPanel>
+
+                                                <TextBlock Text="{Binding HeartTooltipDescription}"
+                                                           FontFamily="{DynamicResource FontSans}"
+                                                           FontSize="12"
+                                                           Foreground="#C7CCE0"
+                                                           TextWrapping="Wrap"
+                                                           Margin="0,0,0,6"/>
+
+                                                <TextBlock Text="{Binding HeartRefillRuleText}"
+                                                           FontFamily="{DynamicResource FontSans}"
+                                                           FontSize="12"
+                                                           Foreground="#C7CCE0"
+                                                           TextWrapping="Wrap"
+                                                           Margin="0,0,0,8"/>
+
+                                                <Rectangle Height="1"
+                                                           Fill="{DynamicResource HeaderBorder}"
+                                                           Margin="0,0,0,8"/>
+
+                                                <TextBlock Text="{Binding HeartCountdownText}"
+                                                           FontFamily="{DynamicResource FontMono}"
+                                                           FontSize="14"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource HeartLow}"
+                                                           TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </ControlTemplate>
+                                </ToolTip.Template>
+                            </ToolTip>
+                        </Border.ToolTip>
+
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Path Data="{DynamicResource IconHeart}"
+                                  Width="16" Height="16"
+                                  Stretch="Uniform"
+                                  RenderTransformOrigin="0.5,0.5"
+                                  VerticalAlignment="Center">
+                                <Path.Effect>
+                                    <DropShadowEffect Color="#FF4D6D"
+                                                      BlurRadius="10"
+                                                      ShadowDepth="0"
+                                                      Opacity="0.6"/>
+                                </Path.Effect>
+                                <Path.RenderTransform>
+                                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                </Path.RenderTransform>
+                                <Path.Style>
+                                    <Style TargetType="Path">
+                                        <Setter Property="Fill" Value="{DynamicResource HeartFill}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HeartIsLow}" Value="True">
+                                                <Setter Property="Fill" Value="{DynamicResource HeartLow}"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding HeartIsEmpty}" Value="True">
+                                                <Setter Property="Fill" Value="{DynamicResource HeartEmpty}"/>
+                                                <DataTrigger.EnterActions>
+                                                    <BeginStoryboard Name="HeartPulseBeginStoryboard">
+                                                        <Storyboard RepeatBehavior="Forever">
+                                                            <DoubleAnimation
+                                                                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                                From="1.0" To="1.2"
+                                                                Duration="0:0:0.6"
+                                                                AutoReverse="True"/>
+                                                            <DoubleAnimation
+                                                                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                                From="1.0" To="1.2"
+                                                                Duration="0:0:0.6"
+                                                                AutoReverse="True"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </DataTrigger.EnterActions>
+                                                <DataTrigger.ExitActions>
+                                                    <StopStoryboard BeginStoryboardName="HeartPulseBeginStoryboard"/>
+                                                </DataTrigger.ExitActions>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Path.Style>
+                            </Path>
+
+                            <TextBlock Text="{Binding HeartCountText}"
+                                       FontFamily="{DynamicResource FontMono}"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0,0,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HeartIsLow}" Value="True">
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource HeartLow}"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding HeartIsEmpty}" Value="True">
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource HeartEmpty}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
 
                     <Button x:Name="SettingsButton"
                             Command="{Binding ToggleSettingsCommand}"
-                            Style="{DynamicResource ButtonGhost}"
-                            Padding="8,6"
-                            ToolTip="Cài đặt">
-                        <Path Data="{DynamicResource IconSettings}"
-                              Width="16" Height="16"
-                              Stroke="{Binding Foreground,
-                                       RelativeSource={RelativeSource AncestorType=Button}}"
-                              StrokeThickness="1.4"
-                              Stretch="Uniform"
-                              VerticalAlignment="Center"/>
-                    </Button>
+                            Style="{StaticResource HeaderIconButton}"
+                            ToolTip="Cài đặt"/>
 
                     <Popup IsOpen="{Binding IsSettingsOpen, Mode=TwoWay}"
                            StaysOpen="False"
@@ -205,10 +401,5 @@
                 </StackPanel>
             </Grid>
         </Border>
-
-        <!-- BODY: chỉ ContentControl -->
-        <Grid Grid.Row="1">
-            <ContentControl Content="{Binding CurrentPage}"/>
-        </Grid>
     </Grid>
 </UserControl>

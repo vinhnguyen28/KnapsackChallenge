@@ -52,28 +52,44 @@
             <Setter Property="FontWeight" Value="Normal"/>
         </Style>
 
-        <!-- ProgressBar EXP: track trắng alpha 20%, fill gradient cam -> vàng -->
+        <!-- =========================================================
+             ProgressBar EXP
+             - Track cao 16px, bo góc 8, nền xám mờ (#33000000) để
+               fill vàng nổi bật rõ rệt.
+             - PART_Indicator PHẢI có VerticalAlignment="Stretch" thì
+               mới cao đủ track — thiếu dòng này → indicator cao 0,
+               không thấy thanh chạy dù Value đúng.
+             - Fill gradient vàng gold đậm, sáng dần sang phải.
+             ========================================================= -->
         <Style x:Key="HomeExpProgressBar" TargetType="ProgressBar">
-            <Setter Property="Height" Value="8"/>
+            <Setter Property="Height" Value="16"/>
             <Setter Property="Maximum" Value="100"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Background" Value="#33FFFFFF"/>
+            <Setter Property="Background" Value="#33000000"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ProgressBar">
                         <Border Background="{TemplateBinding Background}"
-                                CornerRadius="4"
+                                CornerRadius="8"
                                 ClipToBounds="True">
                             <Grid>
                                 <Border x:Name="PART_Indicator"
                                         HorizontalAlignment="Left"
-                                        CornerRadius="4">
+                                        VerticalAlignment="Stretch"
+                                        CornerRadius="8">
                                     <Border.Background>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                            <GradientStop Color="#FF9A3D" Offset="0"/>
-                                            <GradientStop Color="#FBBF24" Offset="1"/>
+                                            <GradientStop Color="#FCD34D" Offset="0"/>
+                                            <GradientStop Color="#FBBF24" Offset="0.6"/>
+                                            <GradientStop Color="#F59E0B" Offset="1"/>
                                         </LinearGradientBrush>
                                     </Border.Background>
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#FBBF24"
+                                                          BlurRadius="8"
+                                                          ShadowDepth="0"
+                                                          Opacity="0.5"/>
+                                    </Border.Effect>
                                 </Border>
                             </Grid>
                         </Border>
@@ -147,7 +163,7 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Auto"
                       Background="Transparent">
-            <Grid MinWidth="1000" MinHeight="560" Margin="28,24">
+            <Grid MinWidth="1000" MinHeight="560" Margin="28,72">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="24*" MinWidth="240" MaxWidth="340"/>
                     <ColumnDefinition Width="20"/>
@@ -183,7 +199,6 @@
                                        VerticalAlignment="Center"/>
                         </Border>
 
-                        <!-- Tiêu đề in hoa, mono, có letter-space cảm giác -->
                         <TextBlock Grid.Column="1"
                                    Text="THỐNG KÊ CỦA BẠN"
                                    FontFamily="{DynamicResource FontMono}"
@@ -193,7 +208,6 @@
                                    VerticalAlignment="Center"
                                    Margin="10,0,12,0"/>
 
-                        <!-- Đường gradient mờ kéo sang phải -->
                         <Rectangle Grid.Column="2"
                                    Height="1"
                                    VerticalAlignment="Center"
@@ -281,7 +295,13 @@
                         </Grid>
                     </Border>
 
-                    <!-- CẤP ĐỘ & EXP -->
+                    <!-- ============================================================
+                         CẤP ĐỘ & EXP
+                         - Icon: squircle gradient tím→indigo, ngôi sao vàng
+                           gradient (sáng bóng) + glow vàng nhẹ.
+                         - Thanh EXP: fill vàng gold chạy đúng % Value, kèm
+                           chữ % overlay ở giữa.
+                         ============================================================ -->
                     <Border Style="{StaticResource HomeGlassCard}" Margin="0,0,0,14">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -289,17 +309,42 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
+                            <!-- Icon cấp độ -->
                             <Border Grid.Column="0"
-                                    Width="38" Height="38"
-                                    CornerRadius="19"
-                                    Background="#337C6CFF"
-                                    BorderBrush="#557C6CFF"
-                                    BorderThickness="1"
+                                    Width="42" Height="42"
+                                    CornerRadius="14"
                                     VerticalAlignment="Top">
-                                <TextBlock Text="⭐"
-                                           FontSize="18"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"/>
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#A78BFA" Offset="0"/>
+                                        <GradientStop Color="#6366F1" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#7C6CFF"
+                                                      BlurRadius="14"
+                                                      ShadowDepth="0"
+                                                      Opacity="0.6"/>
+                                </Border.Effect>
+                                <Path Data="M12,17.27 L18.18,21 L16.54,13.97 L22,9.24 L14.81,8.62 L12,2 L9.19,8.62 L2,9.24 L7.46,13.97 L5.82,21 Z"
+                                      Width="24" Height="24"
+                                      Stretch="Uniform"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center">
+                                    <Path.Fill>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#FEF3C7" Offset="0"/>
+                                            <GradientStop Color="#FBBF24" Offset="0.5"/>
+                                            <GradientStop Color="#F59E0B" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Path.Fill>
+                                    <Path.Effect>
+                                        <DropShadowEffect Color="#FBBF24"
+                                                          BlurRadius="10"
+                                                          ShadowDepth="0"
+                                                          Opacity="0.85"/>
+                                    </Path.Effect>
+                                </Path>
                             </Border>
 
                             <StackPanel Grid.Column="1" Margin="12,0,0,0">
@@ -313,9 +358,29 @@
                                            FontWeight="SemiBold"
                                            Foreground="{StaticResource HomeGold}"
                                            Margin="0,4,0,0"/>
-                                <ProgressBar Style="{StaticResource HomeExpProgressBar}"
-                                             Value="{Binding ExpProgressPercent, Mode=OneWay}"
-                                             Margin="0,8,0,4"/>
+
+                                <!-- Thanh EXP: ProgressBar + chữ % overlay ở giữa -->
+                                <Grid Margin="0,10,0,4">
+                                    <ProgressBar Style="{StaticResource HomeExpProgressBar}"
+                                                 Value="{Binding ExpProgressPercent, Mode=OneWay}"/>
+
+                                    <TextBlock Text="{Binding ExpProgressPercent, StringFormat={}{0:0}%}"
+                                               FontFamily="{DynamicResource FontMono}"
+                                               FontSize="10"
+                                               FontWeight="SemiBold"
+                                               Foreground="White"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               IsHitTestVisible="False">
+                                        <TextBlock.Effect>
+                                            <DropShadowEffect Color="Black"
+                                                              BlurRadius="4"
+                                                              ShadowDepth="0"
+                                                              Opacity="0.85"/>
+                                        </TextBlock.Effect>
+                                    </TextBlock>
+                                </Grid>
+
                                 <TextBlock Text="{Binding ExpProgressText}"
                                            FontFamily="{DynamicResource FontMono}"
                                            FontSize="{DynamicResource FontSizeCaption}"
@@ -332,7 +397,6 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Chip icon tròn màu tím -->
                         <Border Grid.Column="0"
                                 Width="28" Height="28"
                                 CornerRadius="9"
@@ -454,7 +518,6 @@
                                            TextWrapping="Wrap"
                                            Margin="0,6,0,0"/>
 
-                                <!-- Viên thuốc trạng thái (đổi màu theo IsEnabled của Button) -->
                                 <Border HorizontalAlignment="Center"
                                         Margin="0,12,0,0"
                                         Padding="10,4"
@@ -541,7 +604,6 @@
                                            TextWrapping="Wrap"
                                            Margin="0,6,0,0"/>
 
-                                <!-- Viên thuốc trạng thái cho Multiplayer -->
                                 <Border HorizontalAlignment="Center"
                                         Margin="0,12,0,0"
                                         Padding="10,4"
@@ -617,7 +679,6 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Header panel -->
                         <Border Grid.Row="0"
                                 BorderBrush="{StaticResource HomeGlassBorder}"
                                 BorderThickness="0,0,0,1"
@@ -647,7 +708,6 @@
                             </Grid>
                         </Border>
 
-                        <!-- Danh sách -->
                         <ScrollViewer Grid.Row="1"
                                       MaxHeight="360"
                                       VerticalScrollBarVisibility="Auto"
@@ -655,7 +715,6 @@
                             <ItemsControl ItemsSource="{Binding TopPlayers}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <!-- Mỗi dòng: Border để tô nền khi IsMe + vạch trái cam -->
                                         <Border CornerRadius="4" Margin="6,2">
                                             <Border.Style>
                                                 <Style TargetType="Border">
@@ -687,7 +746,6 @@
                                                            Foreground="{StaticResource HomeTextOnDarkMuted}"
                                                            VerticalAlignment="Center"/>
 
-                                                <!-- Username: tô vàng/bạc/đồng theo Rank -->
                                                 <TextBlock Grid.Column="1"
                                                            Text="{Binding Username}"
                                                            FontFamily="{DynamicResource FontSans}"
@@ -743,7 +801,6 @@
                             </ItemsControl>
                         </ScrollViewer>
 
-                        <!-- Empty state -->
                         <StackPanel Grid.Row="1"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
@@ -769,9 +826,7 @@
                                        Margin="0,6,0,0"/>
                         </StackPanel>
 
-                        <!-- Footer -->
                         <StackPanel Grid.Row="2">
-                            <!-- Dòng ghim hạng của tôi (chỉ hiện khi ngoài top) -->
                             <TextBlock Text="{Binding MyRankLine}"
                                        FontFamily="{DynamicResource FontSans}"
                                        FontSize="{DynamicResource FontSizeCaption}"
