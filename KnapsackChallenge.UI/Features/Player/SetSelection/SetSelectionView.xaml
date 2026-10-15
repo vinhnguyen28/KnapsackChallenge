@@ -4,140 +4,345 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
-             d:DesignHeight="620" d:DesignWidth="900"
-             Background="{DynamicResource BrushBackground}">
+             d:DesignHeight="620" d:DesignWidth="900">
 
-    <Grid Margin="24,72,24,24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <UserControl.Resources>
+        <!-- Nút Quay lại phong cách Glass -->
+        <Style x:Key="GlassBackButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource HomeGlassFill}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource HomeGlassBorder}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="12"
+                                Padding="32,14">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="{DynamicResource HomeGlassFillHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bg" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-        <!-- Header -->
-        <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,10,0,4">
-            <TextBlock Text="Chọn mức độ"
-                       FontFamily="{DynamicResource FontSans}"
-                       FontSize="{DynamicResource FontSizeDisplay}"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource BrushInk}"
-                       HorizontalAlignment="Center"/>
-            <TextBlock Text="Hệ thống sẽ chọn ngẫu nhiên một bộ đề trong mức bạn chọn."
-                       FontFamily="{DynamicResource FontSans}"
-                       FontSize="{DynamicResource FontSizeSmall}"
-                       Foreground="{DynamicResource BrushInkMuted}"
-                       HorizontalAlignment="Center"
-                       Margin="0,4,0,0"/>
-        </StackPanel>
+        <!-- Thẻ Độ Khó phong cách Glass -->
+        <Style x:Key="DifficultyCardButton" TargetType="Button">
+            <Setter Property="MinWidth" Value="200"/>
+            <Setter Property="MaxWidth" Value="300"/>
+            <Setter Property="MinHeight" Value="260"/>
+            <Setter Property="MaxHeight" Value="340"/>
+            <Setter Property="Margin" Value="10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid x:Name="RootGrid" RenderTransformOrigin="0.5,0.5">
+                            <Grid.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                            </Grid.RenderTransform>
 
-        <!-- Banner lỗi -->
-        <Border Grid.Row="1"
-                Style="{DynamicResource ErrorBanner}"
-                VerticalAlignment="Top"
-                Margin="0,8,0,0">
-            <TextBlock Text="{Binding ErrorMessage}"
-                       FontFamily="{DynamicResource FontSans}"
-                       FontSize="{DynamicResource FontSizeSmall}"
-                       Foreground="{DynamicResource BrushDanger}"
-                       TextWrapping="Wrap"/>
-        </Border>
+                            <!-- Glass Base -->
+                            <Border x:Name="GlassBg"
+                                    Background="{DynamicResource HomeGlassFill}"
+                                    BorderBrush="{DynamicResource HomeGlassBorder}"
+                                    BorderThickness="1"
+                                    CornerRadius="18" />
 
-        <!-- 3 thẻ mức độ -->
-        <ItemsControl Grid.Row="2"
-                      ItemsSource="{Binding Difficulties}"
-                      HorizontalAlignment="Center"
-                      VerticalAlignment="Center"
-                      MaxWidth="900"
-                      Margin="0,8,0,8">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <UniformGrid Columns="3" Rows="1"/>
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <Button Command="{Binding DataContext.ChooseDifficultyCommand,
-                                      RelativeSource={RelativeSource AncestorType=UserControl}}"
-                            CommandParameter="{Binding}">
-                        <!-- Kế thừa GameCardButton (có animation scale) - thêm ràng buộc
-                             kích thước cho layout 3 thẻ + DataTrigger đổi màu viền theo mức. -->
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource GameCardButton}">
-                                <Setter Property="MinWidth"  Value="180"/>
-                                <Setter Property="MaxWidth"  Value="300"/>
-                                <Setter Property="MinHeight" Value="240"/>
-                                <Setter Property="MaxHeight" Value="320"/>
-                                <Setter Property="Margin" Value="10"/>
-                                <Setter Property="BorderThickness" Value="2"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Difficulty}" Value="Easy">
-                                        <Setter Property="BorderBrush" Value="{DynamicResource BrushSuccess}"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Difficulty}" Value="Medium">
-                                        <Setter Property="BorderBrush" Value="{DynamicResource BrushWarning}"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Difficulty}" Value="Hard">
-                                        <Setter Property="BorderBrush" Value="{DynamicResource BrushDanger}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
+                            <!-- Hover Borders & Glow Effects -->
+                            <Border x:Name="HoverEasy" BorderThickness="2" CornerRadius="18" Opacity="0" Visibility="Collapsed" BorderBrush="#34D399">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="24" ShadowDepth="0" Color="#34D399" Opacity="0.5"/>
+                                </Border.Effect>
+                            </Border>
+                            <Border x:Name="HoverMedium" BorderThickness="2" CornerRadius="18" Opacity="0" Visibility="Collapsed" BorderBrush="#FBBF24">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="24" ShadowDepth="0" Color="#FBBF24" Opacity="0.5"/>
+                                </Border.Effect>
+                            </Border>
+                            <Border x:Name="HoverHard" BorderThickness="2" CornerRadius="18" Opacity="0" Visibility="Collapsed" BorderBrush="#F87171">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="24" ShadowDepth="0" Color="#F87171" Opacity="0.5"/>
+                                </Border.Effect>
+                            </Border>
 
-                        <StackPanel>
-                            <TextBlock Text="{Binding Icon}"
-                                       FontSize="56"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,0,0,8"/>
-                            <TextBlock Text="{Binding DisplayName}"
-                                       FontFamily="{DynamicResource FontSans}"
-                                       FontSize="22"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource BrushInk}"
-                                       HorizontalAlignment="Center"/>
-                            <TextBlock Text="{Binding Description}"
-                                       FontFamily="{DynamicResource FontSans}"
-                                       FontSize="{DynamicResource FontSizeSmall}"
-                                       Foreground="{DynamicResource BrushInkMuted}"
-                                       HorizontalAlignment="Center"
-                                       TextAlignment="Center"
-                                       TextWrapping="Wrap"
-                                       Margin="0,6,0,0"/>
-                            <TextBlock Text="{Binding CountText}"
-                                       FontFamily="{DynamicResource FontMono}"
-                                       FontSize="{DynamicResource FontSizeCaption}"
-                                       Foreground="{DynamicResource BrushInkMuted}"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,12,0,0"/>
-                        </StackPanel>
-                    </Button>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
+                            <!-- Top Accent Line (Đã sửa lỗi tràn viền: Dùng BorderThickness thay vì Height) -->
+                            <Border x:Name="TopLine" BorderThickness="0,4,0,0" CornerRadius="18" BorderBrush="Transparent" />
 
-        <!-- Footer: nút Quay lại to gấp đôi -->
-        <StackPanel Grid.Row="3"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Center"
-                    Margin="0,12,0,6">
-            <Button Command="{Binding BackCommand}"
-                    Style="{DynamicResource ButtonSecondary}"
-                    Padding="40,20">
-                <StackPanel Orientation="Horizontal">
-                    <Path Data="{DynamicResource IconArrowLeft}"
-                          Width="22" Height="22"
-                          Stroke="{Binding Foreground,
-                                   RelativeSource={RelativeSource AncestorType=Button}}"
-                          StrokeThickness="1.6"
-                          Stretch="Uniform"
+                            <!-- Content Layout -->
+                            <Grid Margin="16,24,16,20">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Icon Circle -->
+                                <Border x:Name="IconCircle" Grid.Row="0" Width="76" Height="76" CornerRadius="38" BorderThickness="2" HorizontalAlignment="Center" Margin="0,0,0,16">
+                                    <TextBlock Text="{Binding Icon}" FontSize="36" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+
+                                <!-- Title -->
+                                <TextBlock Grid.Row="1" Text="{Binding DisplayName}"
+                                           FontFamily="{DynamicResource FontSans}" FontSize="24" FontWeight="SemiBold" Foreground="White"
+                                           HorizontalAlignment="Center" Margin="0,0,0,8"/>
+
+                                <!-- Description -->
+                                <TextBlock Grid.Row="2" Text="{Binding Description}"
+                                           FontFamily="{DynamicResource FontSans}" FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{DynamicResource HomeTextOnDarkMuted}"
+                                           TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+
+                                <!-- Level Bar -->
+                                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
+                                    <Border x:Name="Lvl1" Width="28" Height="6" CornerRadius="3" Background="#33FFFFFF" Margin="0,0,6,0"/>
+                                    <Border x:Name="Lvl2" Width="28" Height="6" CornerRadius="3" Background="#33FFFFFF" Margin="0,0,6,0"/>
+                                    <Border x:Name="Lvl3" Width="28" Height="6" CornerRadius="3" Background="#33FFFFFF"/>
+                                </StackPanel>
+
+                                <!-- Set Count Pill -->
+                                <Border Grid.Row="4" Background="#1AFFFFFF" CornerRadius="12" Padding="12,4" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding CountText}"
+                                               FontFamily="{DynamicResource FontMono}" FontSize="{DynamicResource FontSizeCaption}"
+                                               Foreground="White"/>
+                                </Border>
+                            </Grid>
+                        </Grid>
+
+                        <ControlTemplate.Triggers>
+                            <!-- Màu nhấn: Dễ (#34D399) -->
+                            <DataTrigger Binding="{Binding Difficulty}" Value="Easy">
+                                <!-- Đổi từ Background sang BorderBrush -->
+                                <Setter TargetName="TopLine" Property="BorderBrush" Value="#34D399"/>
+                                <Setter TargetName="IconCircle" Property="BorderBrush" Value="#34D399"/>
+                                <Setter TargetName="IconCircle" Property="Background" Value="#2234D399"/>
+                                <Setter TargetName="HoverEasy" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="Lvl1" Property="Background" Value="#34D399"/>
+                            </DataTrigger>
+
+                            <!-- Màu nhấn: Bình thường (#FBBF24) -->
+                            <DataTrigger Binding="{Binding Difficulty}" Value="Medium">
+                                <Setter TargetName="TopLine" Property="BorderBrush" Value="#FBBF24"/>
+                                <Setter TargetName="IconCircle" Property="BorderBrush" Value="#FBBF24"/>
+                                <Setter TargetName="IconCircle" Property="Background" Value="#22FBBF24"/>
+                                <Setter TargetName="HoverMedium" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="Lvl1" Property="Background" Value="#FBBF24"/>
+                                <Setter TargetName="Lvl2" Property="Background" Value="#FBBF24"/>
+                            </DataTrigger>
+
+                            <!-- Màu nhấn: Khó (#F87171) -->
+                            <DataTrigger Binding="{Binding Difficulty}" Value="Hard">
+                                <Setter TargetName="TopLine" Property="BorderBrush" Value="#F87171"/>
+                                <Setter TargetName="IconCircle" Property="BorderBrush" Value="#F87171"/>
+                                <Setter TargetName="IconCircle" Property="Background" Value="#22F87171"/>
+                                <Setter TargetName="HoverHard" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="Lvl1" Property="Background" Value="#F87171"/>
+                                <Setter TargetName="Lvl2" Property="Background" Value="#F87171"/>
+                                <Setter TargetName="Lvl3" Property="Background" Value="#F87171"/>
+                            </DataTrigger>
+
+                            <!-- Hover / Animation Effect -->
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                    <Condition Property="IsEnabled" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <MultiTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="HoverEasy" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15"/>
+                                            <DoubleAnimation Storyboard.TargetName="HoverMedium" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15"/>
+                                            <DoubleAnimation Storyboard.TargetName="HoverHard" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15"/>
+                                            <DoubleAnimation Storyboard.TargetName="RootGrid" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.04" Duration="0:0:0.15"/>
+                                            <DoubleAnimation Storyboard.TargetName="RootGrid" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.04" Duration="0:0:0.15"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </MultiTrigger.EnterActions>
+                                <MultiTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="HoverEasy" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15"/>
+                                            <DoubleAnimation Storyboard.TargetName="HoverMedium" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15"/>
+                                            <DoubleAnimation Storyboard.TargetName="HoverHard" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15"/>
+                                            <DoubleAnimation Storyboard.TargetName="RootGrid" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.15"/>
+                                            <DoubleAnimation Storyboard.TargetName="RootGrid" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.15"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </MultiTrigger.ExitActions>
+                            </MultiTrigger>
+
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="RootGrid" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <!-- Vô hiệu hoá khi CanPlay = False -->
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.45"/>
+                    <Setter Property="Cursor" Value="Arrow"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- Lớp Nền Đồng Bộ Home -->
+        <Border Background="{DynamicResource HomeBackdropFallback}" />
+        <Border Background="{DynamicResource HomeOverlay}" />
+
+        <!-- Lớp Nội Dung (Giữ lề an toàn để tránh dính Header Player) -->
+        <Grid Margin="24,72,24,24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,10,0,4">
+                <TextBlock Text="Chọn mức độ"
+                           FontFamily="{DynamicResource FontSans}"
+                           FontSize="{DynamicResource FontSizeDisplay}"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource HomeTextOnDark}"
+                           HorizontalAlignment="Center"/>
+
+                <!-- Điểm nhấn vạch vàng dưới tiêu đề -->
+                <Border Width="48" Height="3" CornerRadius="2"
+                        Background="{DynamicResource HomeGold}"
+                        Margin="0,8,0,12" HorizontalAlignment="Center"/>
+
+                <TextBlock Text="Hệ thống sẽ chọn ngẫu nhiên một bộ đề trong mức bạn chọn."
+                           FontFamily="{DynamicResource FontSans}"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Foreground="{DynamicResource HomeTextOnDarkMuted}"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Banner lỗi -->
+            <Border Grid.Row="1"
+                    Style="{DynamicResource ErrorBanner}"
+                    VerticalAlignment="Top"
+                    Margin="0,8,0,0" Opacity="0.95">
+                <TextBlock Text="{Binding ErrorMessage}"
+                           FontFamily="{DynamicResource FontSans}"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Foreground="{DynamicResource BrushDanger}"
+                           TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Loading Text (Hoán đổi với ItemsControl) -->
+            <TextBlock Grid.Row="2" Text="Đang tải bộ đề..."
+                       FontFamily="{DynamicResource FontSans}" 
+                       FontSize="{DynamicResource FontSizeHeading}"
+                       Foreground="{DynamicResource HomeTextOnDarkMuted}"
+                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <!-- 3 Thẻ mức độ -->
+            <ItemsControl Grid.Row="2"
+                          ItemsSource="{Binding Difficulties}"
+                          HorizontalAlignment="Center"
                           VerticalAlignment="Center"
-                          Margin="0,0,12,0"/>
-                    <TextBlock Text="Quay lại"
-                               FontSize="18"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center"/>
-                </StackPanel>
-            </Button>
-        </StackPanel>
+                          MaxWidth="900"
+                          Margin="0,8,0,8">
+                <ItemsControl.Style>
+                    <Style TargetType="ItemsControl">
+                        <Setter Property="Visibility" Value="Visible"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ItemsControl.Style>
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="3" Rows="1"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Style="{StaticResource DifficultyCardButton}"
+                                Command="{Binding DataContext.ChooseDifficultyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}"
+                                Opacity="0">
+                            <Button.RenderTransform>
+                                <TranslateTransform Y="24"/>
+                            </Button.RenderTransform>
+                            <!-- Trượt và mờ lên cùng lúc -->
+                            <Button.Triggers>
+                                <EventTrigger RoutedEvent="Loaded">
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.45">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="24" To="0" Duration="0:0:0.45">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </Button.Triggers>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Footer: Nút Quay lại Glass -->
+            <StackPanel Grid.Row="3"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Margin="0,12,0,6">
+                <Button Command="{Binding BackCommand}"
+                        Style="{StaticResource GlassBackButton}">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{DynamicResource IconArrowLeft}"
+                              Width="22" Height="22"
+                              Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.6"
+                              Stretch="Uniform"
+                              VerticalAlignment="Center"
+                              Margin="0,0,12,0"/>
+                        <TextBlock Text="Quay lại"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

@@ -1,0 +1,48 @@
+# Chạy:  docker compose up -d
+# Dừng:  docker compose down            (giữ dữ liệu)
+# Xoá sạch dữ liệu làm lại từ đầu:  docker compose down -v
+#
+# Mac chip Apple (M1/M2/...): bật Docker Desktop > Settings > General >
+#   "Use Rosetta for x86_64/amd64 emulation on Apple Silicon"
+name: knapsack
+
+services:
+  sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    container_name: knapsack-sql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+      MSSQL_SA_PASSWORD: "Knapsack@2026"
+    ports:
+      - "1433:1433"
+    volumes:
+      - knapsack-sql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" -b -o /dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+
+  # Chạy 1 lần: tạo database + chạy InitDatabase.sql + v2..v9 + dữ liệu mẫu, rồi tự thoát.
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    container_name: knapsack-sql-init
+    depends_on:
+      sql:
+        condition: service_healthy
+    environment:
+      SQL_HOST: "sql"
+      SA_PASSWORD: "Knapsack@2026"
+    volumes:
+      - ./KnapsackChallenge.Data/Scripts:/scripts:ro
+      - ./docker:/docker:ro
+    # tr -d '\r': phòng khi Git trên Windows đổi file .sh sang CRLF
+    entrypoint: ["/bin/bash", "-c", "tr -d '\\r' < /docker/init-db.sh | bash"]
+    restart: "no"
+
+volumes:
+  knapsack-sql-data:

@@ -22,6 +22,9 @@ namespace KnapsackChallenge.UI.Features.Player
         public string CountText => SetCount == 0
             ? "Chưa có bộ đề"
             : $"{SetCount} bộ đề";
+
+        // Thêm mapping Level dùng cho việc đếm vạch đo độ khó.
+        public int Level => Difficulty switch { "Easy" => 1, "Medium" => 2, "Hard" => 3, _ => 0 };
     }
 
     // Màn chọn mức độ trước khi vào chơi.

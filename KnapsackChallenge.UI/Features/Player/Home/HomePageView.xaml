@@ -69,9 +69,12 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ProgressBar">
-                        <Border Background="{TemplateBinding Background}"
-                                CornerRadius="8"
-                                ClipToBounds="True">
+                        <Grid>
+                            <!-- Track (nền) — PART_Track bắt buộc phải có -->
+                            <Border x:Name="PART_Track"
+                                    Background="{TemplateBinding Background}"
+                                    CornerRadius="8"/>
+                            <!-- Phần đã chạy -->
                             <Grid>
                                 <Border x:Name="PART_Indicator"
                                         HorizontalAlignment="Left"
@@ -92,10 +95,100 @@
                                     </Border.Effect>
                                 </Border>
                             </Grid>
-                        </Border>
+                        </Grid>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- =========================================================
+             FORMAT CHUNG CHO 3 THẺ: SỐ VÁN / ĐIỂM CAO NHẤT / CẤP ĐỘ & EXP
+             - HomeStatIcon*  : ô icon squircle 42x42, gradient + glow
+             - HomeStatLabel  : nhãn nhỏ phía trên
+             - HomeStatValue  : giá trị lớn (mono, SemiBold, vàng gold)
+             Muốn đổi giao diện cả 3 thẻ -> chỉ sửa ở đây.
+             ========================================================= -->
+        <Style x:Key="HomeStatIconBase" TargetType="Border">
+            <Setter Property="Width" Value="42"/>
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- Cam: số ván đã chơi -->
+        <Style x:Key="HomeStatIconOrange" TargetType="Border"
+               BasedOn="{StaticResource HomeStatIconBase}">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#FDBA74" Offset="0"/>
+                        <GradientStop Color="#F97316" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#FF9A3D" BlurRadius="14" ShadowDepth="0" Opacity="0.6"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Vàng: điểm cao nhất -->
+        <Style x:Key="HomeStatIconGold" TargetType="Border"
+               BasedOn="{StaticResource HomeStatIconBase}">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#FCD34D" Offset="0"/>
+                        <GradientStop Color="#D97706" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#FBBF24" BlurRadius="14" ShadowDepth="0" Opacity="0.6"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Tím: cấp độ & EXP -->
+        <Style x:Key="HomeStatIconPurple" TargetType="Border"
+               BasedOn="{StaticResource HomeStatIconBase}">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#A78BFA" Offset="0"/>
+                        <GradientStop Color="#6366F1" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#7C6CFF" BlurRadius="14" ShadowDepth="0" Opacity="0.6"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Emoji trong ô icon -->
+        <Style x:Key="HomeStatEmoji" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="HomeStatLabel" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{DynamicResource FontSans}"/>
+            <Setter Property="FontSize" Value="{DynamicResource FontSizeCaption}"/>
+            <Setter Property="Foreground" Value="{StaticResource HomeTextOnDarkMuted}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <Style x:Key="HomeStatValue" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{DynamicResource FontMono}"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource HomeGold}"/>
+            <Setter Property="Margin" Value="0,4,0,0"/>
         </Style>
 
         <!-- Halo: 3 vòng sáng radial để tạo chiều sâu -->
@@ -229,31 +322,13 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <Border Grid.Column="0"
-                                    Width="38" Height="38"
-                                    CornerRadius="19"
-                                    Background="#33FF9A3D"
-                                    BorderBrush="#55FF9A3D"
-                                    BorderThickness="1"
-                                    VerticalAlignment="Center">
-                                <TextBlock Text="📊"
-                                           FontSize="18"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"/>
+                            <Border Grid.Column="0" Style="{StaticResource HomeStatIconOrange}">
+                                <TextBlock Text="📊" Style="{StaticResource HomeStatEmoji}"/>
                             </Border>
 
-                            <StackPanel Grid.Column="1" Margin="12,0,0,0">
-                                <TextBlock Text="SỐ VÁN ĐÃ CHƠI"
-                                           FontFamily="{DynamicResource FontSans}"
-                                           FontSize="{DynamicResource FontSizeCaption}"
-                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
-                                           TextWrapping="Wrap"/>
-                                <TextBlock Text="{Binding GamesPlayedText}"
-                                           FontFamily="{DynamicResource FontMono}"
-                                           FontSize="26"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource HomeTextOnDark}"
-                                           Margin="0,4,0,0"/>
+                            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="SỐ VÁN ĐÃ CHƠI" Style="{StaticResource HomeStatLabel}"/>
+                                <TextBlock Text="{Binding GamesPlayedText}" Style="{StaticResource HomeStatValue}"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -266,31 +341,13 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <Border Grid.Column="0"
-                                    Width="38" Height="38"
-                                    CornerRadius="19"
-                                    Background="#33FBBF24"
-                                    BorderBrush="#55FBBF24"
-                                    BorderThickness="1"
-                                    VerticalAlignment="Center">
-                                <TextBlock Text="🏅"
-                                           FontSize="18"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"/>
+                            <Border Grid.Column="0" Style="{StaticResource HomeStatIconGold}">
+                                <TextBlock Text="🏅" Style="{StaticResource HomeStatEmoji}"/>
                             </Border>
 
-                            <StackPanel Grid.Column="1" Margin="12,0,0,0">
-                                <TextBlock Text="ĐIỂM CAO NHẤT"
-                                           FontFamily="{DynamicResource FontSans}"
-                                           FontSize="{DynamicResource FontSizeCaption}"
-                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
-                                           TextWrapping="Wrap"/>
-                                <TextBlock Text="{Binding BestScoreText}"
-                                           FontFamily="{DynamicResource FontMono}"
-                                           FontSize="26"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource HomeTextOnDark}"
-                                           Margin="0,4,0,0"/>
+                            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="ĐIỂM CAO NHẤT" Style="{StaticResource HomeStatLabel}"/>
+                                <TextBlock Text="{Binding BestScoreText}" Style="{StaticResource HomeStatValue}"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -311,21 +368,8 @@
 
                             <!-- Icon cấp độ -->
                             <Border Grid.Column="0"
-                                    Width="42" Height="42"
-                                    CornerRadius="14"
+                                    Style="{StaticResource HomeStatIconPurple}"
                                     VerticalAlignment="Top">
-                                <Border.Background>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                        <GradientStop Color="#A78BFA" Offset="0"/>
-                                        <GradientStop Color="#6366F1" Offset="1"/>
-                                    </LinearGradientBrush>
-                                </Border.Background>
-                                <Border.Effect>
-                                    <DropShadowEffect Color="#7C6CFF"
-                                                      BlurRadius="14"
-                                                      ShadowDepth="0"
-                                                      Opacity="0.6"/>
-                                </Border.Effect>
                                 <Path Data="M12,17.27 L18.18,21 L16.54,13.97 L22,9.24 L14.81,8.62 L12,2 L9.19,8.62 L2,9.24 L7.46,13.97 L5.82,21 Z"
                                       Width="24" Height="24"
                                       Stretch="Uniform"
@@ -348,16 +392,8 @@
                             </Border>
 
                             <StackPanel Grid.Column="1" Margin="12,0,0,0">
-                                <TextBlock Text="CẤP ĐỘ &amp; EXP"
-                                           FontFamily="{DynamicResource FontSans}"
-                                           FontSize="{DynamicResource FontSizeCaption}"
-                                           Foreground="{StaticResource HomeTextOnDarkMuted}"/>
-                                <TextBlock Text="{Binding LevelBadge}"
-                                           FontFamily="{DynamicResource FontMono}"
-                                           FontSize="20"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource HomeGold}"
-                                           Margin="0,4,0,0"/>
+                                <TextBlock Text="CẤP ĐỘ &amp; EXP" Style="{StaticResource HomeStatLabel}"/>
+                                <TextBlock Text="{Binding LevelBadge}" Style="{StaticResource HomeStatValue}"/>
 
                                 <!-- Thanh EXP: ProgressBar + chữ % overlay ở giữa -->
                                 <Grid Margin="0,10,0,4">

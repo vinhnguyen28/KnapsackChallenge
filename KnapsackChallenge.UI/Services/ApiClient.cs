@@ -78,6 +78,8 @@ namespace KnapsackChallenge.UI.Services
         {
             var baseUrl = MultiplayerServerConfig.ServerUrl.TrimEnd('/') + "/";
 
+            System.Diagnostics.Debug.WriteLine("[API] BaseAddress = " + baseUrl);
+
             return new HttpClient
             {
                 BaseAddress = new Uri(baseUrl),

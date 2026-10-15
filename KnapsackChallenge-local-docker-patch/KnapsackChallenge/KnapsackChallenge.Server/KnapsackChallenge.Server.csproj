@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.13" />
+		<PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Công tắc Azure/Local dùng chung (file ở thư mục gốc solution). Không bao giờ publish lên Azure. -->
+		<Content Include="..\appsettings.env.json" Link="appsettings.env.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" Condition="Exists('..\appsettings.env.json')" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\KnapsackChallenge.Common\KnapsackChallenge.Common.csproj" />
+		<ProjectReference Include="..\KnapsackChallenge.Core\KnapsackChallenge.Core.csproj" />
+		<ProjectReference Include="..\KnapsackChallenge.Data\KnapsackChallenge.Data.csproj" />
+	</ItemGroup>
+
+</Project>

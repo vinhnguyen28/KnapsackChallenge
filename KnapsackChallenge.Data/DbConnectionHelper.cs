@@ -16,6 +16,7 @@ namespace KnapsackChallenge.Data
             var config = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile("appsettings.json", optional: false)
+                .AddJsonFile("appsettings.env.json", optional: true)   // công tắc Azure/Local (file gốc solution)
                 .AddJsonFile("appsettings.Local.json", optional: true)
                 .AddEnvironmentVariables()
                 .Build();
