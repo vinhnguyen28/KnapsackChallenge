@@ -1,5 +1,8 @@
 ﻿using KnapsackChallenge.Common.DTOs;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 
 namespace KnapsackChallenge.UI.Features.Player
 {
@@ -10,8 +13,17 @@ namespace KnapsackChallenge.UI.Features.Player
 
         private readonly List<SoloGameSetDto> _sets;
 
-        // Lựa chọn thời gian — Label hiển thị, Seconds = null (mặc định hệ thống) / 0 (không giới hạn) / số giây.
-        private sealed record TimeOption(string Label, int? Seconds);
+        // Lựa chọn thời gian — Label hiển thị, Seconds = null (mặc định hệ thống)
+        // / 0 (không giới hạn) / số giây.
+        //
+        // FIX BUG HIỂN THỊ: override ToString() => Label để nếu vì bất kỳ lý do
+        // nào WPF rơi vào fallback path (không áp ItemTemplate / DisplayMemberPath),
+        // ComboBox vẫn hiển thị đúng "Mặc định hệ thống" thay vì
+        // "TimeOption { Label = Mặc định hệ thống, Seconds =  }".
+        private sealed record TimeOption(string Label, int? Seconds)
+        {
+            public override string ToString() => Label;
+        }
 
         public CreateRoomDialog(IEnumerable<SoloGameSetDto> sets)
         {
@@ -64,10 +76,21 @@ namespace KnapsackChallenge.UI.Features.Player
         private static bool Eq(string? a, string b)
             => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
 
+        // =========================================================
+        // HANDLERS
+        // =========================================================
+
         private void Difficulty_Checked(object sender, RoutedEventArgs e)
         {
             // Guard: Checked có thể nổ trước khi các control khác kịp khởi tạo.
-            if (SetsCombo == null) return;
+            if (SetsCombo == null || Backdrop == null) return;
+
+            var diff = GetSelectedDifficulty() ?? "";
+
+            // Đổi nền động theo độ khó + màu nút "Tạo phòng".
+            Backdrop.Difficulty = diff;
+            if (CreateButton != null) CreateButton.Tag = diff;
+
             RefreshSetList();
         }
 
@@ -145,5 +168,32 @@ namespace KnapsackChallenge.UI.Features.Player
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e) => DialogResult = false;
+
+        private void Close_Click(object sender, RoutedEventArgs e) => DialogResult = false;
+
+        // =========================================================
+        // WINDOW CHROME HELPERS
+        // =========================================================
+
+        // Kéo cửa sổ bằng thanh tiêu đề (WindowStyle=None không có chrome mặc định).
+        private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ButtonState == MouseButtonState.Pressed)
+                DragMove();
+        }
+
+        // Bo tròn 18 cho khung dialog — Border.CornerRadius không tự cắt
+        // lớp con (DifficultyBackdrop + lớp tối). Clip bằng RectangleGeometry
+        // và cập nhật mỗi khi Border đổi kích thước (dialog SizeToContent=Height).
+        // Bán kính 18 PHẢI KHỚP với CornerRadius=18 của DkDialogShell.
+        private void ShellBorder_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (sender is Border b && b.ActualWidth > 0 && b.ActualHeight > 0)
+            {
+                b.Clip = new RectangleGeometry(
+                    new Rect(0, 0, b.ActualWidth, b.ActualHeight),
+                    18, 18);
+            }
+        }
     }
 }

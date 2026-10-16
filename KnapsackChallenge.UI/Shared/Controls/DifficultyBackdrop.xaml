@@ -1,0 +1,259 @@
+﻿<UserControl x:Class="KnapsackChallenge.UI.Shared.Controls.DifficultyBackdrop"
+             x:Name="Root"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="800" d:DesignWidth="1200"
+             IsHitTestVisible="False"
+             Background="Transparent">
+
+    <UserControl.Resources>
+        <!-- =========================================================
+             Brush họa tiết — RadialGradient mềm cho đom đóm / tàn lửa.
+             StaticResource cục bộ, không đụng Colors.xaml.
+             ========================================================= -->
+        <RadialGradientBrush x:Key="MotifFireflyGreen"
+                             GradientOrigin="0.5,0.5"
+                             Center="0.5,0.5"
+                             RadiusX="0.5" RadiusY="0.5">
+            <GradientStop Color="#CCB0FFD8" Offset="0"/>
+            <GradientStop Color="#55B0FFD8" Offset="0.4"/>
+            <GradientStop Color="#00B0FFD8" Offset="1"/>
+        </RadialGradientBrush>
+
+        <RadialGradientBrush x:Key="MotifEmber"
+                             GradientOrigin="0.5,0.5"
+                             Center="0.5,0.5"
+                             RadiusX="0.5" RadiusY="0.5">
+            <GradientStop Color="#CCFCA5A5" Offset="0"/>
+            <GradientStop Color="#55FCA5A5" Offset="0.4"/>
+            <GradientStop Color="#00FCA5A5" Offset="1"/>
+        </RadialGradientBrush>
+    </UserControl.Resources>
+
+    <!-- RootGrid: toàn bộ 5 lớp. Opacity được code-behind animate khi
+         Difficulty đổi để tạo hiệu ứng fade 300ms. -->
+    <Grid x:Name="RootGrid" Background="Transparent">
+
+        <!-- =========================================================
+             LỚP 1 — gradient fallback (dự phòng khi ảnh không tải được)
+             Mặc định: HomeBackdropFallback. Đổi theo độ khó.
+             ========================================================= -->
+        <Rectangle>
+            <Rectangle.Style>
+                <Style TargetType="Rectangle">
+                    <Setter Property="Fill" Value="{StaticResource HomeBackdropFallback}"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ResolvedDifficulty, ElementName=Root}" Value="Easy">
+                            <Setter Property="Fill" Value="{StaticResource DiffEasyBackdrop}"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding ResolvedDifficulty, ElementName=Root}" Value="Medium">
+                            <Setter Property="Fill" Value="{StaticResource DiffMediumBackdrop}"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding ResolvedDifficulty, ElementName=Root}" Value="Hard">
+                            <Setter Property="Fill" Value="{StaticResource DiffHardBackdrop}"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Rectangle.Style>
+        </Rectangle>
+
+        <!-- =========================================================
+             LỚP 2 — ảnh nền riêng theo độ khó (đã tải BitmapImage
+             sẵn trong code-behind; null nếu file lỗi → bỏ qua lớp này).
+             ========================================================= -->
+        <Rectangle>
+            <Rectangle.Fill>
+                <ImageBrush ImageSource="{Binding BackdropImageSource, ElementName=Root}"
+                            Stretch="UniformToFill"
+                            AlignmentX="Center"
+                            AlignmentY="Center"/>
+            </Rectangle.Fill>
+        </Rectangle>
+
+        <!-- =========================================================
+             LỚP 3 — overlay tối để chữ trắng nổi.
+             Mặc định: HomeOverlay. Đổi theo độ khó.
+             ========================================================= -->
+        <Rectangle>
+            <Rectangle.Style>
+                <Style TargetType="Rectangle">
+                    <Setter Property="Fill" Value="{StaticResource HomeOverlay}"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ResolvedDifficulty, ElementName=Root}" Value="Easy">
+                            <Setter Property="Fill" Value="{StaticResource DiffEasyOverlay}"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding ResolvedDifficulty, ElementName=Root}" Value="Medium">
+                            <Setter Property="Fill" Value="{StaticResource DiffMediumOverlay}"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding ResolvedDifficulty, ElementName=Root}" Value="Hard">
+                            <Setter Property="Fill" Value="{StaticResource DiffHardOverlay}"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Rectangle.Style>
+        </Rectangle>
+
+        <!-- =========================================================
+             LỚP 4 — họa tiết nhẹ theo độ khó (KHÔNG animation,
+             thuần tĩnh, không ăn CPU). Ba Grid chồng nhau, chỉ một
+             cái Visible theo ResolvedDifficulty.
+             ========================================================= -->
+        <Grid x:Name="MotifLayer" IsHitTestVisible="False">
+
+            <!--  DỄ: đom đóm xanh mờ  -->
+            <Grid>
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ResolvedDifficulty, ElementName=Root}" Value="Easy">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <Ellipse Width="18" Height="18" Fill="{StaticResource MotifFireflyGreen}"
+                         HorizontalAlignment="Left" VerticalAlignment="Top"
+                         Margin="140,90,0,0" Opacity="0.85"/>
+                <Ellipse Width="12" Height="12" Fill="{StaticResource MotifFireflyGreen}"
+                         HorizontalAlignment="Left" VerticalAlignment="Top"
+                         Margin="320,180,0,0" Opacity="0.7"/>
+                <Ellipse Width="22" Height="22" Fill="{StaticResource MotifFireflyGreen}"
+                         HorizontalAlignment="Right" VerticalAlignment="Top"
+                         Margin="0,140,200,0" Opacity="0.8"/>
+                <Ellipse Width="14" Height="14" Fill="{StaticResource MotifFireflyGreen}"
+                         HorizontalAlignment="Right" VerticalAlignment="Top"
+                         Margin="0,60,120,0" Opacity="0.65"/>
+                <Ellipse Width="16" Height="16" Fill="{StaticResource MotifFireflyGreen}"
+                         HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                         Margin="180,0,0,120" Opacity="0.75"/>
+                <Ellipse Width="20" Height="20" Fill="{StaticResource MotifFireflyGreen}"
+                         HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                         Margin="0,0,160,100" Opacity="0.7"/>
+                <Ellipse Width="12" Height="12" Fill="{StaticResource MotifFireflyGreen}"
+                         HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                         Margin="80,0,0,220" Opacity="0.6"/>
+                <Ellipse Width="14" Height="14" Fill="{StaticResource MotifFireflyGreen}"
+                         HorizontalAlignment="Center" VerticalAlignment="Center"
+                         Margin="120,0,0,0" Opacity="0.55"/>
+            </Grid>
+
+            <!--  BÌNH THƯỜNG: tia sáng chéo hổ phách  -->
+            <Grid>
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ResolvedDifficulty, ElementName=Root}" Value="Medium">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <Rectangle Height="1.5" Width="720"
+                           HorizontalAlignment="Center" VerticalAlignment="Top"
+                           Margin="0,140,0,0"
+                           Opacity="0.35"
+                           RenderTransformOrigin="0.5,0.5">
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#00FBBF24" Offset="0"/>
+                            <GradientStop Color="#80FBBF24" Offset="0.5"/>
+                            <GradientStop Color="#00FBBF24" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                    <Rectangle.RenderTransform>
+                        <RotateTransform Angle="-22"/>
+                    </Rectangle.RenderTransform>
+                </Rectangle>
+
+                <Rectangle Height="1" Width="560"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Margin="0,80,0,0"
+                           Opacity="0.28"
+                           RenderTransformOrigin="0.5,0.5">
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#00FCD34D" Offset="0"/>
+                            <GradientStop Color="#99FCD34D" Offset="0.5"/>
+                            <GradientStop Color="#00FCD34D" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                    <Rectangle.RenderTransform>
+                        <RotateTransform Angle="-22"/>
+                    </Rectangle.RenderTransform>
+                </Rectangle>
+
+                <Rectangle Height="1.5" Width="800"
+                           HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                           Margin="0,0,0,160"
+                           Opacity="0.3"
+                           RenderTransformOrigin="0.5,0.5">
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#00FBBF24" Offset="0"/>
+                            <GradientStop Color="#80FBBF24" Offset="0.5"/>
+                            <GradientStop Color="#00FBBF24" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                    <Rectangle.RenderTransform>
+                        <RotateTransform Angle="-22"/>
+                    </Rectangle.RenderTransform>
+                </Rectangle>
+            </Grid>
+
+            <!--  KHÓ: tàn lửa đỏ mờ  -->
+            <Grid>
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ResolvedDifficulty, ElementName=Root}" Value="Hard">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <Ellipse Width="14" Height="14" Fill="{StaticResource MotifEmber}"
+                         HorizontalAlignment="Left" VerticalAlignment="Top"
+                         Margin="200,120,0,0" Opacity="0.85"/>
+                <Ellipse Width="10" Height="10" Fill="{StaticResource MotifEmber}"
+                         HorizontalAlignment="Right" VerticalAlignment="Top"
+                         Margin="0,90,260,0" Opacity="0.7"/>
+                <Ellipse Width="18" Height="18" Fill="{StaticResource MotifEmber}"
+                         HorizontalAlignment="Center" VerticalAlignment="Center"
+                         Margin="0,0,0,120" Opacity="0.75"/>
+                <Ellipse Width="12" Height="12" Fill="{StaticResource MotifEmber}"
+                         HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                         Margin="120,0,0,180" Opacity="0.7"/>
+                <Ellipse Width="16" Height="16" Fill="{StaticResource MotifEmber}"
+                         HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                         Margin="0,0,140,150" Opacity="0.8"/>
+                <Ellipse Width="10" Height="10" Fill="{StaticResource MotifEmber}"
+                         HorizontalAlignment="Right" VerticalAlignment="Center"
+                         Margin="0,0,300,0" Opacity="0.6"/>
+            </Grid>
+        </Grid>
+
+        <!-- =========================================================
+             LỚP 5 — vignette tối viền (RadialGradient trong suốt ở
+             giữa, đen mờ ở rìa). Không đổi theo độ khó.
+             ========================================================= -->
+        <Rectangle IsHitTestVisible="False">
+            <Rectangle.Fill>
+                <RadialGradientBrush GradientOrigin="0.5,0.5"
+                                     Center="0.5,0.5"
+                                     RadiusX="0.75" RadiusY="0.75">
+                    <GradientStop Color="#00000000" Offset="0.55"/>
+                    <GradientStop Color="#88000000" Offset="1"/>
+                </RadialGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+    </Grid>
+</UserControl>

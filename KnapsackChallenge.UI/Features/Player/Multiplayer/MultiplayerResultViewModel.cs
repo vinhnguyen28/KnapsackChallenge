@@ -40,6 +40,32 @@ namespace KnapsackChallenge.UI.Features.Player
 
         public string TimeText => TimeSpentSeconds <= 0 ? "—" : $"{TimeSpentSeconds}s";
         public string OptimalPercentText => $"{OptimalPercent:0.0}%";
+
+        // =========================================================
+        // NEW — phục vụ giao diện tối
+        // =========================================================
+
+        /// <summary>Chữ cái đầu để vẽ avatar tròn. An toàn với null/rỗng.</summary>
+        public string AvatarInitial
+        {
+            get
+            {
+                var u = Username;
+                if (string.IsNullOrWhiteSpace(u)) return "?";
+                return u.Trim().Substring(0, 1).ToUpperInvariant();
+            }
+        }
+
+        /// <summary>Key trạng thái chuẩn hoá để DataTrigger switch màu chip.</summary>
+        public string StatusKey => IsKicked ? "Kicked"
+            : IsBanned ? "Banned"
+            : IsLeft ? "Left"
+            : IsSubmitted ? "Submitted"
+            : "NotSubmitted";
+
+        public bool IsTop1 => Rank == 1;
+        public bool IsTop2 => Rank == 2;
+        public bool IsTop3 => Rank == 3;
     }
 
     // Màn Bảng xếp hạng cuối ván. Không subscribe SignalR — chỉ hiển thị dữ liệu
@@ -61,10 +87,18 @@ namespace KnapsackChallenge.UI.Features.Player
 
         private bool _isLeaving;
 
+        // Chữ ký cũ giữ nguyên (dùng khi không truyền độ khó).
         public MultiplayerResultViewModel(UserEntity user, FinalRankingDto ranking)
+            : this(user, ranking, null) { }
+
+        // Chữ ký mới — thêm tham số difficulty tuỳ chọn để ResultView có thể
+        // hiển thị đúng nền theo độ khó (khi caller truyền vào).
+        public MultiplayerResultViewModel(UserEntity user, FinalRankingDto ranking, string? difficulty)
         {
             _user = user;
             _ranking = ranking;
+
+            Difficulty = difficulty ?? "";
 
             foreach (var e in ranking.Entries)
                 Entries.Add(new MultiplayerResultEntryRow(e, user.Id));
@@ -99,6 +133,22 @@ namespace KnapsackChallenge.UI.Features.Player
         public int OptimalValue => _ranking.OptimalValue;
         public int TotalPlayers => _ranking.Entries.Count;
 
+        // =========================================================
+        // NEW — phục vụ DifficultyBackdrop
+        // =========================================================
+
+        /// <summary>Độ khó dạng chuỗi gốc (VD "Easy"). Rỗng nếu caller không truyền.</summary>
+        public string Difficulty { get; }
+
+        /// <summary>Key chuẩn hoá để XAML DataTrigger switch màu.</summary>
+        public string DifficultyKey => (Difficulty ?? "").ToLowerInvariant() switch
+        {
+            "easy" => "Easy",
+            "medium" => "Medium",
+            "hard" => "Hard",
+            _ => "",
+        };
+
         public string FinishedAtText => _ranking.FinishedAtUtc == default
             ? "—"
             : _ranking.FinishedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm");
@@ -121,6 +171,4 @@ namespace KnapsackChallenge.UI.Features.Player
             ? $"Lên cấp! Lv {_myEntry.Data.NewLevel} · {_myEntry.Data.RankTitle}"
             : "";
     }
-
-
 }

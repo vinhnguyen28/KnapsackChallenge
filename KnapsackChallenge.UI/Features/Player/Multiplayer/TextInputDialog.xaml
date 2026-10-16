@@ -1,48 +1,91 @@
 ﻿<Window x:Class="KnapsackChallenge.UI.Features.Player.TextInputDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Nhập" Width="460" SizeToContent="Height"
+        Title="Nhập" Width="520" SizeToContent="Height"
         ResizeMode="NoResize" WindowStartupLocation="CenterOwner"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent">
 
-    <Border Background="{DynamicResource BrushSurface}"
-            BorderBrush="{DynamicResource BrushRule}"
-            BorderThickness="1" CornerRadius="10" Margin="14">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.2" Color="Black"/>
-        </Border.Effect>
-
-        <StackPanel Margin="22,18,22,18">
-            <TextBlock x:Name="TitleText"
-                       FontFamily="{DynamicResource FontSans}"
-                       FontSize="{DynamicResource FontSizeTitle}"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource BrushInk}"/>
-
-            <Rectangle Height="1" Fill="{DynamicResource BrushRule}" Margin="0,10,0,16"/>
-
-            <TextBlock x:Name="LabelText"
-                       Style="{DynamicResource FieldLabel}" TextWrapping="Wrap"/>
-
-            <TextBox x:Name="InputBox"
-                     Style="{DynamicResource DarkTextBox}"
-                     Margin="0,0,0,14"/>
-
+    <Grid>
+        <Border x:Name="ShellBorder"
+                Style="{StaticResource DkDialogShell}"
+                SizeChanged="ShellBorder_SizeChanged">
             <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="10"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+                <!-- Lớp nền tối phủ đều dialog. -->
+                <Border Background="#F01A1730" IsHitTestVisible="False"/>
 
-                <Button Grid.Column="0" Content="Hủy"
-                        Click="Cancel_Click"
-                        Style="{DynamicResource ButtonSecondary}"/>
+                <StackPanel Margin="24,18,24,22">
 
-                <Button Grid.Column="2" Content="Đồng ý"
-                        Click="Confirm_Click"
-                        Style="{DynamicResource ButtonPrimary}"/>
+                    <!-- ===== TITLE BAR (kéo được) ===== -->
+                    <Grid x:Name="TitleBar"
+                          Background="Transparent"
+                          Height="36"
+                          MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                            <Path Data="{StaticResource IconEdit}"
+                                  Width="16" Height="16"
+                                  Stroke="{StaticResource HomeGold}"
+                                  StrokeThickness="1.7"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,10,0"/>
+                            <!-- TitleText: nội dung do code-behind gán, KHÔNG đổi. -->
+                            <TextBlock x:Name="TitleText"
+                                       FontFamily="{StaticResource FontSans}"
+                                       FontSize="20"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource HomeTextOnDark}"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+
+                        <Button Grid.Column="1"
+                                Style="{StaticResource DkDialogCloseButton}"
+                                Click="Close_Click"
+                                ToolTip="Đóng"/>
+                    </Grid>
+
+                    <Rectangle Height="1"
+                               Fill="{StaticResource HomeGlassBorder}"
+                               Margin="0,10,0,18"/>
+
+                    <!-- Label: do code-behind gán nội dung + wrap nhiều dòng. -->
+                    <TextBlock x:Name="LabelText"
+                               Style="{StaticResource DkFieldLabel}"
+                               TextWrapping="Wrap"/>
+
+                    <!-- InputBox: giữ nguyên x:Name. Tag = placeholder do
+                         code-behind gán. DkTextBox hiển thị Tag khi rỗng. -->
+                    <TextBox x:Name="InputBox"
+                             Style="{StaticResource DkTextBox}"
+                             Margin="0,0,0,18"/>
+
+                    <!-- ===== ACTIONS ===== -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Grid.Column="0"
+                                Content="Hủy"
+                                Click="Cancel_Click"
+                                Style="{StaticResource DkButtonSecondary}"/>
+
+                        <Button Grid.Column="2"
+                                Content="Đồng ý"
+                                Click="Confirm_Click"
+                                Style="{StaticResource DkButtonPrimary}"/>
+                    </Grid>
+                </StackPanel>
             </Grid>
-        </StackPanel>
-    </Border>
+        </Border>
+    </Grid>
 </Window>

@@ -175,4 +175,75 @@
     <SolidColorBrush x:Key="LbAvatarBg"        Color="#26FFFFFF"/>
     <SolidColorBrush x:Key="LbAvatarBorder"    Color="#33FFFFFF"/>
 
+    <!-- =========================================================
+         NEW (GĐ1) — DIFFICULTY THEMES
+         Bổ sung brush cho từng độ khó: Easy / Medium / Hard.
+         KHÔNG sửa bất kỳ key cũ nào ở trên.
+
+         Quy ước tên:
+           Diff<Level>Backdrop     — gradient nền dự phòng
+           Diff<Level>Overlay      — lớp phủ tối (đặt trên ảnh)
+           Diff<Level>Accent       — màu nhấn chính (đặc)
+           Diff<Level>AccentSoft   — màu nhấn mờ (~15% alpha)
+           Diff<Level>Glow         — màu glow cho DropShadowEffect
+           Diff<Level>Border       — màu viền (50% alpha)
+
+         Dùng cho:
+           - DifficultyBackdrop (Shared/Controls)
+           - Chip độ khó (DkChip + Tag="Easy|Medium|Hard")
+           - Nút nhấn trong phòng (DkButtonPrimary + Tag)
+           - Thẻ chọn độ khó ở dialog Lobby / SetSelection
+         ========================================================= -->
+
+    <!-- ================= EASY — rừng đêm / ngọc lục bảo ================= -->
+    <LinearGradientBrush x:Key="DiffEasyBackdrop" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#04201C" Offset="0"/>
+        <GradientStop Color="#063B30" Offset="0.55"/>
+        <GradientStop Color="#0B5A45" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="DiffEasyOverlay" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#6602211B" Offset="0"/>
+        <GradientStop Color="#B30A2018" Offset="1"/>
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="DiffEasyAccent"     Color="#34D399"/>
+    <SolidColorBrush x:Key="DiffEasyAccentSoft" Color="#2634D399"/>
+    <SolidColorBrush x:Key="DiffEasyGlow"       Color="#CC34D399"/>
+    <SolidColorBrush x:Key="DiffEasyBorder"     Color="#8034D399"/>
+
+    <!-- ================= MEDIUM — hoàng hôn hổ phách ================= -->
+    <LinearGradientBrush x:Key="DiffMediumBackdrop" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#1F1505" Offset="0"/>
+        <GradientStop Color="#3A2A08" Offset="0.55"/>
+        <GradientStop Color="#5A3E0C" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="DiffMediumOverlay" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#66261B08" Offset="0"/>
+        <GradientStop Color="#B33A260A" Offset="1"/>
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="DiffMediumAccent"     Color="#FBBF24"/>
+    <SolidColorBrush x:Key="DiffMediumAccentSoft" Color="#26FBBF24"/>
+    <SolidColorBrush x:Key="DiffMediumGlow"       Color="#CCFBBF24"/>
+    <SolidColorBrush x:Key="DiffMediumBorder"     Color="#80FBBF24"/>
+
+    <!-- ================= HARD — lò rèn / dung nham đỏ thẫm ================= -->
+    <LinearGradientBrush x:Key="DiffHardBackdrop" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#1A0505" Offset="0"/>
+        <GradientStop Color="#3B0A0A" Offset="0.55"/>
+        <GradientStop Color="#5C0F12" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="DiffHardOverlay" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#661F0505" Offset="0"/>
+        <GradientStop Color="#B33A0A0A" Offset="1"/>
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="DiffHardAccent"     Color="#F87171"/>
+    <SolidColorBrush x:Key="DiffHardAccentSoft" Color="#26F87171"/>
+    <SolidColorBrush x:Key="DiffHardGlow"       Color="#CCF87171"/>
+    <SolidColorBrush x:Key="DiffHardBorder"     Color="#80F87171"/>
+
 </ResourceDictionary>

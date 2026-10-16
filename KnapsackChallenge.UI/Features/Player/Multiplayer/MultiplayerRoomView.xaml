@@ -3,347 +3,735 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:shared="clr-namespace:KnapsackChallenge.UI.Shared.Controls"
              mc:Ignorable="d"
-             d:DesignHeight="620" d:DesignWidth="900"
-             Background="{DynamicResource BrushBackground}">
+             d:DesignHeight="720" d:DesignWidth="1200"
+             Background="Transparent">
 
     <UserControl.Resources>
+
+        <!-- Row style kế thừa DkListRow + accent bar màu theo DifficultyKey. -->
         <Style x:Key="RoomPlayerRow" TargetType="DataGridRow"
-               BasedOn="{StaticResource GridRow}"/>
-        <Style x:Key="MiniGridButton" TargetType="Button" BasedOn="{StaticResource ButtonMini}"/>
+               BasedOn="{StaticResource DkListRow}">
+            <Setter Property="Height" Value="52"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridRow">
+                        <Border x:Name="bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{StaticResource LbRowDivider}"
+                                BorderThickness="0,0,0,1">
+                            <Grid>
+                                <Border x:Name="accentBar"
+                                        Width="4"
+                                        HorizontalAlignment="Left"
+                                        Background="Transparent"
+                                        IsHitTestVisible="False"/>
+                                <DataGridCellsPresenter ItemsPanel="{TemplateBinding ItemsPanel}"
+                                                        SnapsToDevicePixels="True"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background"
+                                        Value="{StaticResource LbRowHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="bd" Property="Background"
+                                        Value="{StaticResource LbRowSelected}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Mini pill button cho cột "Mời ra". -->
+        <Style x:Key="MiniGridButton" TargetType="Button"
+               BasedOn="{StaticResource DkButtonSecondary}">
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
+        </Style>
+
     </UserControl.Resources>
 
-    <Grid Margin="20,16,20,20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <!-- =========================================================
+         NỀN động theo độ khó của phòng + nội dung.
+         ========================================================= -->
+    <Grid>
+        <shared:DifficultyBackdrop Difficulty="{Binding DifficultyKey}"/>
 
-        <!-- ============== HEADER ============== -->
-        <Border Grid.Row="0"
-                Background="{DynamicResource BrushSurface}"
-                BorderBrush="{DynamicResource BrushRule}"
-                BorderThickness="1"
-                CornerRadius="2"
-                Padding="16,12"
-                Margin="0,0,0,12">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+        <Grid Margin="24,20,24,24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <!-- 0: Header -->
+                <RowDefinition Height="Auto"/>
+                <!-- 1: Banner -->
+                <RowDefinition Height="*"/>
+                <!-- 2: Body (players + host panel) -->
+            </Grid.RowDefinitions>
 
-                <StackPanel Grid.Column="0">
-                    <TextBlock Text="Mã phòng"
-                               FontFamily="{DynamicResource FontSans}"
-                               FontSize="{DynamicResource FontSizeCaption}"
-                               Foreground="{DynamicResource BrushInkMuted}"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                        <TextBlock Text="{Binding RoomCode, Mode=OneWay}"
-                                   FontFamily="{DynamicResource FontMono}"
-                                   FontSize="22"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource BrushInk}"
-                                   VerticalAlignment="Center"/>
-                        <Button Command="{Binding CopyCodeCommand}"
-                                Style="{DynamicResource ButtonGhost}"
-                                Padding="8,4"
-                                Margin="8,0,0,0"
-                                ToolTip="Copy mã phòng">
-                            <TextBlock Text="Copy" FontSize="11"/>
-                        </Button>
-                    </StackPanel>
-                </StackPanel>
-
-                <StackPanel Grid.Column="1" Margin="24,0"
-                            VerticalAlignment="Center">
-                    <TextBlock Text="{Binding SetName, Mode=OneWay}"
-                               FontFamily="{DynamicResource FontSans}"
-                               FontSize="{DynamicResource FontSizeTitle}"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource BrushInk}"
-                               TextTrimming="CharacterEllipsis"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                        <Border Style="{DynamicResource StampNeutral}" Margin="0,0,6,0">
-                            <TextBlock Text="{Binding Difficulty, Mode=OneWay}"
-                                       Style="{StaticResource MonoCaptionTextStyle}"
-                                       Foreground="{DynamicResource BrushInkMuted}"/>
-                        </Border>
-                        <Border Style="{DynamicResource StampNeutral}" Margin="0,0,6,0">
-                            <TextBlock Style="{StaticResource MonoCaptionTextStyle}"
-                                       Foreground="{DynamicResource BrushInkMuted}">
-                                <Run Text="Max "/>
-                                <Run Text="{Binding MaxWeight, Mode=OneWay}"/>
-                            </TextBlock>
-                        </Border>
-                        <Border Style="{DynamicResource StampNeutral}">
-                            <TextBlock Style="{StaticResource MonoCaptionTextStyle}"
-                                       Foreground="{DynamicResource BrushInkMuted}">
-                                <Run Text="⏱ "/>
-                                <Run Text="{Binding TimeLimitText, Mode=OneWay}"/>
-                            </TextBlock>
-                        </Border>
-                    </StackPanel>
-                </StackPanel>
-
-                <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                    <Border Padding="10,5" BorderThickness="1" CornerRadius="2"
-                            Background="Transparent"
-                            BorderBrush="{DynamicResource BrushAccent}"
-                            HorizontalAlignment="Right">
-                        <TextBlock Text="{Binding StatusText, Mode=OneWay}"
-                                   Style="{StaticResource MonoCaptionTextStyle}"
-                                   Foreground="{DynamicResource BrushAccent}"/>
-                    </Border>
-                    <TextBlock Text="{Binding CreatedAtText, Mode=OneWay}"
-                               FontFamily="{DynamicResource FontMono}"
-                               FontSize="{DynamicResource FontSizeCaption}"
-                               Foreground="{DynamicResource BrushInkMuted}"
-                               HorizontalAlignment="Right"
-                               Margin="0,4,0,0"/>
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <!-- ============== BANNERS + HINT ============== -->
-        <Grid Grid.Row="1" MinHeight="42" Margin="0,0,0,12">
-            <Border Style="{DynamicResource InfoBanner}" Margin="0" VerticalAlignment="Top">
-                <TextBlock Text="{Binding InfoMessage, Mode=OneWay}"
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="{DynamicResource FontSizeSmall}"
-                           Foreground="{DynamicResource BrushSuccess}"
-                           TextWrapping="Wrap"/>
-            </Border>
-            <Border Style="{DynamicResource ErrorBanner}" Margin="0" VerticalAlignment="Top">
-                <TextBlock Text="{Binding ErrorMessage, Mode=OneWay}"
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="{DynamicResource FontSizeSmall}"
-                           Foreground="{DynamicResource BrushDanger}"
-                           TextWrapping="Wrap"/>
-            </Border>
-        </Grid>
-
-        <!-- ============== BODY ============== -->
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="16"/>
-                <ColumnDefinition Width="360"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- PLAYER LIST -->
-            <Border Grid.Column="0" Style="{DynamicResource Card}" Padding="0">
+            <!-- =========================================================
+                 ROW 0 — HEADER: mã phòng + copy + bộ đề + chips + status
+                 ========================================================= -->
+            <Border Grid.Row="0"
+                    Background="{StaticResource HomeGlassFill}"
+                    BorderBrush="{StaticResource HomeGlassBorder}"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    Padding="20,14"
+                    Margin="0,0,0,14">
                 <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                    <Border Grid.Row="0"
-                            BorderBrush="{DynamicResource BrushRule}"
-                            BorderThickness="0,0,0,1"
-                            Padding="12,10">
-                        <Grid>
-                            <TextBlock Text="Người chơi trong phòng"
-                                       FontFamily="{DynamicResource FontSans}"
-                                       FontSize="{DynamicResource FontSizeCaption}"
+                    <!-- Cột trái: mã phòng + nút Copy -->
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock Text="MÃ PHÒNG"
+                                   Style="{StaticResource DkLabel}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <TextBlock Text="{Binding RoomCode, Mode=OneWay}"
+                                       FontFamily="{DynamicResource FontMono}"
+                                       FontSize="22"
                                        FontWeight="SemiBold"
-                                       Foreground="{DynamicResource BrushInkMuted}"/>
-                            <TextBlock FontFamily="{DynamicResource FontMono}"
-                                       FontSize="{DynamicResource FontSizeCaption}"
-                                       Foreground="{DynamicResource BrushInkMuted}"
-                                       HorizontalAlignment="Right">
-                                <Run Text="{Binding Players.Count, Mode=OneWay}"/>
-                                <Run Text=" / "/>
-                                <Run Text="{Binding MaxPlayers, Mode=OneWay}"/>
+                                       Foreground="{StaticResource HomeTextOnDark}"
+                                       VerticalAlignment="Center"/>
+                            <Button Command="{Binding CopyCodeCommand}"
+                                    Style="{StaticResource DkButtonGhost}"
+                                    Margin="8,0,0,0"
+                                    Padding="8,4"
+                                    ToolTip="Copy mã phòng">
+                                <TextBlock Text="Copy"
+                                           FontSize="{StaticResource FontSizeCaption}"
+                                           Foreground="{StaticResource HomeGold}"/>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Cột giữa: bộ đề + chips độ khó / max / thời gian -->
+                    <StackPanel Grid.Column="1" Margin="28,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding SetName, Mode=OneWay}"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="20"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource HomeTextOnDark}"
+                                   TextTrimming="CharacterEllipsis">
+                            <TextBlock.Effect>
+                                <DropShadowEffect Color="Black"
+                                                  BlurRadius="10"
+                                                  ShadowDepth="0"
+                                                  Opacity="0.45"/>
+                            </TextBlock.Effect>
+                        </TextBlock>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <!-- Chip độ khó — màu theo DifficultyKey -->
+                            <Border CornerRadius="10"
+                                    Padding="10,3"
+                                    BorderThickness="1"
+                                    Margin="0,0,8,0">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#26FFFFFF"/>
+                                        <Setter Property="BorderBrush" Value="#33FFFFFF"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding DifficultyKey}" Value="Easy">
+                                                <Setter Property="Background" Value="#2634D399"/>
+                                                <Setter Property="BorderBrush" Value="#8034D399"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding DifficultyKey}" Value="Medium">
+                                                <Setter Property="Background" Value="#26FBBF24"/>
+                                                <Setter Property="BorderBrush" Value="#80FBBF24"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding DifficultyKey}" Value="Hard">
+                                                <Setter Property="Background" Value="#26F87171"/>
+                                                <Setter Property="BorderBrush" Value="#80F87171"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Width="12" Height="12"
+                                          Stretch="Uniform"
+                                          StrokeThickness="1.6"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,6,0">
+                                        <Path.Style>
+                                            <Style TargetType="Path">
+                                                <Setter Property="Data" Value="{StaticResource IconTarget}"/>
+                                                <Setter Property="Stroke" Value="{StaticResource HomeTextOnDark}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding DifficultyKey}" Value="Easy">
+                                                        <Setter Property="Data" Value="{StaticResource IconLeaf}"/>
+                                                        <Setter Property="Stroke" Value="#6EE7B7"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding DifficultyKey}" Value="Medium">
+                                                        <Setter Property="Data" Value="{StaticResource IconTarget}"/>
+                                                        <Setter Property="Stroke" Value="#FCD34D"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding DifficultyKey}" Value="Hard">
+                                                        <Setter Property="Data" Value="{StaticResource IconFlame}"/>
+                                                        <Setter Property="Stroke" Value="#FCA5A5"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Path.Style>
+                                    </Path>
+                                    <TextBlock Text="{Binding Difficulty, Mode=OneWay}"
+                                               FontFamily="{DynamicResource FontSans}"
+                                               FontSize="{StaticResource FontSizeCaption}"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="{StaticResource HomeTextOnDark}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding DifficultyKey}" Value="Easy">
+                                                        <Setter Property="Foreground" Value="#6EE7B7"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding DifficultyKey}" Value="Medium">
+                                                        <Setter Property="Foreground" Value="#FCD34D"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding DifficultyKey}" Value="Hard">
+                                                        <Setter Property="Foreground" Value="#FCA5A5"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Chip Max weight -->
+                            <Border CornerRadius="10"
+                                    Padding="10,3"
+                                    BorderThickness="1"
+                                    Background="#1FFFFFFF"
+                                    BorderBrush="#33FFFFFF"
+                                    Margin="0,0,8,0">
+                                <TextBlock FontFamily="{DynamicResource FontMono}"
+                                           FontSize="{StaticResource FontSizeCaption}"
+                                           Foreground="{StaticResource HomeTextOnDarkMuted}">
+                                    <Run Text="Max "/>
+                                    <Run Text="{Binding MaxWeight, Mode=OneWay}"/>
+                                </TextBlock>
+                            </Border>
+
+                            <!-- Chip thời gian -->
+                            <Border CornerRadius="10"
+                                    Padding="10,3"
+                                    BorderThickness="1"
+                                    Background="#1FFFFFFF"
+                                    BorderBrush="#33FFFFFF">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="{StaticResource IconClock}"
+                                          Width="12" Height="12"
+                                          Stretch="Uniform"
+                                          Stroke="{StaticResource HomeTextOnDarkMuted}"
+                                          StrokeThickness="1.6"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,6,0"/>
+                                    <TextBlock Text="{Binding TimeLimitText, Mode=OneWay}"
+                                               FontFamily="{DynamicResource FontMono}"
+                                               FontSize="{StaticResource FontSizeCaption}"
+                                               Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Cột phải: chip status + created time -->
+                    <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                        <Border CornerRadius="12"
+                                Padding="12,5"
+                                BorderThickness="1"
+                                HorizontalAlignment="Right">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="#2634D399"/>
+                                    <Setter Property="BorderBrush" Value="#8034D399"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding StatusKey}" Value="Waiting">
+                                            <Setter Property="Background" Value="#2634D399"/>
+                                            <Setter Property="BorderBrush" Value="#8034D399"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding StatusKey}" Value="Playing">
+                                            <Setter Property="Background" Value="#26FBBF24"/>
+                                            <Setter Property="BorderBrush" Value="#80FBBF24"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding StatusKey}" Value="Finished">
+                                            <Setter Property="Background" Value="#26FFFFFF"/>
+                                            <Setter Property="BorderBrush" Value="#33FFFFFF"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="{Binding StatusText, Mode=OneWay}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontFamily" Value="{DynamicResource FontSans}"/>
+                                        <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Foreground" Value="#6EE7B7"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding StatusKey}" Value="Playing">
+                                                <Setter Property="Foreground" Value="#FCD34D"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding StatusKey}" Value="Finished">
+                                                <Setter Property="Foreground" Value="{StaticResource HomeTextOnDarkMuted}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
                             </TextBlock>
-                        </Grid>
-                    </Border>
+                        </Border>
 
-                    <DataGrid Grid.Row="1"
-                              ItemsSource="{Binding Players}"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              SelectionMode="Single"
-                              SelectionUnit="FullRow"
-                              CanUserAddRows="False"
-                              CanUserResizeRows="False"
-                              CanUserResizeColumns="False"
-                              HeadersVisibility="Column"
-                              GridLinesVisibility="None"
-                              Background="Transparent"
-                              BorderThickness="0"
-                              RowHeight="44"
-                              FontSize="{DynamicResource FontSizeBody}"
-                              Foreground="{DynamicResource BrushInk}"
-                              ColumnHeaderStyle="{DynamicResource GridColumnHeader}"
-                              RowStyle="{StaticResource RoomPlayerRow}"
-                              CellStyle="{DynamicResource GridCell}">
-                        <DataGrid.Columns>
-
-                            <DataGridTemplateColumn Header="NGƯỜI CHƠI" Width="*">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Username}"
-                                                       FontFamily="{DynamicResource FontSans}"
-                                                       FontSize="{DynamicResource FontSizeBody}"
-                                                       Foreground="{DynamicResource BrushInk}"
-                                                       VerticalAlignment="Center"/>
-                                            <Border Padding="6,2" BorderThickness="1" CornerRadius="2"
-                                                    Background="Transparent"
-                                                    BorderBrush="{DynamicResource BrushAccent}"
-                                                    Margin="8,0,0,0"
-                                                    VerticalAlignment="Center"
-                                                    Visibility="{Binding HostBadge,
-                                                                 Converter={StaticResource BoolToVisibility},
-                                                                 ConverterParameter=nonempty}">
-                                                <TextBlock Text="HOST"
-                                                           Style="{StaticResource MonoCaptionTextStyle}"
-                                                           Foreground="{DynamicResource BrushAccent}"/>
-                                            </Border>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-
-                            <DataGridTemplateColumn Header="TRẠNG THÁI" Width="110">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Border HorizontalAlignment="Left"
-                                                Padding="6,2" BorderThickness="1" CornerRadius="2"
-                                                Background="Transparent">
-                                            <Border.Style>
-                                                <Style TargetType="Border">
-                                                    <Setter Property="BorderBrush"
-                                                            Value="{DynamicResource BrushInkMuted}"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsOnline}" Value="True">
-                                                            <Setter Property="BorderBrush"
-                                                                    Value="{DynamicResource BrushSuccess}"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
-                                            <TextBlock Text="{Binding StatusText}">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock"
-                                                           BasedOn="{StaticResource MonoCaptionTextStyle}">
-                                                        <Setter Property="Foreground"
-                                                                Value="{DynamicResource BrushInkMuted}"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsOnline}" Value="True">
-                                                                <Setter Property="Foreground"
-                                                                        Value="{DynamicResource BrushSuccess}"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </Border>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-
-                            <DataGridTemplateColumn Header="" Width="90">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Content="Mời ra"
-                                                Style="{DynamicResource MiniGridButton}"
-                                                HorizontalAlignment="Left"
-                                                Command="{Binding DataContext.KickPlayerCommand,
-                                                          RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                CommandParameter="{Binding}"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-
-                        </DataGrid.Columns>
-                    </DataGrid>
+                        <TextBlock Text="{Binding CreatedAtText, Mode=OneWay}"
+                                   FontFamily="{DynamicResource FontMono}"
+                                   FontSize="{StaticResource FontSizeCaption}"
+                                   Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                   HorizontalAlignment="Right"
+                                   Margin="0,6,0,0"/>
+                    </StackPanel>
                 </Grid>
             </Border>
 
-            <!-- HOST PANEL -->
-            <Border Grid.Column="2" Style="{DynamicResource Card}" Padding="18">
-                <StackPanel>
-                    <TextBlock Text="Điều khiển phòng"
-                               FontFamily="{DynamicResource FontSans}"
-                               FontSize="{DynamicResource FontSizeTitle}"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource BrushInk}"/>
-
-                    <Rectangle Height="1" Fill="{DynamicResource BrushRule}" Margin="0,10,0,16"/>
-
-                    <!-- Non-host: hint text -->
-                    <Border Padding="12,10"
-                            Background="{DynamicResource BrushSurfaceAlt}"
-                            BorderBrush="{DynamicResource BrushRule}"
-                            BorderThickness="1" CornerRadius="2"
-                            Visibility="{Binding IsNotHost,
-                                         Converter={StaticResource BoolToVisibility}}">
-                        <TextBlock Text="{Binding HostHintText}"
+            <!-- =========================================================
+                 ROW 1 — BANNER Info / Error (glass toast)
+                 ========================================================= -->
+            <Grid Grid.Row="1" MinHeight="42" Margin="0,0,0,14">
+                <Border Style="{StaticResource DkToastInfo}"
+                        VerticalAlignment="Top"
+                        Visibility="{Binding InfoMessage,
+                                     Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{StaticResource IconCheck}"
+                              Width="14" Height="14"
+                              Stroke="#34D399"
+                              StrokeThickness="2.2"
+                              Stretch="Uniform"
+                              VerticalAlignment="Center"
+                              Margin="0,0,10,0"/>
+                        <TextBlock Text="{Binding InfoMessage, Mode=OneWay}"
                                    FontFamily="{DynamicResource FontSans}"
                                    FontSize="{DynamicResource FontSizeSmall}"
-                                   Foreground="{DynamicResource BrushInkMuted}"
-                                   TextWrapping="Wrap"/>
-                    </Border>
-
-                    <!-- Host: change set + start -->
-                    <StackPanel Visibility="{Binding IsHost,
-                                             Converter={StaticResource BoolToVisibility}}">
-
-                        <TextBlock Text="Bộ đề của phòng"
-                                   Style="{DynamicResource FieldLabel}"/>
-
-                        <WrapPanel Margin="0,0,0,8">
-                            <RadioButton Content="🌱 Dễ"
-                                         GroupName="RoomSetDiff"
-                                         Style="{DynamicResource FilterTabRadio}"
-                                         IsChecked="{Binding IsSetFilterEasy, Mode=TwoWay}"/>
-                            <RadioButton Content="⚖️ Bình thường"
-                                         GroupName="RoomSetDiff"
-                                         Style="{DynamicResource FilterTabRadio}"
-                                         IsChecked="{Binding IsSetFilterMedium, Mode=TwoWay}"/>
-                            <RadioButton Content="🔥 Khó"
-                                         GroupName="RoomSetDiff"
-                                         Style="{DynamicResource FilterTabRadio}"
-                                         IsChecked="{Binding IsSetFilterHard, Mode=TwoWay}"/>
-                        </WrapPanel>
-
-                        <ComboBox ItemsSource="{Binding FilteredSets}"
-                                  SelectedItem="{Binding SelectedSet, Mode=TwoWay}"
-                                  DisplayMemberPath="DisplayText"
-                                  IsEnabled="{Binding CanChangeSet}"
-                                  Style="{DynamicResource DarkComboBox}"
-                                  Height="34"
-                                  Margin="0,0,0,8"/>
-
-                        <Button Command="{Binding RandomSetCommand}"
-                                Content="🎲 Random trong mức này"
-                                Style="{DynamicResource ButtonSecondary}"
-                                Margin="0,0,0,8"/>
-
-                        <Button Command="{Binding ChangeSetCommand}"
-                                Content="Áp dụng bộ đề"
-                                Style="{DynamicResource ButtonSecondary}"
-                                Margin="0,0,0,14"/>
-
-                        <Rectangle Height="1" Fill="{DynamicResource BrushRule}" Margin="0,0,0,14"/>
-
-                        <TextBlock Text="{Binding HostHintText}"
-                                   FontFamily="{DynamicResource FontSans}"
-                                   FontSize="{DynamicResource FontSizeSmall}"
-                                   Foreground="{DynamicResource BrushInkMuted}"
+                                   Foreground="#6EE7B7"
                                    TextWrapping="Wrap"
-                                   Margin="0,0,0,8"/>
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
 
-                        <Button Command="{Binding StartGameCommand}"
-                                Style="{DynamicResource ButtonPrimary}"
+                <Border Style="{StaticResource DkToastError}"
+                        VerticalAlignment="Top"
+                        Visibility="{Binding ErrorMessage,
+                                     Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{StaticResource IconWarning}"
+                              Width="14" Height="14"
+                              Stroke="#F87171"
+                              StrokeThickness="2.0"
+                              Stretch="Uniform"
+                              VerticalAlignment="Center"
+                              Margin="0,0,10,0"/>
+                        <TextBlock Text="{Binding ErrorMessage, Mode=OneWay}"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   Foreground="#FCA5A5"
+                                   TextWrapping="Wrap"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- =========================================================
+                 ROW 2 — BODY: Players list (trái) + Host panel (phải)
+                 ========================================================= -->
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="380"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- ============ PLAYER LIST ============ -->
+                <Border Grid.Column="0"
+                        Background="{StaticResource HomeGlassFill}"
+                        BorderBrush="{StaticResource HomeGlassBorder}"
+                        BorderThickness="1"
+                        CornerRadius="14"
+                        Padding="0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Sub-header: title + count -->
+                        <Border Grid.Row="0"
+                                BorderBrush="{StaticResource LbRowDivider}"
+                                BorderThickness="0,0,0,1"
+                                Padding="16,12">
+                            <Grid>
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="{StaticResource IconPlayers}"
+                                          Width="16" Height="16"
+                                          Stroke="{StaticResource HomeTextOnDark}"
+                                          StrokeThickness="1.5"
+                                          Stretch="Uniform"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,8,0"/>
+                                    <TextBlock Text="Người chơi trong phòng"
+                                               FontFamily="{DynamicResource FontSans}"
+                                               FontSize="{StaticResource FontSizeSmall}"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource HomeTextOnDark}"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <TextBlock FontFamily="{DynamicResource FontMono}"
+                                           FontSize="{StaticResource FontSizeCaption}"
+                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center">
+                                    <Run Text="{Binding Players.Count, Mode=OneWay}"/>
+                                    <Run Text=" / "/>
+                                    <Run Text="{Binding MaxPlayers, Mode=OneWay}"/>
+                                </TextBlock>
+                            </Grid>
+                        </Border>
+
+                        <!-- DataGrid -->
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding Players}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  SelectionMode="Single"
+                                  SelectionUnit="FullRow"
+                                  CanUserAddRows="False"
+                                  CanUserResizeRows="False"
+                                  CanUserResizeColumns="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="Transparent"
+                                  BorderThickness="0"
+                                  RowHeight="52"
+                                  FontSize="{DynamicResource FontSizeBody}"
+                                  Foreground="{StaticResource HomeTextOnDark}"
+                                  ColumnHeaderStyle="{StaticResource DkListHeader}"
+                                  RowStyle="{StaticResource RoomPlayerRow}"
+                                  CellStyle="{StaticResource DkListCell}"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <DataGrid.Columns>
+
+                                <!-- NGƯỜI CHƠI: avatar + username + badge HOST -->
+                                <DataGridTemplateColumn Header="NGƯỜI CHƠI" Width="*" MinWidth="200">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <!-- Avatar tròn 32x32 -->
+                                                <Border Width="32" Height="32" CornerRadius="16"
+                                                        Background="{StaticResource LbAvatarBg}"
+                                                        BorderBrush="{StaticResource LbAvatarBorder}"
+                                                        BorderThickness="1"
+                                                        Margin="0,0,12,0"
+                                                        VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding AvatarInitial}"
+                                                               FontFamily="{DynamicResource FontSans}"
+                                                               FontSize="{DynamicResource FontSizeSmall}"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{StaticResource HomeTextOnDark}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
+
+                                                <TextBlock Text="{Binding Username}"
+                                                           FontFamily="{DynamicResource FontSans}"
+                                                           FontSize="{DynamicResource FontSizeBody}"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{StaticResource HomeTextOnDark}"
+                                                           VerticalAlignment="Center"/>
+
+                                                <!-- Badge HOST — chỉ hiện khi IsHost=True.
+                                                     (FIX bug cũ ConverterParameter=nonempty.) -->
+                                                <Border Padding="6,2"
+                                                        CornerRadius="6"
+                                                        BorderThickness="1"
+                                                        Background="#33FF9A3D"
+                                                        BorderBrush="#80FF9A3D"
+                                                        Margin="8,0,0,0"
+                                                        VerticalAlignment="Center">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsHost}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="HOST"
+                                                               FontFamily="{DynamicResource FontMono}"
+                                                               FontSize="{StaticResource FontSizeCaption}"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="#FFB981"/>
+                                                </Border>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!-- TRẠNG THÁI: chip Online / Offline / Đã rời -->
+                                <DataGridTemplateColumn Header="TRẠNG THÁI" Width="130">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border CornerRadius="10"
+                                                    Padding="10,3"
+                                                    BorderThickness="1"
+                                                    VerticalAlignment="Center"
+                                                    HorizontalAlignment="Left">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#26FFFFFF"/>
+                                                        <Setter Property="BorderBrush" Value="#33FFFFFF"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsOnline}" Value="True">
+                                                                <Setter Property="Background" Value="#2634D399"/>
+                                                                <Setter Property="BorderBrush" Value="#8034D399"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock Text="{Binding StatusText}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="FontFamily" Value="{DynamicResource FontSans}"/>
+                                                            <Setter Property="FontSize" Value="{DynamicResource FontSizeCaption}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                            <Setter Property="Foreground" Value="{StaticResource HomeTextOnDarkMuted}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsOnline}" Value="True">
+                                                                    <Setter Property="Foreground" Value="#6EE7B7"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Border>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!-- MỜI RA: nút nhỏ -->
+                                <DataGridTemplateColumn Header="" Width="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Mời ra"
+                                                    Style="{StaticResource MiniGridButton}"
+                                                    HorizontalAlignment="Left"
+                                                    Command="{Binding DataContext.KickPlayerCommand,
+                                                              RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ============ HOST PANEL ============ -->
+                <Border Grid.Column="2"
+                        Background="{StaticResource HomeGlassFill}"
+                        BorderBrush="{StaticResource HomeGlassBorder}"
+                        BorderThickness="1"
+                        CornerRadius="14"
+                        Padding="20">
+                    <StackPanel>
+                        <TextBlock Text="Điều khiển phòng"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{StaticResource FontSizeTitle}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource HomeTextOnDark}"/>
+
+                        <Rectangle Height="1"
+                                   Fill="{StaticResource HomeGlassBorder}"
+                                   Margin="0,12,0,16"/>
+
+                        <!-- Non-host: hint -->
+                        <Border Padding="14,12"
+                                CornerRadius="10"
+                                Background="#1FFFFFFF"
+                                BorderBrush="{StaticResource HomeGlassBorder}"
+                                BorderThickness="1"
+                                Visibility="{Binding IsNotHost,
+                                             Converter={StaticResource BoolToVisibility}}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource IconClock}"
+                                      Width="16" Height="16"
+                                      Stroke="{StaticResource HomeTextOnDarkMuted}"
+                                      StrokeThickness="1.6"
+                                      Stretch="Uniform"
+                                      VerticalAlignment="Top"
+                                      Margin="0,0,10,0"/>
+                                <TextBlock Text="{Binding HostHintText}"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                           TextWrapping="Wrap"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Host: change set + start -->
+                        <StackPanel Visibility="{Binding IsHost,
+                                                 Converter={StaticResource BoolToVisibility}}">
+
+                            <TextBlock Text="Bộ đề của phòng"
+                                       Style="{StaticResource DkFieldLabel}"/>
+
+                            <!-- Filter chip bộ đề theo độ khó -->
+                            <WrapPanel Margin="0,0,0,10">
+                                <RadioButton Content="Dễ"
+                                             GroupName="RoomSetDiff"
+                                             Tag="Easy"
+                                             Style="{StaticResource DkPillRadio}"
+                                             IsChecked="{Binding IsSetFilterEasy, Mode=TwoWay}"/>
+
+                                <RadioButton Content="Bình thường"
+                                             GroupName="RoomSetDiff"
+                                             Tag="Medium"
+                                             Style="{StaticResource DkPillRadio}"
+                                             IsChecked="{Binding IsSetFilterMedium, Mode=TwoWay}"/>
+
+                                <RadioButton Content="Khó"
+                                             GroupName="RoomSetDiff"
+                                             Tag="Hard"
+                                             Style="{StaticResource DkPillRadio}"
+                                             IsChecked="{Binding IsSetFilterHard, Mode=TwoWay}"/>
+                            </WrapPanel>
+
+                            <!-- ComboBox — ItemTemplate tường minh để tránh ToString. -->
+                            <ComboBox ItemsSource="{Binding FilteredSets}"
+                                      SelectedItem="{Binding SelectedSet, Mode=TwoWay}"
+                                      IsEnabled="{Binding CanChangeSet}"
+                                      Style="{StaticResource DkComboBox}"
+                                      Height="38"
+                                      Margin="0,0,0,10">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding SetName}"
+                                                   FontFamily="{DynamicResource FontSans}"
+                                                   FontSize="{DynamicResource FontSizeSmall}"
+                                                   Foreground="{StaticResource HomeTextOnDark}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+
+                            <Button Command="{Binding RandomSetCommand}"
+                                    Style="{StaticResource DkButtonSecondary}"
+                                    Margin="0,0,0,8">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="{StaticResource IconRefresh}"
+                                          Width="14" Height="14"
+                                          Stroke="{Binding Foreground,
+                                                   RelativeSource={RelativeSource AncestorType=Button}}"
+                                          StrokeThickness="1.6"
+                                          Stretch="Uniform"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,8,0"/>
+                                    <TextBlock Text="Random trong mức này" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <Button Command="{Binding ChangeSetCommand}"
+                                    Content="Áp dụng bộ đề"
+                                    Style="{StaticResource DkButtonSecondary}"
+                                    Margin="0,0,0,16"/>
+
+                            <Rectangle Height="1"
+                                       Fill="{StaticResource HomeGlassBorder}"
+                                       Margin="0,0,0,16"/>
+
+                            <TextBlock Text="{Binding HostHintText}"
+                                       FontFamily="{DynamicResource FontSans}"
+                                       FontSize="{DynamicResource FontSizeSmall}"
+                                       Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,10"/>
+
+                            <!-- Nút Bắt đầu — gradient đổi theo độ khó phòng.
+                                 LƯU Ý: KHÔNG set Style ở attribute trên thẻ <Button>
+                                 (vì đã set trong <Button.Style> bên dưới → tránh
+                                 lỗi MC3024 "Style is set more than once"). -->
+                            <Button Command="{Binding StartGameCommand}"
+                                    Padding="20,13">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource DkButtonPrimary}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding DifficultyKey}" Value="Easy">
+                                                <Setter Property="Background">
+                                                    <Setter.Value>
+                                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                            <GradientStop Color="#34D399" Offset="0"/>
+                                                            <GradientStop Color="#059669" Offset="1"/>
+                                                        </LinearGradientBrush>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding DifficultyKey}" Value="Medium">
+                                                <Setter Property="Background">
+                                                    <Setter.Value>
+                                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                            <GradientStop Color="#FBBF24" Offset="0"/>
+                                                            <GradientStop Color="#D97706" Offset="1"/>
+                                                        </LinearGradientBrush>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding DifficultyKey}" Value="Hard">
+                                                <Setter Property="Background">
+                                                    <Setter.Value>
+                                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                            <GradientStop Color="#F87171" Offset="0"/>
+                                                            <GradientStop Color="#B91C1C" Offset="1"/>
+                                                        </LinearGradientBrush>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="{StaticResource IconChevronRight}"
+                                          Width="14" Height="14"
+                                          Stroke="{Binding Foreground,
+                                                   RelativeSource={RelativeSource AncestorType=Button}}"
+                                          StrokeThickness="1.7"
+                                          Stretch="Uniform"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,8,0"/>
+                                    <TextBlock Text="Bắt đầu ván" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+
+                        <Rectangle Height="1"
+                                   Fill="{StaticResource HomeGlassBorder}"
+                                   Margin="0,20,0,16"/>
+
+                        <!-- Nút Rời phòng — luôn hiển thị -->
+                        <Button Command="{Binding LeaveRoomCommand}"
+                                Style="{StaticResource DkButtonDanger}"
                                 Padding="16,11">
                             <StackPanel Orientation="Horizontal">
-                                <Path Data="{DynamicResource IconChevronRight}"
+                                <Path Data="{StaticResource IconLogout}"
                                       Width="14" Height="14"
                                       Stroke="{Binding Foreground,
                                                RelativeSource={RelativeSource AncestorType=Button}}"
@@ -351,30 +739,12 @@
                                       Stretch="Uniform"
                                       VerticalAlignment="Center"
                                       Margin="0,0,8,0"/>
-                                <TextBlock Text="Bắt đầu ván" VerticalAlignment="Center"/>
+                                <TextBlock Text="Rời phòng" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>
-
-                    <Rectangle Height="1" Fill="{DynamicResource BrushRule}" Margin="0,18,0,14"/>
-
-                    <Button Command="{Binding LeaveRoomCommand}"
-                            Style="{DynamicResource ButtonDanger}"
-                            Padding="16,11">
-                        <StackPanel Orientation="Horizontal">
-                            <Path Data="{DynamicResource IconLogout}"
-                                  Width="14" Height="14"
-                                  Stroke="{Binding Foreground,
-                                           RelativeSource={RelativeSource AncestorType=Button}}"
-                                  StrokeThickness="1.5"
-                                  Stretch="Uniform"
-                                  VerticalAlignment="Center"
-                                  Margin="0,0,8,0"/>
-                            <TextBlock Text="Rời phòng" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-            </Border>
+                </Border>
+            </Grid>
         </Grid>
     </Grid>
 </UserControl>

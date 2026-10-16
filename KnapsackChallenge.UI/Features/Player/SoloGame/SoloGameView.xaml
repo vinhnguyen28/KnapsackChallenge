@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:KnapsackChallenge.UI.Features.Player"
              xmlns:shared="clr-namespace:KnapsackChallenge.UI.Shared"
+             xmlns:backdrop="clr-namespace:KnapsackChallenge.UI.Shared.Controls"
              mc:Ignorable="d"
              d:DesignHeight="700" d:DesignWidth="1200"
              Background="Transparent">
@@ -12,21 +13,9 @@
     <!-- =====================================================================
          SoloGameView (v10 - thiết kế lại tông TỐI/GLASS).
 
-         Ý TƯỞNG:
-         - Nền 5 lớp giống LeaderboardView/HomePage:
-             Rectangle HomeBackdropFallback
-           → Rectangle ImageBrush home-bg.jpg (UniformToFill)
-           → Rectangle HomeOverlay
-           → Ellipse halo cam (góc trên-trái)
-           → Ellipse halo tím (góc dưới-phải)
-         - Toàn bộ control bên trên dùng HomeGlassFill/HomeGlassBorder/HomeTextOnDark,
-           bo góc lớn, không còn dùng theme SÁNG (BrushBackground/ButtonPrimary cũ).
-         - KHÔNG đổi binding nào so với bản cũ; không chạm ViewModel.
-
-         KHẢ NĂNG TÁCH RA DÙNG CHUNG:
-         - Style `SoloItemCardButton` và `SoloGlassPill`/`SoloPrimaryPill` có thể
-           copy nguyên khối sang Themes/ItemCardStyles.xaml để MultiplayerGameView
-           dùng lại. Hiện để local cho gọn (đúng như ghi chú của bạn).
+         GĐ5 - thay 3 lớp nền tĩnh bằng DifficultyBackdrop bind CurrentDifficulty
+         để nền + accent đồng bộ theo độ khó (Easy/Medium/Hard) khi ván đổi.
+         Toàn bộ binding/command/x:Name/style giữ nguyên.
 
          NẾU SAU NÀY BẠN ĐỔI TÔNG MÀU:
          - Cam nhấn: #FF9A3D → #E8590C
@@ -167,11 +156,6 @@
                IsOptimal   → viền xanh #34D399 + badge xanh top-left
                              (IsOptimal đặt SAU IsSelected nên xanh thắng khi cả hai)
                HasResult   → Opacity 0.85, khoá hover (không scale)
-
-             TÁCH RA DÙNG CHUNG:
-               Copy nguyên khối Style này + các Icon geometry cần thiết vào
-               Themes/ItemCardStyles.xaml nếu MultiplayerGameView muốn dùng lại.
-               Khi đó đổi `xmlns:local` cho phù hợp.
              ============================================================ -->
         <Style x:Key="SoloItemCardButton" TargetType="Button">
             <Setter Property="Width" Value="168"/>
@@ -223,8 +207,6 @@
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        RenderOptions.BitmapScalingMode="HighQuality">
-                                    <!-- DropShadow rất nhẹ để icon nổi lên khỏi nền kính.
-                                         Nếu perf có vấn đề với 30+ thẻ, xoá khối Effect này. -->
                                     <Image.Effect>
                                         <DropShadowEffect Color="Black"
                                                           BlurRadius="8"
@@ -599,63 +581,20 @@
         </Style>
 
     </UserControl.Resources>
-
     <!-- =================================================================
-         NỀN 5 LỚP + NỘI DUNG.
-         Grid ngoài không có RowDefinitions -> 1 hàng ngầm định; mọi con
-         chồng lên nhau, con sau vẽ đè con trước.
+         NỀN động + NỘI DUNG.
+         DifficultyBackdrop tự lo 5 lớp cũ; nội dung chồng lên trên.
          ================================================================= -->
     <Grid Background="Transparent">
 
-        <!-- (1) Fallback gradient tím đậm — luôn vẽ trước tiên. -->
-        <Rectangle Fill="{StaticResource HomeBackdropFallback}"/>
-
-        <!-- (2) Ảnh nền home-bg.jpg phủ kín (nếu thiếu file, WPF bỏ qua layer này). -->
-        <Rectangle>
-            <Rectangle.Fill>
-                <ImageBrush ImageSource="pack://application:,,,/Assets/Backgrounds/home-bg.jpg"
-                            Stretch="UniformToFill"
-                            AlignmentX="Center"
-                            AlignmentY="Center"/>
-            </Rectangle.Fill>
-        </Rectangle>
-
-        <!-- (3) Overlay tối để chữ trắng nổi rõ. -->
-        <Rectangle Fill="{StaticResource HomeOverlay}"/>
-
-        <!-- (4) Halo CAM — góc trên-trái, tràn ra ngoài. -->
-        <Ellipse Width="520" Height="520"
-                 HorizontalAlignment="Left"
-                 VerticalAlignment="Top"
-                 Margin="-160,-200,0,0"
-                 Opacity="0.28"
-                 IsHitTestVisible="False">
-            <Ellipse.Fill>
-                <RadialGradientBrush>
-                    <GradientStop Color="#FF9A3D" Offset="0"/>
-                    <GradientStop Color="#00FF9A3D" Offset="1"/>
-                </RadialGradientBrush>
-            </Ellipse.Fill>
-        </Ellipse>
-
-        <!-- (5) Halo TÍM — góc dưới-phải, tràn ra ngoài. -->
-        <Ellipse Width="620" Height="620"
-                 HorizontalAlignment="Right"
-                 VerticalAlignment="Bottom"
-                 Margin="0,0,-180,-260"
-                 Opacity="0.28"
-                 IsHitTestVisible="False">
-            <Ellipse.Fill>
-                <RadialGradientBrush>
-                    <GradientStop Color="#7C6CFF" Offset="0"/>
-                    <GradientStop Color="#007C6CFF" Offset="1"/>
-                </RadialGradientBrush>
-            </Ellipse.Fill>
-        </Ellipse>
+        <!-- (NỀN) Đổi màu + ảnh theo độ khó ván đang chơi.
+             CurrentDifficulty là property có sẵn trong SoloGameViewModel
+             (nhận từ SoloGameDataDto.Difficulty sau khi StartGame). -->
+        <backdrop:DifficultyBackdrop Difficulty="{Binding CurrentDifficulty}"/>
 
         <!-- =============================================================
              NỘI DUNG.
-             Margin ngoài cùng 24,18,24,24 theo yêu cầu.
+             Margin ngoài cùng 24,18,24,24 theo bản gốc.
              ============================================================= -->
         <Grid Margin="24,18,24,24">
             <Grid.RowDefinitions>
@@ -668,15 +607,15 @@
                 <RowDefinition Height="*"/>
                 <!-- 3: lưới vật phẩm -->
                 <RowDefinition Height="Auto"/>
-                <!-- 4: giỏ đồ đã chọn -->
+                <!-- 4: giỏ đồ đã chọn (PHẦN 3/3) -->
                 <RowDefinition Height="Auto"/>
-                <!-- 5: hành động / kết quả -->
+                <!-- 5: hành động / kết quả (PHẦN 3/3) -->
             </Grid.RowDefinitions>
 
             <!-- =========================================================
                  ROW 0: 2 NÚT PILL KÍNH.
-                 - Margin bottom 28: đảm bảo cách xa khối "Bộ đề hiện tại".
-                 - Khoảng cách giữa 2 nút: 12px (Margin phải của nút 1).
+                 Margin bottom 28: cách xa khối "Bộ đề hiện tại".
+                 Khoảng cách giữa 2 nút: 12px.
                  ========================================================= -->
             <StackPanel Grid.Row="0"
                         Orientation="Horizontal"
@@ -733,7 +672,7 @@
                                Margin="0,0,0,6"/>
 
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <!-- Tên bộ đề 26pt, có DropShadow đen nhẹ để nổi khỏi halo. -->
+                        <!-- Tên bộ đề 26pt, drop shadow để nổi khỏi nền động. -->
                         <TextBlock Text="{Binding CurrentSetName}"
                                    FontFamily="{StaticResource FontSans}"
                                    FontSize="26"
@@ -749,7 +688,7 @@
                             </TextBlock.Effect>
                         </TextBlock>
 
-                        <!--  Chip độ khó: 3 biến thể hiện theo DataTrigger.  -->
+                        <!-- Chip độ khó: 3 biến thể hiện theo DataTrigger. -->
                         <Grid Margin="12,0,0,0" VerticalAlignment="Center">
 
                             <!-- Easy: "Dễ" + IconLeaf + xanh #34D399 -->
@@ -818,7 +757,7 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- Hard: "Khó" + IconFlame + đỏ cam #F87171 -->
+                            <!-- Hard: "Khó" + IconFlame + đỏ #F87171 -->
                             <Border CornerRadius="12"
                                     Padding="10,4"
                                     BorderThickness="1"
@@ -852,7 +791,7 @@
                             </Border>
                         </Grid>
 
-                        <!--  Chip đỏ "CHẾ ĐỘ TẠM ĐÓNG" khi SoloModeDisabled=True.  -->
+                        <!-- Chip đỏ "CHẾ ĐỘ TẠM ĐÓNG" khi SoloModeDisabled=True. -->
                         <Border CornerRadius="12"
                                 Padding="10,4"
                                 BorderThickness="1"
@@ -871,8 +810,7 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!--  Cột phải: pill đồng hồ, căn giữa theo chiều dọc.  -->
-                <!-- Khi IsCountdown=True, viền + số đổi sang CAM để kéo mắt người chơi. -->
+                <!-- Cột phải: pill đồng hồ. Viền + số đổi sang CAM khi đếm ngược. -->
                 <Border Grid.Column="1"
                         CornerRadius="14"
                         Padding="18,10"
@@ -928,9 +866,7 @@
 
             <!-- =========================================================
                  ROW 2: BANNERS PlayInfo (xanh) / PlayError (đỏ).
-                 Giữ hành vi cũ: chỉ hiện khi chuỗi không rỗng (nhờ Style
-                 InfoBanner/ErrorBanner cũ không dùng nữa — định nghĩa lại
-                 local bên dưới). MinHeight giữ layout không nhảy.
+                 Chồng nhau, mỗi cái tự ẩn khi chuỗi rỗng.
                  ========================================================= -->
             <Grid Grid.Row="2" MinHeight="0" Margin="0,0,0,12">
 
@@ -1032,8 +968,7 @@
                                   HorizontalScrollBarVisibility="Disabled"
                                   Padding="4,4,4,0">
                         <!-- HorizontalAlignment=Center: ItemsControl co lại theo nội dung
-                             rồi được căn giữa -> thẻ ở hàng cuối cùng cũng được căn giữa
-                             khi số thẻ không đủ lấp đầy hàng. -->
+                             rồi được căn giữa -> thẻ ở hàng cuối cùng cũng được căn giữa. -->
                         <ItemsControl ItemsSource="{Binding GameItems}"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Top">
@@ -1083,7 +1018,6 @@
                     </StackPanel>
                 </Grid>
             </Border>
-
             <!-- =========================================================
                  ROW 4: GIỎ ĐỒ ĐÃ CHỌN.
                  3 ô số liệu + ProgressBar + chip cảnh báo vượt tải.
@@ -1101,7 +1035,7 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!--  3 ô số liệu  -->
+                    <!-- 3 ô số liệu -->
                     <Grid Grid.Row="0" Margin="0,0,0,14">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -1215,7 +1149,7 @@
                         </StackPanel>
                     </Grid>
 
-                    <!--  Progress bar + chip cảnh báo  -->
+                    <!-- Progress bar + chip cảnh báo vượt tải -->
                     <Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -1296,7 +1230,7 @@
                  ========================================================= -->
             <Grid Grid.Row="5" MinHeight="72">
 
-                <!--  Khối 1: hành động khi chưa nộp  -->
+                <!-- Khối 1: hành động khi chưa nộp -->
                 <Grid>
                     <Grid.Style>
                         <Style TargetType="Grid">
@@ -1322,7 +1256,7 @@
                     </StackPanel>
                 </Grid>
 
-                <!--  Khối 2: panel kết quả  -->
+                <!-- Khối 2: panel kết quả -->
                 <Border CornerRadius="18"
                         Background="{StaticResource HomeGlassFill}"
                         BorderBrush="{StaticResource HomeGlassBorder}"

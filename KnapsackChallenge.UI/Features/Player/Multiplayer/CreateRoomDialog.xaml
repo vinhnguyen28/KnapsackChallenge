@@ -1,203 +1,311 @@
 ﻿<Window x:Class="KnapsackChallenge.UI.Features.Player.CreateRoomDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Tạo phòng" Width="560" SizeToContent="Height"
+        xmlns:shared="clr-namespace:KnapsackChallenge.UI.Shared.Controls"
+        Title="Tạo phòng" Width="600" SizeToContent="Height"
         ResizeMode="NoResize" WindowStartupLocation="CenterOwner"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent">
 
-    <Window.Resources>
-        <!-- Style cục bộ cho RadioButton dạng "card". -->
-        <Style x:Key="ChoiceCard" TargetType="RadioButton">
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Margin" Value="0,0,8,0"/>
-            <Setter Property="Foreground" Value="{DynamicResource BrushInk}"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="bd"
-                                Background="{DynamicResource BrushSurface}"
-                                BorderBrush="{DynamicResource BrushRule}"
-                                BorderThickness="1"
-                                CornerRadius="6"
-                                Padding="10">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="bd" Property="BorderBrush"
-                                        Value="{DynamicResource BrushAccent}"/>
-                                <Setter TargetName="bd" Property="Background"
-                                        Value="{DynamicResource BrushAccentSoft}"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.45"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-    </Window.Resources>
-
-    <Border Background="{DynamicResource BrushSurface}"
-            BorderBrush="{DynamicResource BrushRule}"
-            BorderThickness="1" CornerRadius="10" Margin="14">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.2" Color="Black"/>
-        </Border.Effect>
-
-        <StackPanel Margin="22,18,22,18">
-            <TextBlock Text="Tạo phòng mới"
-                       FontFamily="{DynamicResource FontSans}"
-                       FontSize="{DynamicResource FontSizeTitle}"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource BrushInk}"/>
-
-            <Rectangle Height="1" Fill="{DynamicResource BrushRule}" Margin="0,10,0,16"/>
-
-            <!-- =========================================================
-                 BƯỚC 1: ĐỘ KHÓ
-                 ========================================================= -->
-            <TextBlock Text="1. Độ khó" Style="{DynamicResource FieldLabel}"/>
-
-            <UniformGrid Columns="3" Margin="0,0,0,14">
-                <RadioButton x:Name="RbEasy" GroupName="Diff" Tag="Easy"
-                             Style="{StaticResource ChoiceCard}"
-                             Checked="Difficulty_Checked">
-                    <StackPanel>
-                        <TextBlock Text="🌱 Dễ"
-                                   FontFamily="{DynamicResource FontSans}"
-                                   FontSize="{DynamicResource FontSizeBody}"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource BrushInk}"
-                                   HorizontalAlignment="Center"/>
-                        <TextBlock x:Name="TxtEasyCount"
-                                   FontFamily="{DynamicResource FontSans}"
-                                   FontSize="{DynamicResource FontSizeSmall}"
-                                   Foreground="{DynamicResource BrushInkMuted}"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,4,0,0"/>
-                    </StackPanel>
-                </RadioButton>
-
-                <RadioButton x:Name="RbMedium" GroupName="Diff" Tag="Medium"
-                             Style="{StaticResource ChoiceCard}"
-                             Checked="Difficulty_Checked">
-                    <StackPanel>
-                        <TextBlock Text="⚖️ Bình thường"
-                                   FontFamily="{DynamicResource FontSans}"
-                                   FontSize="{DynamicResource FontSizeBody}"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource BrushInk}"
-                                   HorizontalAlignment="Center"/>
-                        <TextBlock x:Name="TxtMediumCount"
-                                   FontFamily="{DynamicResource FontSans}"
-                                   FontSize="{DynamicResource FontSizeSmall}"
-                                   Foreground="{DynamicResource BrushInkMuted}"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,4,0,0"/>
-                    </StackPanel>
-                </RadioButton>
-
-                <RadioButton x:Name="RbHard" GroupName="Diff" Tag="Hard"
-                             Style="{StaticResource ChoiceCard}"
-                             Margin="0"
-                             Checked="Difficulty_Checked">
-                    <StackPanel>
-                        <TextBlock Text="🔥 Khó"
-                                   FontFamily="{DynamicResource FontSans}"
-                                   FontSize="{DynamicResource FontSizeBody}"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource BrushInk}"
-                                   HorizontalAlignment="Center"/>
-                        <TextBlock x:Name="TxtHardCount"
-                                   FontFamily="{DynamicResource FontSans}"
-                                   FontSize="{DynamicResource FontSizeSmall}"
-                                   Foreground="{DynamicResource BrushInkMuted}"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,4,0,0"/>
-                    </StackPanel>
-                </RadioButton>
-            </UniformGrid>
-
-            <!-- =========================================================
-                 BƯỚC 2: BỘ ĐỀ
-                 ========================================================= -->
-            <TextBlock Text="2. Bộ đề" Style="{DynamicResource FieldLabel}"/>
-
-            <UniformGrid Columns="2" Margin="0,0,0,8">
-                <RadioButton x:Name="RbRandom" GroupName="Pick"
-                             Style="{StaticResource ChoiceCard}"
-                             Checked="PickMode_Changed">
-                    <TextBlock Text="🎲 Random trong mức này"
-                               FontFamily="{DynamicResource FontSans}"
-                               FontSize="{DynamicResource FontSizeBody}"
-                               Foreground="{DynamicResource BrushInk}"
-                               HorizontalAlignment="Center"/>
-                </RadioButton>
-
-                <RadioButton x:Name="RbPick" GroupName="Pick"
-                             Style="{StaticResource ChoiceCard}"
-                             Margin="0"
-                             Checked="PickMode_Changed">
-                    <TextBlock Text="Chọn đề cụ thể"
-                               FontFamily="{DynamicResource FontSans}"
-                               FontSize="{DynamicResource FontSizeBody}"
-                               Foreground="{DynamicResource BrushInk}"
-                               HorizontalAlignment="Center"/>
-                </RadioButton>
-            </UniformGrid>
-
-            <ComboBox x:Name="SetsCombo"
-                      Style="{DynamicResource DarkComboBox}"
-                      DisplayMemberPath="DisplayText"
-                      Height="34"
-                      Visibility="Collapsed"
-                      Margin="0,0,0,14"/>
-
-            <!-- =========================================================
-                 BƯỚC 3: THỜI GIAN
-                 ========================================================= -->
-            <TextBlock Text="3. Thời gian" Style="{DynamicResource FieldLabel}"/>
-
-            <ComboBox x:Name="TimeCombo"
-                      Style="{DynamicResource DarkComboBox}"
-                      DisplayMemberPath="Label"
-                      Height="34"/>
-
-            <TextBlock Text="Thời gian tối đa có thể bị giới hạn bởi quản trị viên."
-                       FontFamily="{DynamicResource FontSans}"
-                       FontSize="{DynamicResource FontSizeSmall}"
-                       Foreground="{DynamicResource BrushInkMuted}"
-                       TextWrapping="Wrap"
-                       Margin="0,6,0,0"/>
-
-            <Grid MinHeight="36" Margin="0,10,0,12">
-                <TextBlock x:Name="ErrorText"
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="{DynamicResource FontSizeSmall}"
-                           Foreground="{DynamicResource BrushDanger}"
-                           TextWrapping="Wrap"
-                           Visibility="Collapsed"/>
-            </Grid>
-
+    <Grid>
+        <!-- Khung dialog glass tối bo 18 + drop shadow. Clip bo góc
+             được set trong code-behind (SizeChanged) để cắt cả lớp
+             DifficultyBackdrop bên trong. -->
+        <Border x:Name="ShellBorder"
+                Style="{StaticResource DkDialogShell}"
+                SizeChanged="ShellBorder_SizeChanged">
             <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="10"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+                <!-- =================================================
+                     LỚP 1: nền động theo độ khó.
+                     Ban đầu rỗng (home-bg), tự đổi khi đổi thẻ độ khó.
+                     IsHitTestVisible=False đã set trong UserControl.
+                     ================================================= -->
+                <shared:DifficultyBackdrop x:Name="Backdrop" Difficulty=""/>
 
-                <Button Grid.Column="0" Content="Hủy"
-                        Click="Cancel_Click"
-                        Style="{DynamicResource ButtonSecondary}"/>
+                <!-- =================================================
+                     LỚP 2: lớp làm tối nhẹ để chữ luôn đọc được dù
+                     nền độ khó có sáng hay tối.
+                     ================================================= -->
+                <Border Background="#A60B1020" IsHitTestVisible="False"/>
 
-                <Button x:Name="CreateButton"
-                        Grid.Column="2" Content="Tạo phòng"
-                        Click="Confirm_Click"
-                        Style="{DynamicResource ButtonPrimary}"/>
+                <!-- =================================================
+                     LỚP 3: nội dung dialog.
+                     ================================================= -->
+                <StackPanel Margin="24,18,24,22">
+
+                    <!-- ===== TITLE BAR (kéo được) ===== -->
+                    <Grid x:Name="TitleBar"
+                          Background="Transparent"
+                          Height="36"
+                          MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                            <Path Data="{StaticResource IconAdd}"
+                                  Width="18" Height="18"
+                                  Stroke="{StaticResource HomeGold}"
+                                  StrokeThickness="1.8"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,10,0"/>
+                            <TextBlock Text="Tạo phòng mới"
+                                       FontFamily="{StaticResource FontSans}"
+                                       FontSize="20"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource HomeTextOnDark}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <Button Grid.Column="1"
+                                Style="{StaticResource DkDialogCloseButton}"
+                                Click="Close_Click"
+                                ToolTip="Đóng"/>
+                    </Grid>
+
+                    <Rectangle Height="1"
+                               Fill="{StaticResource HomeGlassBorder}"
+                               Margin="0,10,0,18"/>
+
+                    <!-- ===== BƯỚC 1: ĐỘ KHÓ ===== -->
+                    <TextBlock Text="1. Độ khó"
+                               Style="{StaticResource DkFieldLabel}"/>
+
+                    <UniformGrid Columns="3" Margin="0,0,0,18">
+
+                        <!-- DỄ -->
+                        <RadioButton x:Name="RbEasy"
+                                     GroupName="Diff"
+                                     Tag="Easy"
+                                     Style="{StaticResource DkChoiceCard}"
+                                     Margin="0,0,8,0"
+                                     Checked="Difficulty_Checked">
+                            <StackPanel>
+                                <Path Data="{StaticResource IconLeaf}"
+                                      Width="26" Height="26"
+                                      Stroke="#34D399"
+                                      StrokeThickness="1.8"
+                                      Stretch="Uniform"
+                                      HorizontalAlignment="Center"
+                                      Margin="0,2,0,8"/>
+                                <TextBlock Text="Dễ"
+                                           FontFamily="{StaticResource FontSans}"
+                                           FontSize="{StaticResource FontSizeBody}"
+                                           FontWeight="SemiBold"
+                                           Foreground="#6EE7B7"
+                                           HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="TxtEasyCount"
+                                           FontFamily="{StaticResource FontMono}"
+                                           FontSize="{StaticResource FontSizeCaption}"
+                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                           HorizontalAlignment="Center"
+                                           TextAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <!-- BÌNH THƯỜNG -->
+                        <RadioButton x:Name="RbMedium"
+                                     GroupName="Diff"
+                                     Tag="Medium"
+                                     Style="{StaticResource DkChoiceCard}"
+                                     Margin="0,0,8,0"
+                                     Checked="Difficulty_Checked">
+                            <StackPanel>
+                                <Path Data="{StaticResource IconScale}"
+                                      Width="26" Height="26"
+                                      Stroke="#FBBF24"
+                                      StrokeThickness="1.8"
+                                      Stretch="Uniform"
+                                      HorizontalAlignment="Center"
+                                      Margin="0,2,0,8"/>
+                                <TextBlock Text="Bình thường"
+                                           FontFamily="{StaticResource FontSans}"
+                                           FontSize="{StaticResource FontSizeBody}"
+                                           FontWeight="SemiBold"
+                                           Foreground="#FCD34D"
+                                           HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="TxtMediumCount"
+                                           FontFamily="{StaticResource FontMono}"
+                                           FontSize="{StaticResource FontSizeCaption}"
+                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                           HorizontalAlignment="Center"
+                                           TextAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <!-- KHÓ -->
+                        <RadioButton x:Name="RbHard"
+                                     GroupName="Diff"
+                                     Tag="Hard"
+                                     Style="{StaticResource DkChoiceCard}"
+                                     Checked="Difficulty_Checked">
+                            <StackPanel>
+                                <Path Data="{StaticResource IconFlame}"
+                                      Width="26" Height="26"
+                                      Stroke="#F87171"
+                                      StrokeThickness="1.8"
+                                      Stretch="Uniform"
+                                      HorizontalAlignment="Center"
+                                      Margin="0,2,0,8"/>
+                                <TextBlock Text="Khó"
+                                           FontFamily="{StaticResource FontSans}"
+                                           FontSize="{StaticResource FontSizeBody}"
+                                           FontWeight="SemiBold"
+                                           Foreground="#FCA5A5"
+                                           HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="TxtHardCount"
+                                           FontFamily="{StaticResource FontMono}"
+                                           FontSize="{StaticResource FontSizeCaption}"
+                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                           HorizontalAlignment="Center"
+                                           TextAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </RadioButton>
+                    </UniformGrid>
+
+                    <!-- ===== BƯỚC 2: BỘ ĐỀ ===== -->
+                    <TextBlock Text="2. Bộ đề"
+                               Style="{StaticResource DkFieldLabel}"/>
+
+                    <UniformGrid Columns="2" Margin="0,0,0,10">
+                        <RadioButton x:Name="RbRandom"
+                                     GroupName="Pick"
+                                     Style="{StaticResource DkChoiceCard}"
+                                     Margin="0,0,8,0"
+                                     Checked="PickMode_Changed">
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Center">
+                                <Path Data="{StaticResource IconRefresh}"
+                                      Width="14" Height="14"
+                                      Stroke="{StaticResource HomeTextOnDark}"
+                                      StrokeThickness="1.6"
+                                      Stretch="Uniform"
+                                      VerticalAlignment="Center"
+                                      Margin="0,0,8,0"/>
+                                <TextBlock Text="Random trong mức này"
+                                           FontFamily="{StaticResource FontSans}"
+                                           FontSize="{StaticResource FontSizeSmall}"
+                                           Foreground="{StaticResource HomeTextOnDark}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton x:Name="RbPick"
+                                     GroupName="Pick"
+                                     Style="{StaticResource DkChoiceCard}"
+                                     Checked="PickMode_Changed">
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Center">
+                                <Path Data="{StaticResource IconTarget}"
+                                      Width="14" Height="14"
+                                      Stroke="{StaticResource HomeTextOnDark}"
+                                      StrokeThickness="1.6"
+                                      Stretch="Uniform"
+                                      VerticalAlignment="Center"
+                                      Margin="0,0,8,0"/>
+                                <TextBlock Text="Chọn đề cụ thể"
+                                           FontFamily="{StaticResource FontSans}"
+                                           FontSize="{StaticResource FontSizeSmall}"
+                                           Foreground="{StaticResource HomeTextOnDark}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+                    </UniformGrid>
+
+                    <!-- =========================================================
+                         ComboBox chọn bộ đề — ItemTemplate TƯỜNG MINH
+                         (TextBlock Text="{Binding DisplayText}") để fix bug
+                         ToString; không dùng DisplayMemberPath nữa.
+                         ========================================================= -->
+                    <ComboBox x:Name="SetsCombo"
+                              Style="{StaticResource DkComboBox}"
+                              Height="38"
+                              Visibility="Collapsed"
+                              Margin="0,0,0,16">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding DisplayText}"
+                                           FontFamily="{StaticResource FontSans}"
+                                           FontSize="{StaticResource FontSizeSmall}"
+                                           Foreground="{StaticResource HomeTextOnDark}"
+                                           TextTrimming="CharacterEllipsis"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <!-- ===== BƯỚC 3: THỜI GIAN ===== -->
+                    <TextBlock Text="3. Thời gian"
+                               Style="{StaticResource DkFieldLabel}"/>
+
+                    <!-- =========================================================
+                         ComboBox thời gian — ItemTemplate TƯỜNG MINH
+                         (TextBlock Text="{Binding Label}") để fix bug ToString.
+                         Record TimeOption cũng override ToString() => Label
+                         (xem code-behind) làm lớp bảo hiểm thứ hai.
+                         ========================================================= -->
+                    <ComboBox x:Name="TimeCombo"
+                              Style="{StaticResource DkComboBox}"
+                              Height="38">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Label}"
+                                           FontFamily="{StaticResource FontSans}"
+                                           FontSize="{StaticResource FontSizeSmall}"
+                                           Foreground="{StaticResource HomeTextOnDark}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <TextBlock Text="Thời gian tối đa có thể bị giới hạn bởi quản trị viên."
+                               FontFamily="{StaticResource FontSans}"
+                               FontSize="{StaticResource FontSizeCaption}"
+                               Foreground="{StaticResource HomeTextOnDarkMuted}"
+                               TextWrapping="Wrap"
+                               Margin="0,8,0,0"/>
+
+                    <!-- ===== VÙNG LỖI (giữ layout, không nhảy) ===== -->
+                    <Grid MinHeight="34" Margin="0,14,0,14">
+                        <TextBlock x:Name="ErrorText"
+                                   FontFamily="{StaticResource FontSans}"
+                                   FontSize="{StaticResource FontSizeSmall}"
+                                   Foreground="#FCA5A5"
+                                   TextWrapping="Wrap"
+                                   Visibility="Collapsed"/>
+                    </Grid>
+
+                    <!-- ===== ACTIONS ===== -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Grid.Column="0"
+                                Content="Hủy"
+                                Click="Cancel_Click"
+                                Style="{StaticResource DkButtonSecondary}"/>
+
+                        <!-- CreateButton: Tag đổi theo độ khó (code-behind
+                             Difficulty_Checked gán) → DkButtonPrimary tự
+                             đổi gradient cho khớp. -->
+                        <Button x:Name="CreateButton"
+                                Grid.Column="2"
+                                Content="Tạo phòng"
+                                Click="Confirm_Click"
+                                Style="{StaticResource DkButtonPrimary}"/>
+                    </Grid>
+                </StackPanel>
             </Grid>
-        </StackPanel>
-    </Border>
+        </Border>
+    </Grid>
 </Window>

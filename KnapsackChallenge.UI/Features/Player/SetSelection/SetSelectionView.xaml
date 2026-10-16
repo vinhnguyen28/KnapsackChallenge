@@ -3,16 +3,19 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:shared="clr-namespace:KnapsackChallenge.UI.Shared.Controls"
              mc:Ignorable="d"
-             d:DesignHeight="620" d:DesignWidth="900">
+             d:DesignHeight="720" d:DesignWidth="1200"
+             Background="Transparent">
 
     <UserControl.Resources>
-        <!-- Nút Quay lại phong cách Glass -->
+
         <Style x:Key="GlassBackButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource HomeGlassFill}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource HomeGlassBorder}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -20,13 +23,14 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="12"
+                                CornerRadius="14"
                                 Padding="32,14">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bg" Property="Background" Value="{DynamicResource HomeGlassFillHover}"/>
+                                <Setter TargetName="Bg" Property="BorderBrush" Value="#66FFFFFF"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bg" Property="Opacity" Value="0.8"/>
@@ -37,14 +41,21 @@
             </Setter>
         </Style>
 
-        <!-- Thẻ Độ Khó phong cách Glass -->
+        <!-- =========================================================
+             DifficultyCardButton — FIX GĐ6:
+             Tăng độ rõ nền tint theo độ khó:
+               - AccentTint.Opacity: 0.4 → 0.85
+               - Gradient stop alpha: #4D (30%) → #73 (45%)
+               - GradientOrigin: 0.5,0 → 0.5,0.5 (tỏa đều hơn)
+             ========================================================= -->
         <Style x:Key="DifficultyCardButton" TargetType="Button">
-            <Setter Property="MinWidth" Value="200"/>
-            <Setter Property="MaxWidth" Value="300"/>
-            <Setter Property="MinHeight" Value="260"/>
-            <Setter Property="MaxHeight" Value="340"/>
-            <Setter Property="Margin" Value="10"/>
+            <Setter Property="MinWidth" Value="220"/>
+            <Setter Property="MaxWidth" Value="320"/>
+            <Setter Property="MinHeight" Value="280"/>
+            <Setter Property="MaxHeight" Value="360"/>
+            <Setter Property="Margin" Value="12"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -53,35 +64,60 @@
                                 <ScaleTransform ScaleX="1" ScaleY="1"/>
                             </Grid.RenderTransform>
 
-                            <!-- Glass Base -->
+                            <!-- Nền kính cơ bản -->
                             <Border x:Name="GlassBg"
-                                    Background="{DynamicResource HomeGlassFill}"
-                                    BorderBrush="{DynamicResource HomeGlassBorder}"
-                                    BorderThickness="1"
-                                    CornerRadius="18" />
-
-                            <!-- Hover Borders & Glow Effects -->
-                            <Border x:Name="HoverEasy" BorderThickness="2" CornerRadius="18" Opacity="0" Visibility="Collapsed" BorderBrush="#34D399">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="24" ShadowDepth="0" Color="#34D399" Opacity="0.5"/>
-                                </Border.Effect>
-                            </Border>
-                            <Border x:Name="HoverMedium" BorderThickness="2" CornerRadius="18" Opacity="0" Visibility="Collapsed" BorderBrush="#FBBF24">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="24" ShadowDepth="0" Color="#FBBF24" Opacity="0.5"/>
-                                </Border.Effect>
-                            </Border>
-                            <Border x:Name="HoverHard" BorderThickness="2" CornerRadius="18" Opacity="0" Visibility="Collapsed" BorderBrush="#F87171">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="24" ShadowDepth="0" Color="#F87171" Opacity="0.5"/>
-                                </Border.Effect>
+                                    CornerRadius="20"
+                                    BorderThickness="1.5"
+                                    BorderBrush="{DynamicResource HomeGlassBorder}">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Color="#1FFFFFFF" Offset="0"/>
+                                        <GradientStop Color="#0DFFFFFF" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
                             </Border>
 
-                            <!-- Top Accent Line (Đã sửa lỗi tràn viền: Dùng BorderThickness thay vì Height) -->
-                            <Border x:Name="TopLine" BorderThickness="0,4,0,0" CornerRadius="18" BorderBrush="Transparent" />
+                            <!-- Nền accent radial — FIX: rõ hơn (Opacity 0.85) -->
+                            <Border x:Name="AccentTint" CornerRadius="20" Opacity="0.85">
+                                <Border.Background>
+                                    <RadialGradientBrush GradientOrigin="0.5,0.5" Center="0.5,0.5"
+                                                         RadiusX="1" RadiusY="1">
+                                        <GradientStop Color="#00000000" Offset="0"/>
+                                        <GradientStop Color="#00000000" Offset="1"/>
+                                    </RadialGradientBrush>
+                                </Border.Background>
+                            </Border>
 
-                            <!-- Content Layout -->
-                            <Grid Margin="16,24,16,20">
+                            <!-- Hover glow theo độ khó -->
+                            <Border x:Name="HoverEasy" BorderThickness="2" CornerRadius="20"
+                                    Opacity="0" Visibility="Collapsed" BorderBrush="#34D399">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="28" ShadowDepth="0"
+                                                      Color="#34D399" Opacity="0.65"/>
+                                </Border.Effect>
+                            </Border>
+                            <Border x:Name="HoverMedium" BorderThickness="2" CornerRadius="20"
+                                    Opacity="0" Visibility="Collapsed" BorderBrush="#FBBF24">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="28" ShadowDepth="0"
+                                                      Color="#FBBF24" Opacity="0.65"/>
+                                </Border.Effect>
+                            </Border>
+                            <Border x:Name="HoverHard" BorderThickness="2" CornerRadius="20"
+                                    Opacity="0" Visibility="Collapsed" BorderBrush="#F87171">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="28" ShadowDepth="0"
+                                                      Color="#F87171" Opacity="0.65"/>
+                                </Border.Effect>
+                            </Border>
+
+                            <!-- Top accent line -->
+                            <Border x:Name="TopLine"
+                                    BorderThickness="0,4,0,0"
+                                    CornerRadius="20"
+                                    BorderBrush="Transparent"/>
+
+                            <Grid Margin="20,26,20,22">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
@@ -90,71 +126,174 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <!-- Icon Circle -->
-                                <Border x:Name="IconCircle" Grid.Row="0" Width="76" Height="76" CornerRadius="38" BorderThickness="2" HorizontalAlignment="Center" Margin="0,0,0,16">
-                                    <TextBlock Text="{Binding Icon}" FontSize="36" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border x:Name="IconCircle"
+                                        Grid.Row="0"
+                                        Width="82" Height="82"
+                                        CornerRadius="41"
+                                        BorderThickness="2"
+                                        HorizontalAlignment="Center"
+                                        Margin="0,0,0,18">
+                                    <Path Width="38" Height="38"
+                                          Stretch="Uniform"
+                                          StrokeThickness="2.0"
+                                          StrokeStartLineCap="Round"
+                                          StrokeEndLineCap="Round"
+                                          StrokeLineJoin="Round"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center">
+                                        <Path.Style>
+                                            <Style TargetType="Path">
+                                                <Setter Property="Data" Value="{StaticResource IconTarget}"/>
+                                                <Setter Property="Stroke" Value="White"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Difficulty}" Value="Easy">
+                                                        <Setter Property="Data" Value="{StaticResource IconLeaf}"/>
+                                                        <Setter Property="Stroke" Value="#34D399"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Difficulty}" Value="Medium">
+                                                        <Setter Property="Data" Value="{StaticResource IconScale}"/>
+                                                        <Setter Property="Stroke" Value="#FBBF24"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Difficulty}" Value="Hard">
+                                                        <Setter Property="Data" Value="{StaticResource IconFlame}"/>
+                                                        <Setter Property="Stroke" Value="#F87171"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Path.Style>
+                                    </Path>
                                 </Border>
 
-                                <!-- Title -->
-                                <TextBlock Grid.Row="1" Text="{Binding DisplayName}"
-                                           FontFamily="{DynamicResource FontSans}" FontSize="24" FontWeight="SemiBold" Foreground="White"
-                                           HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="1"
+                                           Text="{Binding DisplayName}"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="26"
+                                           FontWeight="SemiBold"
+                                           Foreground="White"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,8"/>
 
-                                <!-- Description -->
-                                <TextBlock Grid.Row="2" Text="{Binding Description}"
-                                           FontFamily="{DynamicResource FontSans}" FontSize="{DynamicResource FontSizeSmall}"
+                                <TextBlock Grid.Row="2"
+                                           Text="{Binding Description}"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="{DynamicResource FontSizeSmall}"
                                            Foreground="{DynamicResource HomeTextOnDarkMuted}"
-                                           TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Center"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,18"/>
 
-                                <!-- Level Bar -->
-                                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
-                                    <Border x:Name="Lvl1" Width="28" Height="6" CornerRadius="3" Background="#33FFFFFF" Margin="0,0,6,0"/>
-                                    <Border x:Name="Lvl2" Width="28" Height="6" CornerRadius="3" Background="#33FFFFFF" Margin="0,0,6,0"/>
-                                    <Border x:Name="Lvl3" Width="28" Height="6" CornerRadius="3" Background="#33FFFFFF"/>
+                                <StackPanel Grid.Row="3"
+                                            Orientation="Horizontal"
+                                            HorizontalAlignment="Center"
+                                            Margin="0,0,0,20">
+                                    <Border x:Name="Lvl1" Width="32" Height="7" CornerRadius="3.5"
+                                            Background="#33FFFFFF" Margin="0,0,6,0"/>
+                                    <Border x:Name="Lvl2" Width="32" Height="7" CornerRadius="3.5"
+                                            Background="#33FFFFFF" Margin="0,0,6,0"/>
+                                    <Border x:Name="Lvl3" Width="32" Height="7" CornerRadius="3.5"
+                                            Background="#33FFFFFF"/>
                                 </StackPanel>
 
-                                <!-- Set Count Pill -->
-                                <Border Grid.Row="4" Background="#1AFFFFFF" CornerRadius="12" Padding="12,4" HorizontalAlignment="Center">
+                                <Border Grid.Row="4"
+                                        Background="#1AFFFFFF"
+                                        BorderBrush="#33FFFFFF"
+                                        BorderThickness="1"
+                                        CornerRadius="14"
+                                        Padding="14,5"
+                                        HorizontalAlignment="Center">
                                     <TextBlock Text="{Binding CountText}"
-                                               FontFamily="{DynamicResource FontMono}" FontSize="{DynamicResource FontSizeCaption}"
+                                               FontFamily="{DynamicResource FontMono}"
+                                               FontSize="{DynamicResource FontSizeCaption}"
+                                               FontWeight="SemiBold"
                                                Foreground="White"/>
                                 </Border>
                             </Grid>
                         </Grid>
 
                         <ControlTemplate.Triggers>
-                            <!-- Màu nhấn: Dễ (#34D399) -->
+
+                            <!-- DỄ -->
                             <DataTrigger Binding="{Binding Difficulty}" Value="Easy">
-                                <!-- Đổi từ Background sang BorderBrush -->
                                 <Setter TargetName="TopLine" Property="BorderBrush" Value="#34D399"/>
                                 <Setter TargetName="IconCircle" Property="BorderBrush" Value="#34D399"/>
-                                <Setter TargetName="IconCircle" Property="Background" Value="#2234D399"/>
+                                <Setter TargetName="IconCircle" Property="Background" Value="#3334D399"/>
+                                <Setter TargetName="IconCircle" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#34D399"
+                                                          BlurRadius="18" ShadowDepth="0"
+                                                          Opacity="0.55"/>
+                                    </Setter.Value>
+                                </Setter>
                                 <Setter TargetName="HoverEasy" Property="Visibility" Value="Visible"/>
                                 <Setter TargetName="Lvl1" Property="Background" Value="#34D399"/>
+                                <Setter TargetName="AccentTint" Property="Background">
+                                    <Setter.Value>
+                                        <RadialGradientBrush GradientOrigin="0.5,0.5" Center="0.5,0.5"
+                                                             RadiusX="1" RadiusY="1">
+                                            <GradientStop Color="#7334D399" Offset="0"/>
+                                            <GradientStop Color="#0D34D399" Offset="0.7"/>
+                                            <GradientStop Color="#00000000" Offset="1"/>
+                                        </RadialGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
                             </DataTrigger>
 
-                            <!-- Màu nhấn: Bình thường (#FBBF24) -->
+                            <!-- BÌNH THƯỜNG -->
                             <DataTrigger Binding="{Binding Difficulty}" Value="Medium">
                                 <Setter TargetName="TopLine" Property="BorderBrush" Value="#FBBF24"/>
                                 <Setter TargetName="IconCircle" Property="BorderBrush" Value="#FBBF24"/>
-                                <Setter TargetName="IconCircle" Property="Background" Value="#22FBBF24"/>
+                                <Setter TargetName="IconCircle" Property="Background" Value="#33FBBF24"/>
+                                <Setter TargetName="IconCircle" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#FBBF24"
+                                                          BlurRadius="18" ShadowDepth="0"
+                                                          Opacity="0.55"/>
+                                    </Setter.Value>
+                                </Setter>
                                 <Setter TargetName="HoverMedium" Property="Visibility" Value="Visible"/>
                                 <Setter TargetName="Lvl1" Property="Background" Value="#FBBF24"/>
                                 <Setter TargetName="Lvl2" Property="Background" Value="#FBBF24"/>
+                                <Setter TargetName="AccentTint" Property="Background">
+                                    <Setter.Value>
+                                        <RadialGradientBrush GradientOrigin="0.5,0.5" Center="0.5,0.5"
+                                                             RadiusX="1" RadiusY="1">
+                                            <GradientStop Color="#73FBBF24" Offset="0"/>
+                                            <GradientStop Color="#0DFBBF24" Offset="0.7"/>
+                                            <GradientStop Color="#00000000" Offset="1"/>
+                                        </RadialGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
                             </DataTrigger>
 
-                            <!-- Màu nhấn: Khó (#F87171) -->
+                            <!-- KHÓ -->
                             <DataTrigger Binding="{Binding Difficulty}" Value="Hard">
                                 <Setter TargetName="TopLine" Property="BorderBrush" Value="#F87171"/>
                                 <Setter TargetName="IconCircle" Property="BorderBrush" Value="#F87171"/>
-                                <Setter TargetName="IconCircle" Property="Background" Value="#22F87171"/>
+                                <Setter TargetName="IconCircle" Property="Background" Value="#33F87171"/>
+                                <Setter TargetName="IconCircle" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#F87171"
+                                                          BlurRadius="18" ShadowDepth="0"
+                                                          Opacity="0.55"/>
+                                    </Setter.Value>
+                                </Setter>
                                 <Setter TargetName="HoverHard" Property="Visibility" Value="Visible"/>
                                 <Setter TargetName="Lvl1" Property="Background" Value="#F87171"/>
                                 <Setter TargetName="Lvl2" Property="Background" Value="#F87171"/>
                                 <Setter TargetName="Lvl3" Property="Background" Value="#F87171"/>
+                                <Setter TargetName="AccentTint" Property="Background">
+                                    <Setter.Value>
+                                        <RadialGradientBrush GradientOrigin="0.5,0.5" Center="0.5,0.5"
+                                                             RadiusX="1" RadiusY="1">
+                                            <GradientStop Color="#73F87171" Offset="0"/>
+                                            <GradientStop Color="#0DF87171" Offset="0.7"/>
+                                            <GradientStop Color="#00000000" Offset="1"/>
+                                        </RadialGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
                             </DataTrigger>
 
-                            <!-- Hover / Animation Effect -->
                             <MultiTrigger>
                                 <MultiTrigger.Conditions>
                                     <Condition Property="IsMouseOver" Value="True"/>
@@ -163,22 +302,42 @@
                                 <MultiTrigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="HoverEasy" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15"/>
-                                            <DoubleAnimation Storyboard.TargetName="HoverMedium" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15"/>
-                                            <DoubleAnimation Storyboard.TargetName="HoverHard" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15"/>
-                                            <DoubleAnimation Storyboard.TargetName="RootGrid" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.04" Duration="0:0:0.15"/>
-                                            <DoubleAnimation Storyboard.TargetName="RootGrid" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.04" Duration="0:0:0.15"/>
+                                            <DoubleAnimation Storyboard.TargetName="HoverEasy"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="1" Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="HoverMedium"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="1" Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="HoverHard"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="1" Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="RootGrid"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                             To="1.04" Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="RootGrid"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                             To="1.04" Duration="0:0:0.18"/>
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </MultiTrigger.EnterActions>
                                 <MultiTrigger.ExitActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="HoverEasy" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15"/>
-                                            <DoubleAnimation Storyboard.TargetName="HoverMedium" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15"/>
-                                            <DoubleAnimation Storyboard.TargetName="HoverHard" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15"/>
-                                            <DoubleAnimation Storyboard.TargetName="RootGrid" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.15"/>
-                                            <DoubleAnimation Storyboard.TargetName="RootGrid" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.15"/>
+                                            <DoubleAnimation Storyboard.TargetName="HoverEasy"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="0" Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="HoverMedium"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="0" Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="HoverHard"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="0" Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="RootGrid"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                             To="1" Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="RootGrid"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                             To="1" Duration="0:0:0.18"/>
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </MultiTrigger.ExitActions>
@@ -186,12 +345,42 @@
 
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="RootGrid" Property="Opacity" Value="0.9"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="RootGrid"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                             To="0.97" Duration="0:0:0.08"/>
+                                            <DoubleAnimation Storyboard.TargetName="RootGrid"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                             To="0.97" Duration="0:0:0.08"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="RootGrid"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                             To="1.04" Duration="0:0:0.1"/>
+                                            <DoubleAnimation Storyboard.TargetName="RootGrid"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                             To="1.04" Duration="0:0:0.1"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
                             </Trigger>
+
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="GlassBg" Property="BorderBrush" Value="#80FFFFFF"/>
+                                <Setter TargetName="GlassBg" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <!-- Vô hiệu hoá khi CanPlay = False -->
+
             <Style.Triggers>
                 <Trigger Property="IsEnabled" Value="False">
                     <Setter Property="Opacity" Value="0.45"/>
@@ -199,14 +388,12 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
     </UserControl.Resources>
 
     <Grid>
-        <!-- Lớp Nền Đồng Bộ Home -->
-        <Border Background="{DynamicResource HomeBackdropFallback}" />
-        <Border Background="{DynamicResource HomeOverlay}" />
+        <shared:DifficultyBackdrop Difficulty=""/>
 
-        <!-- Lớp Nội Dung (Giữ lề an toàn để tránh dính Header Player) -->
         <Grid Margin="24,72,24,24">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -215,19 +402,32 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Header -->
             <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,10,0,4">
                 <TextBlock Text="Chọn mức độ"
                            FontFamily="{DynamicResource FontSans}"
                            FontSize="{DynamicResource FontSizeDisplay}"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource HomeTextOnDark}"
-                           HorizontalAlignment="Center"/>
+                           HorizontalAlignment="Center">
+                    <TextBlock.Effect>
+                        <DropShadowEffect Color="Black"
+                                          BlurRadius="14"
+                                          ShadowDepth="0"
+                                          Opacity="0.55"/>
+                    </TextBlock.Effect>
+                </TextBlock>
 
-                <!-- Điểm nhấn vạch vàng dưới tiêu đề -->
                 <Border Width="48" Height="3" CornerRadius="2"
                         Background="{DynamicResource HomeGold}"
-                        Margin="0,8,0,12" HorizontalAlignment="Center"/>
+                        Margin="0,10,0,12"
+                        HorizontalAlignment="Center">
+                    <Border.Effect>
+                        <DropShadowEffect Color="#FBBF24"
+                                          BlurRadius="10"
+                                          ShadowDepth="0"
+                                          Opacity="0.7"/>
+                    </Border.Effect>
+                </Border>
 
                 <TextBlock Text="Hệ thống sẽ chọn ngẫu nhiên một bộ đề trong mức bạn chọn."
                            FontFamily="{DynamicResource FontSans}"
@@ -236,21 +436,31 @@
                            HorizontalAlignment="Center"/>
             </StackPanel>
 
-            <!-- Banner lỗi -->
             <Border Grid.Row="1"
-                    Style="{DynamicResource ErrorBanner}"
+                    Style="{DynamicResource DkToastError}"
                     VerticalAlignment="Top"
-                    Margin="0,8,0,0" Opacity="0.95">
-                <TextBlock Text="{Binding ErrorMessage}"
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="{DynamicResource FontSizeSmall}"
-                           Foreground="{DynamicResource BrushDanger}"
-                           TextWrapping="Wrap"/>
+                    Margin="0,10,0,0"
+                    Visibility="{Binding ErrorMessage,
+                                 Converter={StaticResource BoolToVisibility}}">
+                <StackPanel Orientation="Horizontal">
+                    <Path Data="{StaticResource IconWarning}"
+                          Width="14" Height="14"
+                          Stroke="#F87171"
+                          StrokeThickness="2.0"
+                          Stretch="Uniform"
+                          VerticalAlignment="Center"
+                          Margin="0,0,10,0"/>
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               FontFamily="{DynamicResource FontSans}"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               Foreground="#FCA5A5"
+                               TextWrapping="Wrap"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
             </Border>
 
-            <!-- Loading Text (Hoán đổi với ItemsControl) -->
             <TextBlock Grid.Row="2" Text="Đang tải bộ đề..."
-                       FontFamily="{DynamicResource FontSans}" 
+                       FontFamily="{DynamicResource FontSans}"
                        FontSize="{DynamicResource FontSizeHeading}"
                        Foreground="{DynamicResource HomeTextOnDarkMuted}"
                        HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -266,12 +476,11 @@
                 </TextBlock.Style>
             </TextBlock>
 
-            <!-- 3 Thẻ mức độ -->
             <ItemsControl Grid.Row="2"
                           ItemsSource="{Binding Difficulties}"
                           HorizontalAlignment="Center"
                           VerticalAlignment="Center"
-                          MaxWidth="900"
+                          MaxWidth="1000"
                           Margin="0,8,0,8">
                 <ItemsControl.Style>
                     <Style TargetType="ItemsControl">
@@ -291,23 +500,27 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Button Style="{StaticResource DifficultyCardButton}"
-                                Command="{Binding DataContext.ChooseDifficultyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                Command="{Binding DataContext.ChooseDifficultyCommand,
+                                          RelativeSource={RelativeSource AncestorType=UserControl}}"
                                 CommandParameter="{Binding}"
                                 Opacity="0">
                             <Button.RenderTransform>
                                 <TranslateTransform Y="24"/>
                             </Button.RenderTransform>
-                            <!-- Trượt và mờ lên cùng lúc -->
                             <Button.Triggers>
                                 <EventTrigger RoutedEvent="Loaded">
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.45">
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             From="0" To="1"
+                                                             Duration="0:0:0.45">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
                                                 </DoubleAnimation.EasingFunction>
                                             </DoubleAnimation>
-                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" From="24" To="0" Duration="0:0:0.45">
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                             From="24" To="0"
+                                                             Duration="0:0:0.45">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
                                                 </DoubleAnimation.EasingFunction>
@@ -321,7 +534,6 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <!-- Footer: Nút Quay lại Glass -->
             <StackPanel Grid.Row="3"
                         Orientation="Horizontal"
                         HorizontalAlignment="Center"
@@ -331,7 +543,8 @@
                     <StackPanel Orientation="Horizontal">
                         <Path Data="{DynamicResource IconArrowLeft}"
                               Width="22" Height="22"
-                              Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              Stroke="{Binding Foreground,
+                                       RelativeSource={RelativeSource AncestorType=Button}}"
                               StrokeThickness="1.6"
                               Stretch="Uniform"
                               VerticalAlignment="Center"

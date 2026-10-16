@@ -51,6 +51,46 @@ namespace KnapsackChallenge.UI.Features.Player
         public bool CanJoin =>
             Data.Status == RoomStatus.Waiting
             && Data.PlayerCount < Data.MaxPlayers;
+
+        // =========================================================
+        // NEW — phục vụ LobbyView tông tối (không đổi logic cũ)
+        // =========================================================
+
+        /// <summary>Key chuẩn hoá để XAML DataTrigger switch màu chip/accent bar.</summary>
+        public string DifficultyKey => (Data.Difficulty ?? "").ToLowerInvariant() switch
+        {
+            "easy" => "Easy",
+            "medium" => "Medium",
+            "hard" => "Hard",
+            _ => "Unknown",
+        };
+
+        /// <summary>Key chuẩn hoá trạng thái — dùng cho chip "Đang chờ/Đang chơi/Đầy".</summary>
+        public string StatusKey
+        {
+            get
+            {
+                if (Data.Status == RoomStatus.Playing) return "Playing";
+                if (Data.Status == RoomStatus.Finished) return "Finished";
+                if (Data.MaxPlayers > 0 && Data.PlayerCount >= Data.MaxPlayers) return "Full";
+                return "Waiting";
+            }
+        }
+
+        /// <summary>Phần trăm đầy (0..100) cho thanh tiến độ mini ở cột Người.</summary>
+        public double CapacityPercent =>
+            Data.MaxPlayers <= 0 ? 0 : (double)Data.PlayerCount / Data.MaxPlayers * 100.0;
+
+        /// <summary>Chữ cái đầu của chủ phòng (dùng làm avatar tròn). An toàn với null/rỗng.</summary>
+        public string AvatarInitial
+        {
+            get
+            {
+                var u = HostUsername;
+                if (string.IsNullOrWhiteSpace(u)) return "?";
+                return u.Trim().Substring(0, 1).ToUpperInvariant();
+            }
+        }
     }
 
     public class LobbyViewModel : ViewModelBase, IPageLifecycle
@@ -298,13 +338,6 @@ namespace KnapsackChallenge.UI.Features.Player
                 if (Rooms.Count == 0) msg += " Thử đổi bộ lọc.";
                 InfoMessage = msg;
             }
-
-            //if (_allRooms.Count != 0)
-            //{
-            //    var msg = $"Hiển thị {Rooms.Count}/{_allRooms.Count} phòng.";
-            //    if (Rooms.Count == 0) msg += " Thử đổi bộ lọc.";
-            //    InfoMessage = msg;
-            //}
         }
 
         private async System.Threading.Tasks.Task RefreshAsync()

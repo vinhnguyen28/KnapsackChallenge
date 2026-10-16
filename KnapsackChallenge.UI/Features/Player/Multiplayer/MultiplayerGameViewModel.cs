@@ -24,6 +24,17 @@ namespace KnapsackChallenge.UI.Features.Player
         public string StatusText => !IsOnline ? "Mất kết nối"
             : IsSubmitted ? "Đã nộp"
             : "Đang chơi";
+
+        // NEW — avatar tròn trong side panel tối.
+        public string AvatarInitial
+        {
+            get
+            {
+                var u = Username;
+                if (string.IsNullOrWhiteSpace(u)) return "?";
+                return u.Trim().Substring(0, 1).ToUpperInvariant();
+            }
+        }
     }
 
     // Màn chơi Multiplayer (Phase 4).
@@ -78,6 +89,15 @@ namespace KnapsackChallenge.UI.Features.Player
         public int MaxWeight => _start.MaxWeight;
         public int TimeLimitSeconds => _start.TimeLimitSeconds;
         public bool IsCountdown => TimeLimitSeconds > 0;
+
+        // NEW — key chuẩn hoá để DifficultyBackdrop + chip độ khó switch màu.
+        public string DifficultyKey => (_start.Difficulty ?? "").ToLowerInvariant() switch
+        {
+            "easy" => "Easy",
+            "medium" => "Medium",
+            "hard" => "Hard",
+            _ => "Unknown",
+        };
 
         public string TimerLabel => IsCountdown ? "Còn lại" : "Thời gian";
 

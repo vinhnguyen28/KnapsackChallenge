@@ -27,6 +27,17 @@ namespace KnapsackChallenge.UI.Features.Player
             : Data.IsOnline ? "Online" : "Offline";
 
         public string HostBadge => Data.IsHost ? "HOST" : "";
+
+        // NEW — phục vụ avatar tròn trong DataGrid tối.
+        public string AvatarInitial
+        {
+            get
+            {
+                var u = Username;
+                if (string.IsNullOrWhiteSpace(u)) return "?";
+                return u.Trim().Substring(0, 1).ToUpperInvariant();
+            }
+        }
     }
 
     public class MultiplayerRoomViewModel : ViewModelBase, IPageLifecycle
@@ -86,6 +97,24 @@ namespace KnapsackChallenge.UI.Features.Player
             RoomStatus.Playing => "Đang chơi",
             RoomStatus.Finished => "Kết thúc",
             _ => "Đã đóng",
+        };
+
+        // NEW — chuẩn hoá để XAML DataTrigger switch màu ổn định,
+        // không phụ thuộc chữ tiếng Việt của StatusText.
+        public string DifficultyKey => (_state.Difficulty ?? "").ToLowerInvariant() switch
+        {
+            "easy" => "Easy",
+            "medium" => "Medium",
+            "hard" => "Hard",
+            _ => "Unknown",
+        };
+
+        public string StatusKey => _state.Status switch
+        {
+            RoomStatus.Waiting => "Waiting",
+            RoomStatus.Playing => "Playing",
+            RoomStatus.Finished => "Finished",
+            _ => "Closed",
         };
 
         public string TimeLimitText => TimeLimitSeconds <= 0
@@ -267,6 +296,8 @@ namespace KnapsackChallenge.UI.Features.Player
             OnPropertyChanged(nameof(RoomCode));
             OnPropertyChanged(nameof(SetName));
             OnPropertyChanged(nameof(Difficulty));
+            OnPropertyChanged(nameof(DifficultyKey));   // NEW
+            OnPropertyChanged(nameof(StatusKey));       // NEW
             OnPropertyChanged(nameof(MaxWeight));
             OnPropertyChanged(nameof(MaxPlayers));
             OnPropertyChanged(nameof(TimeLimitSeconds));
