@@ -10,6 +10,12 @@
                 <ResourceDictionary Source="Themes/Icons.xaml"/>
                 <ResourceDictionary Source="Themes/Controls.xaml"/>
                 <ResourceDictionary Source="Themes/Layout.xaml"/>
+                <!-- NEW: style riêng cho màn Bảng xếp hạng.
+                     Đặt SAU Layout để mọi resource phụ thuộc
+                     (Colors / Typography / Icons) đã có sẵn; đồng thời
+                     KHÔNG ghi đè bất kỳ key nào đang dùng chung vì
+                     toàn bộ key trong file này đều có tiền tố "Lb". -->
+                <ResourceDictionary Source="Themes/LeaderboardStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>

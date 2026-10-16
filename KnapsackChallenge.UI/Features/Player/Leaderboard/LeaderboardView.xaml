@@ -4,381 +4,1114 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
-             d:DesignHeight="620" d:DesignWidth="1000"
-             Background="{DynamicResource BrushBackground}">
+             d:DesignHeight="720" d:DesignWidth="1080"
+             Background="Transparent">
 
-    <UserControl.Resources>
-        <!-- Row style cho DataGrid EXP: top 1/2/3 đổi nền; dòng của mình ưu tiên nổi bật nhất. -->
-        <Style x:Key="ExpLbRow" TargetType="DataGridRow" BasedOn="{StaticResource GridRow}">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding Rank}" Value="1">
-                    <Setter Property="Background" Value="{DynamicResource BrushWarningSoft}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Rank}" Value="2">
-                    <Setter Property="Background" Value="{DynamicResource BrushSurfaceAlt}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Rank}" Value="3">
-                    <Setter Property="Background" Value="{DynamicResource BrushAccentSoft}"/>
-                </DataTrigger>
-                <!-- Đặt SAU CÙNG để thắng các DataTrigger trên khi IsMe=True. -->
-                <DataTrigger Binding="{Binding IsMe}" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource BrushAccentSoft}"/>
-                    <Setter Property="FontWeight" Value="SemiBold"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
+    <!-- =========================================================
+         LEADERBOARD — tông tối, đồng bộ Home Player.
 
-        <!-- Row style cho DataGrid theo bộ đề: cùng logic. -->
-        <Style x:Key="SetLbRow" TargetType="DataGridRow" BasedOn="{StaticResource GridRow}">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding Rank}" Value="1">
-                    <Setter Property="Background" Value="{DynamicResource BrushWarningSoft}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Rank}" Value="2">
-                    <Setter Property="Background" Value="{DynamicResource BrushSurfaceAlt}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Rank}" Value="3">
-                    <Setter Property="Background" Value="{DynamicResource BrushAccentSoft}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding IsMe}" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource BrushAccentSoft}"/>
-                    <Setter Property="FontWeight" Value="SemiBold"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-    </UserControl.Resources>
+         Cấu trúc lớp nền:
+           1) Gradient tối dự phòng (HomeBackdropFallback)
+           2) Ảnh nền home-bg.jpg (nếu có)
+           3) Overlay tối để chữ trắng nổi
+           4) 2 halo màu (cam + tím) tạo chiều sâu
+           5) Nội dung (Grid 5 hàng trong ScrollViewer)
 
-    <Grid Margin="20,16,20,20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+         Toàn bộ style "Lb*" khai báo trong Themes/LeaderboardStyles.xaml.
 
-        <!-- =========================================================
-             HÀNG 0: TIÊU ĐỀ + LÀM MỚI
-             ========================================================= -->
-        <Grid Grid.Row="0" Margin="0,0,0,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+         FIX bo tròn khung bảng:
+           Border.ClipToBounds không tôn trọng CornerRadius. Đã dùng
+           x:Name="TableBorder" + SizeChanged → code-behind gán Clip là
+           RectangleGeometry(radius=14) để cắt nội dung con theo bo tròn.
+         ========================================================= -->
 
-            <Button Grid.Column="0"
-                    Command="{Binding BackCommand}"
-                    Style="{DynamicResource ButtonSecondary}"
-                    Padding="12,7"
-                    Margin="0,0,14,0"
-                    VerticalAlignment="Center">
-                <TextBlock Text="← Trang chủ"/>
-            </Button>
+    <Grid>
 
-            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                <TextBlock Text="Bảng xếp hạng"
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="{DynamicResource FontSizeTitle}"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource BrushInk}"/>
-                <TextBlock Text="Xếp theo cấp độ, hoặc theo % đạt tối ưu của từng bộ đề."
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="{DynamicResource FontSizeSmall}"
-                           Foreground="{DynamicResource BrushInkMuted}"
-                           Margin="0,2,0,0"/>
-            </StackPanel>
+        <!-- Lớp 1: gradient tối dự phòng khi ảnh không nạp được -->
+        <Rectangle Fill="{StaticResource HomeBackdropFallback}"/>
 
-            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="Đang tải..."
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="{DynamicResource FontSizeSmall}"
-                           Foreground="{DynamicResource BrushInkMuted}"
-                           VerticalAlignment="Center"
-                           Margin="0,0,12,0"
-                           Visibility="{Binding IsLoading,
-                                        Converter={StaticResource BoolToVisibility}}"/>
-                <Button Command="{Binding RefreshCommand}"
-                        Style="{DynamicResource ButtonSecondary}"
-                        Padding="12,7">
-                    <StackPanel Orientation="Horizontal">
-                        <Path Data="{DynamicResource IconRefresh}"
-                              Width="14" Height="14"
-                              Stroke="{Binding Foreground,
-                                       RelativeSource={RelativeSource AncestorType=Button}}"
-                              StrokeThickness="1.5"
-                              Stretch="Uniform"
-                              VerticalAlignment="Center"
-                              Margin="0,0,8,0"/>
-                        <TextBlock Text="Làm mới" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
-            </StackPanel>
-        </Grid>
+        <!-- Lớp 2: ảnh nền chung với Home (nếu file tồn tại) -->
+        <Rectangle>
+            <Rectangle.Fill>
+                <ImageBrush ImageSource="pack://application:,,,/Assets/Backgrounds/home-bg.jpg"
+                            Stretch="UniformToFill"/>
+            </Rectangle.Fill>
+        </Rectangle>
+
+        <!-- Lớp 3: overlay tối để chữ trắng nổi -->
+        <Rectangle Fill="{StaticResource HomeOverlay}"/>
+
+        <!-- Lớp 4: halo trang trí, không nhận chuột -->
+        <Ellipse Width="560" Height="560"
+                 HorizontalAlignment="Left" VerticalAlignment="Top"
+                 Margin="-200,-200,0,0"
+                 Opacity="0.28"
+                 IsHitTestVisible="False">
+            <Ellipse.Fill>
+                <RadialGradientBrush GradientOrigin="0.5,0.5"
+                                     Center="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+                    <GradientStop Color="#FF9A3D" Offset="0"/>
+                    <GradientStop Color="#00FF9A3D" Offset="1"/>
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
+
+        <Ellipse Width="480" Height="480"
+                 HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                 Margin="0,0,-180,-180"
+                 Opacity="0.28"
+                 IsHitTestVisible="False">
+            <Ellipse.Fill>
+                <RadialGradientBrush GradientOrigin="0.5,0.5"
+                                     Center="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+                    <GradientStop Color="#7C6CFF" Offset="0"/>
+                    <GradientStop Color="#007C6CFF" Offset="1"/>
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
 
         <!-- =========================================================
-             HÀNG 1: 2 TAB
+             Lớp 5: NỘI DUNG
              ========================================================= -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
-            <RadioButton Content="🏅 Cấp độ (EXP)"
-                         GroupName="LbTab"
-                         Style="{DynamicResource FilterTabRadio}"
-                         IsChecked="{Binding IsExpTab, Mode=TwoWay}"/>
-            <RadioButton Content="🎯 Theo bộ đề"
-                         GroupName="LbTab"
-                         Style="{DynamicResource FilterTabRadio}"
-                         IsChecked="{Binding IsSetTab, Mode=TwoWay}"/>
-        </StackPanel>
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="0"
+                      Background="Transparent">
+            <Grid Margin="24,20,24,24" MinWidth="900">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <!-- 0: header -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- 1: tabs -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- 2: filter -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- 3: bảng -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- 4: hạng của bạn -->
+                </Grid.RowDefinitions>
 
-        <!-- =========================================================
-             HÀNG 2: THANH LỌC (chỉ hiện khi tab "Theo bộ đề")
-             ========================================================= -->
-        <WrapPanel Grid.Row="2"
-                   Margin="0,0,0,10"
-                   Visibility="{Binding IsSetTab,
-                                Converter={StaticResource BoolToVisibility}}">
+                <!-- =========================================================
+                     ROW 0 — HEADER
+                     ========================================================= -->
+                <Grid Grid.Row="0" Margin="0,0,0,32">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-            <RadioButton Content="Tất cả"
-                         GroupName="LbDiff"
-                         Style="{DynamicResource FilterTabRadio}"
-                         IsChecked="{Binding IsDiffAll, Mode=TwoWay}"/>
-            <RadioButton Content="🌱 Dễ"
-                         GroupName="LbDiff"
-                         Style="{DynamicResource FilterTabRadio}"
-                         IsChecked="{Binding IsDiffEasy, Mode=TwoWay}"/>
-            <RadioButton Content="⚖️ Bình thường"
-                         GroupName="LbDiff"
-                         Style="{DynamicResource FilterTabRadio}"
-                         IsChecked="{Binding IsDiffMedium, Mode=TwoWay}"/>
-            <RadioButton Content="🔥 Khó"
-                         GroupName="LbDiff"
-                         Style="{DynamicResource FilterTabRadio}"
-                         IsChecked="{Binding IsDiffHard, Mode=TwoWay}"/>
-
-            <ComboBox Width="150"
-                      Margin="12,0,0,0"
-                      VerticalAlignment="Center"
-                      Style="{DynamicResource DarkComboBox}"
-                      ItemsSource="{Binding ModeOptions}"
-                      SelectedItem="{Binding SelectedMode, Mode=TwoWay}"
-                      DisplayMemberPath="Label"/>
-
-            <ComboBox Width="140"
-                      Margin="8,0,0,0"
-                      VerticalAlignment="Center"
-                      Style="{DynamicResource DarkComboBox}"
-                      ItemsSource="{Binding TimeOptions}"
-                      SelectedItem="{Binding SelectedTime, Mode=TwoWay}"
-                      DisplayMemberPath="Label"/>
-
-            <ComboBox Width="260"
-                      Margin="8,0,0,0"
-                      VerticalAlignment="Center"
-                      Style="{DynamicResource DarkComboBox}"
-                      ItemsSource="{Binding SetOptions}"
-                      SelectedItem="{Binding SelectedSetOption, Mode=TwoWay}"
-                      DisplayMemberPath="Label"
-                      Visibility="{Binding HasSetFilter,
-                                   Converter={StaticResource BoolToVisibility}}"/>
-        </WrapPanel>
-
-        <!-- =========================================================
-             HÀNG 3: BẢNG (2 DataGrid + empty state xếp chồng)
-             ========================================================= -->
-        <Border Grid.Row="3" Style="{DynamicResource Card}" Padding="0">
-            <Grid>
-
-                <!-- DataGrid EXP -->
-                <DataGrid ItemsSource="{Binding ExpRows}"
-                          Visibility="{Binding IsExpTab,
-                                       Converter={StaticResource BoolToVisibility}}"
-                          AutoGenerateColumns="False"
-                          IsReadOnly="True"
-                          SelectionMode="Single"
-                          SelectionUnit="FullRow"
-                          CanUserAddRows="False"
-                          CanUserResizeRows="False"
-                          CanUserResizeColumns="False"
-                          HeadersVisibility="Column"
-                          GridLinesVisibility="None"
-                          Background="Transparent"
-                          BorderThickness="0"
-                          RowHeight="38"
-                          FontSize="{DynamicResource FontSizeBody}"
-                          Foreground="{DynamicResource BrushInk}"
-                          ColumnHeaderStyle="{DynamicResource GridColumnHeader}"
-                          RowStyle="{StaticResource ExpLbRow}"
-                          CellStyle="{DynamicResource GridCell}">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="#"
-                                            Binding="{Binding RankText}"
-                                            Width="70"
-                                            ElementStyle="{StaticResource RightCellText}"/>
-                        <DataGridTextColumn Header="NGƯỜI CHƠI"
-                                            Binding="{Binding Username}"
-                                            Width="*"/>
-                        <DataGridTextColumn Header="CẤP"
-                                            Binding="{Binding LevelText}"
-                                            Width="90"/>
-                        <DataGridTextColumn Header="HẠNG"
-                                            Binding="{Binding RankTitle}"
-                                            Width="130"
-                                            ElementStyle="{StaticResource MutedCellText}"/>
-                        <DataGridTextColumn Header="EXP"
-                                            Binding="{Binding ExpText}"
-                                            Width="130"
-                                            ElementStyle="{StaticResource RightCellText}"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-
-                <!-- DataGrid theo bộ đề -->
-                <DataGrid ItemsSource="{Binding SetRows}"
-                          Visibility="{Binding IsSetTab,
-                                       Converter={StaticResource BoolToVisibility}}"
-                          AutoGenerateColumns="False"
-                          IsReadOnly="True"
-                          SelectionMode="Single"
-                          SelectionUnit="FullRow"
-                          CanUserAddRows="False"
-                          CanUserResizeRows="False"
-                          CanUserResizeColumns="False"
-                          HeadersVisibility="Column"
-                          GridLinesVisibility="None"
-                          Background="Transparent"
-                          BorderThickness="0"
-                          RowHeight="38"
-                          FontSize="{DynamicResource FontSizeBody}"
-                          Foreground="{DynamicResource BrushInk}"
-                          ColumnHeaderStyle="{DynamicResource GridColumnHeader}"
-                          RowStyle="{StaticResource SetLbRow}"
-                          CellStyle="{DynamicResource GridCell}">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="#"
-                                            Binding="{Binding RankText}"
-                                            Width="70"
-                                            ElementStyle="{StaticResource RightCellText}"/>
-                        <DataGridTextColumn Header="NGƯỜI CHƠI"
-                                            Binding="{Binding Username}"
-                                            Width="*"/>
-                        <DataGridTextColumn Header="BỘ ĐỀ"
-                                            Binding="{Binding SetName}"
-                                            Width="*"
-                                            ElementStyle="{StaticResource MutedCellText}"/>
-                        <DataGridTextColumn Header="ĐỘ KHÓ"
-                                            Binding="{Binding DifficultyText}"
-                                            Width="110"
-                                            ElementStyle="{StaticResource MutedCellText}"/>
-                        <DataGridTextColumn Header="% TỐI ƯU"
-                                            Binding="{Binding PercentText}"
-                                            Width="100"
-                                            ElementStyle="{StaticResource RightCellText}"/>
-                        <DataGridTextColumn Header="ĐIỂM"
-                                            Binding="{Binding ScoreText}"
-                                            Width="100"
-                                            ElementStyle="{StaticResource RightCellText}"/>
-                        <DataGridTextColumn Header="THỜI GIAN"
-                                            Binding="{Binding TimeText}"
-                                            Width="100"
-                                            ElementStyle="{StaticResource RightCellText}"/>
-                        <DataGridTextColumn Header="THỜI ĐIỂM"
-                                            Binding="{Binding AchievedText}"
-                                            Width="150"
-                                            ElementStyle="{StaticResource MutedCellText}"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-
-                <!-- Empty state EXP -->
-                <StackPanel HorizontalAlignment="Center"
+                    <!-- Nút Trang chủ — pill glass bo 12 -->
+                    <Button Grid.Column="0"
+                            Command="{Binding BackCommand}"
+                            Padding="16,10"
+                            Margin="0,0,14,0"
                             VerticalAlignment="Center"
-                            IsHitTestVisible="False">
-                    <StackPanel.Style>
-                        <Style TargetType="StackPanel">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding IsExpTab}" Value="True"/>
-                                        <Condition Binding="{Binding ExpRows.Count}" Value="0"/>
-                                        <Condition Binding="{Binding IsLoading}" Value="False"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </MultiDataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </StackPanel.Style>
-                    <Path Data="{DynamicResource IconTagStack}"
-                          Width="40" Height="40"
-                          Stroke="{DynamicResource BrushInkMuted}"
-                          StrokeThickness="1.2"
-                          Stretch="Uniform"
-                          HorizontalAlignment="Center"
-                          Opacity="0.5"/>
-                    <TextBlock Text="Chưa có ai lọt bảng xếp hạng"
-                               FontFamily="{DynamicResource FontSans}"
-                               FontSize="{DynamicResource FontSizeSmall}"
-                               Foreground="{DynamicResource BrushInkMuted}"
-                               Margin="0,10,0,0"/>
+                            Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="bd"
+                                        Background="{StaticResource HomeGlassFill}"
+                                        BorderBrush="{StaticResource HomeGlassBorder}"
+                                        BorderThickness="1"
+                                        CornerRadius="12"
+                                        Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="bd" Property="Background"
+                                                Value="{StaticResource HomeGlassFillHover}"/>
+                                        <Setter TargetName="bd" Property="BorderBrush"
+                                                Value="#66FFFFFF"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{DynamicResource IconArrowLeft}"
+                                  Width="14" Height="14"
+                                  Stroke="{StaticResource HomeTextOnDark}"
+                                  StrokeThickness="1.6"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,8,0"/>
+                            <TextBlock Text="Trang chủ"
+                                       FontFamily="{DynamicResource FontSans}"
+                                       FontSize="{DynamicResource FontSizeBody}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource HomeTextOnDark}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Tiêu đề + phụ đề -->
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Bảng xếp hạng"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="24"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource HomeTextOnDark}">
+                            <TextBlock.Effect>
+                                <DropShadowEffect Color="Black"
+                                                  BlurRadius="12"
+                                                  ShadowDepth="0"
+                                                  Opacity="0.5"/>
+                            </TextBlock.Effect>
+                        </TextBlock>
+                        <TextBlock Text="Xếp theo cấp độ, hoặc theo % đạt tối ưu của từng bộ đề."
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                   Margin="0,4,0,0"/>
+                    </StackPanel>
+
+                    <!-- Nút Làm mới + trạng thái tải -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Đang tải..."
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,12,0"
+                                   Visibility="{Binding IsLoading,
+                                                Converter={StaticResource BoolToVisibility}}"/>
+                        <Button Command="{Binding RefreshCommand}"
+                                Padding="16,10"
+                                Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="bd"
+                                            Background="{StaticResource HomeGlassFill}"
+                                            BorderBrush="{StaticResource HomeGlassBorder}"
+                                            BorderThickness="1"
+                                            CornerRadius="12"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="bd" Property="Background"
+                                                    Value="{StaticResource HomeGlassFillHover}"/>
+                                            <Setter TargetName="bd" Property="BorderBrush"
+                                                    Value="#66FFFFFF"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{DynamicResource IconRefresh}"
+                                      Width="14" Height="14"
+                                      Stroke="{StaticResource HomeTextOnDark}"
+                                      StrokeThickness="1.6"
+                                      Stretch="Uniform"
+                                      VerticalAlignment="Center"
+                                      Margin="0,0,8,0"/>
+                                <TextBlock Text="Làm mới"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="{DynamicResource FontSizeBody}"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource HomeTextOnDark}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <!-- =========================================================
+                     ROW 1 — 2 TAB PILL
+                     ========================================================= -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,16">
+
+                    <RadioButton GroupName="LbTab"
+                                 Style="{StaticResource LbTabRadio}"
+                                 IsChecked="{Binding IsExpTab, Mode=TwoWay}">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{DynamicResource IconTrophy}"
+                                  Stroke="{Binding Foreground,
+                                           RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                  StrokeThickness="1.5"
+                                  Width="16" Height="16"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,8,0"/>
+                            <TextBlock Text="Cấp độ (EXP)" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
+
+                    <RadioButton GroupName="LbTab"
+                                 Style="{StaticResource LbTabRadio}"
+                                 IsChecked="{Binding IsSetTab, Mode=TwoWay}">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{DynamicResource IconTarget}"
+                                  Stroke="{Binding Foreground,
+                                           RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                  StrokeThickness="1.5"
+                                  Width="16" Height="16"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,8,0"/>
+                            <TextBlock Text="Theo bộ đề" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
+
                 </StackPanel>
 
-                <!-- Empty state theo bộ đề -->
-                <StackPanel HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            IsHitTestVisible="False">
-                    <StackPanel.Style>
-                        <Style TargetType="StackPanel">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding IsSetTab}" Value="True"/>
-                                        <Condition Binding="{Binding SetRows.Count}" Value="0"/>
-                                        <Condition Binding="{Binding IsLoading}" Value="False"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </MultiDataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </StackPanel.Style>
-                    <Path Data="{DynamicResource IconTagStack}"
-                          Width="40" Height="40"
-                          Stroke="{DynamicResource BrushInkMuted}"
-                          StrokeThickness="1.2"
-                          Stretch="Uniform"
-                          HorizontalAlignment="Center"
-                          Opacity="0.5"/>
-                    <TextBlock Text="Chưa có ai lọt bảng xếp hạng"
-                               FontFamily="{DynamicResource FontSans}"
-                               FontSize="{DynamicResource FontSizeSmall}"
-                               Foreground="{DynamicResource BrushInkMuted}"
-                               Margin="0,10,0,0"/>
+                <!-- =========================================================
+                     ROW 2 — THANH LỌC (chỉ hiện khi tab "Theo bộ đề")
+                     ========================================================= -->
+                <WrapPanel Grid.Row="2"
+                           Margin="0,0,0,16"
+                           VerticalAlignment="Center"
+                           Visibility="{Binding IsSetTab,
+                                        Converter={StaticResource BoolToVisibility}}">
+
+                    <RadioButton GroupName="LbDiff"
+                                 Style="{StaticResource LbPillRadio}"
+                                 IsChecked="{Binding IsDiffAll, Mode=TwoWay}"
+                                 Content="Tất cả"/>
+
+                    <RadioButton GroupName="LbDiff"
+                                 Style="{StaticResource LbPillRadio}"
+                                 IsChecked="{Binding IsDiffEasy, Mode=TwoWay}">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{DynamicResource IconLeaf}"
+                                  Stroke="{Binding Foreground,
+                                           RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                  StrokeThickness="1.5"
+                                  Width="12" Height="12"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,6,0"/>
+                            <TextBlock Text="Dễ" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
+
+                    <RadioButton GroupName="LbDiff"
+                                 Style="{StaticResource LbPillRadio}"
+                                 IsChecked="{Binding IsDiffMedium, Mode=TwoWay}">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{DynamicResource IconScale}"
+                                  Stroke="{Binding Foreground,
+                                           RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                  StrokeThickness="1.5"
+                                  Width="12" Height="12"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,6,0"/>
+                            <TextBlock Text="Bình thường" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
+
+                    <RadioButton GroupName="LbDiff"
+                                 Style="{StaticResource LbPillRadio}"
+                                 IsChecked="{Binding IsDiffHard, Mode=TwoWay}"
+                                 Margin="0,0,14,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{DynamicResource IconFlame}"
+                                  Stroke="{Binding Foreground,
+                                           RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                  StrokeThickness="1.5"
+                                  Width="12" Height="12"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,6,0"/>
+                            <TextBlock Text="Khó" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
+
+                    <!-- ComboBox CHẾ ĐỘ — ItemTemplate tường minh để fix bug ToString -->
+                    <ComboBox Width="160"
+                              Margin="0,0,8,0"
+                              VerticalAlignment="Center"
+                              Style="{StaticResource LbComboBox}"
+                              ItemsSource="{Binding ModeOptions}"
+                              SelectedItem="{Binding SelectedMode, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Label}"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{Binding Foreground,
+                                                        RelativeSource={RelativeSource AncestorType=ComboBox}}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <!-- ComboBox THỜI GIAN -->
+                    <ComboBox Width="160"
+                              Margin="0,0,8,0"
+                              VerticalAlignment="Center"
+                              Style="{StaticResource LbComboBox}"
+                              ItemsSource="{Binding TimeOptions}"
+                              SelectedItem="{Binding SelectedTime, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Label}"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{Binding Foreground,
+                                                        RelativeSource={RelativeSource AncestorType=ComboBox}}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <!-- ComboBox BỘ ĐỀ -->
+                    <ComboBox Width="260"
+                              VerticalAlignment="Center"
+                              Style="{StaticResource LbComboBox}"
+                              ItemsSource="{Binding SetOptions}"
+                              SelectedItem="{Binding SelectedSetOption, Mode=TwoWay}"
+                              Visibility="{Binding HasSetFilter,
+                                           Converter={StaticResource BoolToVisibility}}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Label}"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{Binding Foreground,
+                                                        RelativeSource={RelativeSource AncestorType=ComboBox}}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </WrapPanel>
+
+                <!-- =========================================================
+                     ROW 3 — BẢNG
+                     - Lớp nền: Border rỗng chỉ để đổ bóng.
+                     - Lớp nội dung: Border có x:Name="TableBorder",
+                       SizeChanged → code-behind gán Clip = RectangleGeometry
+                       (radius=14) để bo tròn sạch cả nội dung con bên trong.
+                     ========================================================= -->
+                <Grid Grid.Row="3" Margin="0,0,0,16">
+
+                    <!-- Lớp nền: chỉ đổ bóng, không chứa nội dung -->
+                    <Border CornerRadius="14"
+                            Background="{StaticResource HomeGlassFill}"
+                            BorderBrush="{StaticResource HomeGlassBorder}"
+                            BorderThickness="1">
+                        <Border.Effect>
+                            <DropShadowEffect Color="Black"
+                                              BlurRadius="24"
+                                              ShadowDepth="0"
+                                              Opacity="0.4"/>
+                        </Border.Effect>
+                    </Border>
+
+                    <!-- Lớp nội dung: có x:Name + SizeChanged để clip bo tròn -->
+                    <Border x:Name="TableBorder"
+                            CornerRadius="14"
+                            Background="{StaticResource HomeGlassFill}"
+                            BorderBrush="{StaticResource HomeGlassBorder}"
+                            BorderThickness="1"
+                            SizeChanged="TableBorder_SizeChanged">
+                        <Grid>
+
+                            <!-- ============ DataGrid TAB EXP ============ -->
+                            <DataGrid ItemsSource="{Binding ExpRows}"
+                                      Visibility="{Binding IsExpTab,
+                                                   Converter={StaticResource BoolToVisibility}}"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      SelectionMode="Single"
+                                      SelectionUnit="FullRow"
+                                      CanUserAddRows="False"
+                                      CanUserResizeRows="False"
+                                      CanUserResizeColumns="False"
+                                      AlternationCount="2"
+                                      HeadersVisibility="Column"
+                                      GridLinesVisibility="None"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      RowHeight="46"
+                                      FontSize="{DynamicResource FontSizeBody}"
+                                      Foreground="{StaticResource HomeTextOnDark}"
+                                      ColumnHeaderStyle="{StaticResource LbGridHeaderLeft}"
+                                      RowStyle="{StaticResource LbGridRow}"
+                                      CellStyle="{StaticResource LbGridCell}"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <DataGrid.Columns>
+
+                                    <!-- Cột # — huy hiệu top 3 hoặc số -->
+                                    <DataGridTemplateColumn Header="#"
+                                                            Width="80"
+                                                            HeaderStyle="{StaticResource LbGridHeaderCenter}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Grid HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center">
+                                                    <TextBlock x:Name="PlainRank"
+                                                               Text="{Binding RankDisplay}"
+                                                               FontFamily="{DynamicResource FontMono}"
+                                                               FontSize="{DynamicResource FontSizeBody}"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+
+                                                    <Grid x:Name="GoldBadge"
+                                                          Visibility="Collapsed"
+                                                          HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center">
+                                                        <Border Style="{StaticResource LbRankBadgeGold}">
+                                                            <TextBlock Text="1"
+                                                                       FontFamily="{DynamicResource FontMono}"
+                                                                       FontSize="{DynamicResource FontSizeBody}"
+                                                                       FontWeight="SemiBold"
+                                                                       Foreground="#3A2400"
+                                                                       HorizontalAlignment="Center"
+                                                                       VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <Path Data="{DynamicResource IconCrown}"
+                                                              Fill="#3A2400"
+                                                              Width="11" Height="11"
+                                                              Stretch="Uniform"
+                                                              HorizontalAlignment="Center"
+                                                              VerticalAlignment="Top"
+                                                              Margin="0,-8,0,0"/>
+                                                    </Grid>
+
+                                                    <Border x:Name="SilverBadge"
+                                                            Style="{StaticResource LbRankBadgeSilver}"
+                                                            Visibility="Collapsed">
+                                                        <TextBlock Text="2"
+                                                                   FontFamily="{DynamicResource FontMono}"
+                                                                   FontSize="{DynamicResource FontSizeBody}"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="#22262E"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"/>
+                                                    </Border>
+
+                                                    <Border x:Name="BronzeBadge"
+                                                            Style="{StaticResource LbRankBadgeBronze}"
+                                                            Visibility="Collapsed">
+                                                        <TextBlock Text="3"
+                                                                   FontFamily="{DynamicResource FontMono}"
+                                                                   FontSize="{DynamicResource FontSizeBody}"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="#FFFFFF"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </Grid>
+                                                <DataTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding IsGold}" Value="True">
+                                                        <Setter TargetName="PlainRank" Property="Visibility" Value="Collapsed"/>
+                                                        <Setter TargetName="GoldBadge" Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsSilver}" Value="True">
+                                                        <Setter TargetName="PlainRank" Property="Visibility" Value="Collapsed"/>
+                                                        <Setter TargetName="SilverBadge" Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsBronze}" Value="True">
+                                                        <Setter TargetName="PlainRank" Property="Visibility" Value="Collapsed"/>
+                                                        <Setter TargetName="BronzeBadge" Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </DataTemplate.Triggers>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <!-- NGƯỜI CHƠI -->
+                                    <DataGridTemplateColumn Header="NGƯỜI CHƠI"
+                                                            Width="*"
+                                                            MinWidth="180">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <Border Grid.Column="0"
+                                                            Style="{StaticResource LbAvatar}">
+                                                        <TextBlock Text="{Binding Initial}"
+                                                                   FontFamily="{DynamicResource FontSans}"
+                                                                   FontSize="{DynamicResource FontSizeSmall}"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{StaticResource HomeTextOnDark}"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"/>
+                                                    </Border>
+
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding Username}"
+                                                               FontFamily="{DynamicResource FontSans}"
+                                                               FontSize="{DynamicResource FontSizeBody}"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{StaticResource HomeTextOnDark}"
+                                                               VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis"/>
+
+                                                    <Border Grid.Column="2"
+                                                            Style="{StaticResource LbChipMe}"
+                                                            Visibility="{Binding IsMe,
+                                                                         Converter={StaticResource BoolToVisibility}}">
+                                                        <TextBlock Text="Bạn"
+                                                                   FontFamily="{DynamicResource FontSans}"
+                                                                   FontSize="{DynamicResource FontSizeCaption}"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{StaticResource HomeTextOnDark}"/>
+                                                    </Border>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <!-- CẤP -->
+                                    <DataGridTemplateColumn Header="CẤP"
+                                                            Width="100"
+                                                            HeaderStyle="{StaticResource LbGridHeaderCenter}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border Style="{StaticResource LbChipLevel}">
+                                                    <TextBlock Text="{Binding LevelText}"
+                                                               FontFamily="{DynamicResource FontMono}"
+                                                               FontSize="{DynamicResource FontSizeCaption}"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{StaticResource LbChipLevelText}"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <!-- HẠNG -->
+                                    <DataGridTemplateColumn Header="HẠNG"
+                                                            Width="140"
+                                                            HeaderStyle="{StaticResource LbGridHeaderCenter}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border>
+                                                    <Border.Style>
+                                                        <Style TargetType="Border"
+                                                               BasedOn="{StaticResource LbChip}">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding RankTitle}" Value="Đồng">
+                                                                    <Setter Property="Background"
+                                                                            Value="{StaticResource LbChipBronzeBg}"/>
+                                                                    <Setter Property="BorderBrush"
+                                                                            Value="{StaticResource LbChipBronzeBorder}"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding RankTitle}" Value="Bạc">
+                                                                    <Setter Property="Background"
+                                                                            Value="{StaticResource LbChipSilverBg}"/>
+                                                                    <Setter Property="BorderBrush"
+                                                                            Value="{StaticResource LbChipSilverBorder}"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding RankTitle}" Value="Vàng">
+                                                                    <Setter Property="Background"
+                                                                            Value="{StaticResource LbChipGoldBg}"/>
+                                                                    <Setter Property="BorderBrush"
+                                                                            Value="{StaticResource LbChipGoldBorder}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{Binding RankTitle}">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="FontFamily"
+                                                                        Value="{DynamicResource FontSans}"/>
+                                                                <Setter Property="FontSize"
+                                                                        Value="{DynamicResource FontSizeCaption}"/>
+                                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                <Setter Property="Foreground"
+                                                                        Value="{StaticResource HomeTextOnDark}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding RankTitle}" Value="Đồng">
+                                                                        <Setter Property="Foreground"
+                                                                                Value="{StaticResource LbChipBronzeText}"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding RankTitle}" Value="Bạc">
+                                                                        <Setter Property="Foreground"
+                                                                                Value="{StaticResource LbChipSilverText}"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding RankTitle}" Value="Vàng">
+                                                                        <Setter Property="Foreground"
+                                                                                Value="{StaticResource LbChipGoldText}"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <!-- CỘT EXP — chỉ hiển thị số -->
+                                    <DataGridTemplateColumn Header="EXP"
+                                                            Width="140"
+                                                            HeaderStyle="{StaticResource LbGridHeaderRight}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding ExpText}"
+                                                           FontFamily="{DynamicResource FontMono}"
+                                                           FontSize="{DynamicResource FontSizeBody}"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{StaticResource HomeGold}"
+                                                           HorizontalAlignment="Right"
+                                                           VerticalAlignment="Center"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <!-- ============ DataGrid TAB THEO BỘ ĐỀ ============ -->
+                            <DataGrid ItemsSource="{Binding SetRows}"
+                                      Visibility="{Binding IsSetTab,
+                                                   Converter={StaticResource BoolToVisibility}}"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      SelectionMode="Single"
+                                      SelectionUnit="FullRow"
+                                      CanUserAddRows="False"
+                                      CanUserResizeRows="False"
+                                      CanUserResizeColumns="False"
+                                      AlternationCount="2"
+                                      HeadersVisibility="Column"
+                                      GridLinesVisibility="None"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      RowHeight="46"
+                                      FontSize="{DynamicResource FontSizeBody}"
+                                      Foreground="{StaticResource HomeTextOnDark}"
+                                      ColumnHeaderStyle="{StaticResource LbGridHeaderLeft}"
+                                      RowStyle="{StaticResource LbGridRow}"
+                                      CellStyle="{StaticResource LbGridCell}"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <DataGrid.Columns>
+
+                                    <DataGridTemplateColumn Header="#"
+                                                            Width="80"
+                                                            HeaderStyle="{StaticResource LbGridHeaderCenter}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Grid HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center">
+                                                    <TextBlock x:Name="PlainRank"
+                                                               Text="{Binding RankDisplay}"
+                                                               FontFamily="{DynamicResource FontMono}"
+                                                               FontSize="{DynamicResource FontSizeBody}"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+
+                                                    <Grid x:Name="GoldBadge"
+                                                          Visibility="Collapsed"
+                                                          HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center">
+                                                        <Border Style="{StaticResource LbRankBadgeGold}">
+                                                            <TextBlock Text="1"
+                                                                       FontFamily="{DynamicResource FontMono}"
+                                                                       FontSize="{DynamicResource FontSizeBody}"
+                                                                       FontWeight="SemiBold"
+                                                                       Foreground="#3A2400"
+                                                                       HorizontalAlignment="Center"
+                                                                       VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <Path Data="{DynamicResource IconCrown}"
+                                                              Fill="#3A2400"
+                                                              Width="11" Height="11"
+                                                              Stretch="Uniform"
+                                                              HorizontalAlignment="Center"
+                                                              VerticalAlignment="Top"
+                                                              Margin="0,-8,0,0"/>
+                                                    </Grid>
+
+                                                    <Border x:Name="SilverBadge"
+                                                            Style="{StaticResource LbRankBadgeSilver}"
+                                                            Visibility="Collapsed">
+                                                        <TextBlock Text="2"
+                                                                   FontFamily="{DynamicResource FontMono}"
+                                                                   FontSize="{DynamicResource FontSizeBody}"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="#22262E"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"/>
+                                                    </Border>
+
+                                                    <Border x:Name="BronzeBadge"
+                                                            Style="{StaticResource LbRankBadgeBronze}"
+                                                            Visibility="Collapsed">
+                                                        <TextBlock Text="3"
+                                                                   FontFamily="{DynamicResource FontMono}"
+                                                                   FontSize="{DynamicResource FontSizeBody}"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="#FFFFFF"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </Grid>
+                                                <DataTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding IsGold}" Value="True">
+                                                        <Setter TargetName="PlainRank" Property="Visibility" Value="Collapsed"/>
+                                                        <Setter TargetName="GoldBadge" Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsSilver}" Value="True">
+                                                        <Setter TargetName="PlainRank" Property="Visibility" Value="Collapsed"/>
+                                                        <Setter TargetName="SilverBadge" Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsBronze}" Value="True">
+                                                        <Setter TargetName="PlainRank" Property="Visibility" Value="Collapsed"/>
+                                                        <Setter TargetName="BronzeBadge" Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </DataTemplate.Triggers>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTemplateColumn Header="NGƯỜI CHƠI"
+                                                            Width="*"
+                                                            MinWidth="160">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <Border Grid.Column="0"
+                                                            Style="{StaticResource LbAvatar}">
+                                                        <TextBlock Text="{Binding Initial}"
+                                                                   FontFamily="{DynamicResource FontSans}"
+                                                                   FontSize="{DynamicResource FontSizeSmall}"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{StaticResource HomeTextOnDark}"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"/>
+                                                    </Border>
+
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding Username}"
+                                                               FontFamily="{DynamicResource FontSans}"
+                                                               FontSize="{DynamicResource FontSizeBody}"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{StaticResource HomeTextOnDark}"
+                                                               VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis"/>
+
+                                                    <Border Grid.Column="2"
+                                                            Style="{StaticResource LbChipMe}"
+                                                            Visibility="{Binding IsMe,
+                                                                         Converter={StaticResource BoolToVisibility}}">
+                                                        <TextBlock Text="Bạn"
+                                                                   FontFamily="{DynamicResource FontSans}"
+                                                                   FontSize="{DynamicResource FontSizeCaption}"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{StaticResource HomeTextOnDark}"/>
+                                                    </Border>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTemplateColumn Header="BỘ ĐỀ"
+                                                            Width="*"
+                                                            MinWidth="140">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding SetName}"
+                                                           FontFamily="{DynamicResource FontSans}"
+                                                           FontSize="{DynamicResource FontSizeBody}"
+                                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                                           VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTemplateColumn Header="ĐỘ KHÓ"
+                                                            Width="130"
+                                                            HeaderStyle="{StaticResource LbGridHeaderCenter}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border>
+                                                    <Border.Style>
+                                                        <Style TargetType="Border"
+                                                               BasedOn="{StaticResource LbChip}">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding DifficultyKey}" Value="Easy">
+                                                                    <Setter Property="Background"
+                                                                            Value="{StaticResource LbChipEasyBg}"/>
+                                                                    <Setter Property="BorderBrush"
+                                                                            Value="{StaticResource LbChipEasyBorder}"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding DifficultyKey}" Value="Medium">
+                                                                    <Setter Property="Background"
+                                                                            Value="{StaticResource LbChipMedBg}"/>
+                                                                    <Setter Property="BorderBrush"
+                                                                            Value="{StaticResource LbChipMedBorder}"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding DifficultyKey}" Value="Hard">
+                                                                    <Setter Property="Background"
+                                                                            Value="{StaticResource LbChipHardBg}"/>
+                                                                    <Setter Property="BorderBrush"
+                                                                            Value="{StaticResource LbChipHardBorder}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{Binding DifficultyText}">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="FontFamily"
+                                                                        Value="{DynamicResource FontSans}"/>
+                                                                <Setter Property="FontSize"
+                                                                        Value="{DynamicResource FontSizeCaption}"/>
+                                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                <Setter Property="Foreground"
+                                                                        Value="{StaticResource HomeTextOnDark}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding DifficultyKey}" Value="Easy">
+                                                                        <Setter Property="Foreground"
+                                                                                Value="{StaticResource LbChipEasyText}"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding DifficultyKey}" Value="Medium">
+                                                                        <Setter Property="Foreground"
+                                                                                Value="{StaticResource LbChipMedText}"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding DifficultyKey}" Value="Hard">
+                                                                        <Setter Property="Foreground"
+                                                                                Value="{StaticResource LbChipHardText}"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTemplateColumn Header="% TỐI ƯU"
+                                                            Width="110"
+                                                            HeaderStyle="{StaticResource LbGridHeaderRight}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding PercentText}"
+                                                           FontFamily="{DynamicResource FontMono}"
+                                                           FontSize="{DynamicResource FontSizeBody}"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{StaticResource HomeGold}"
+                                                           HorizontalAlignment="Right"
+                                                           VerticalAlignment="Center"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTemplateColumn Header="ĐIỂM"
+                                                            Width="110"
+                                                            HeaderStyle="{StaticResource LbGridHeaderRight}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding ScoreText}"
+                                                           FontFamily="{DynamicResource FontMono}"
+                                                           FontSize="{DynamicResource FontSizeBody}"
+                                                           Foreground="{StaticResource HomeTextOnDark}"
+                                                           HorizontalAlignment="Right"
+                                                           VerticalAlignment="Center"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTemplateColumn Header="THỜI GIAN"
+                                                            Width="110"
+                                                            HeaderStyle="{StaticResource LbGridHeaderRight}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding TimeText}"
+                                                           FontFamily="{DynamicResource FontMono}"
+                                                           FontSize="{DynamicResource FontSizeBody}"
+                                                           Foreground="{StaticResource HomeTextOnDark}"
+                                                           HorizontalAlignment="Right"
+                                                           VerticalAlignment="Center"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTemplateColumn Header="THỜI ĐIỂM"
+                                                            Width="160"
+                                                            HeaderStyle="{StaticResource LbGridHeaderRight}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding AchievedText}"
+                                                           FontFamily="{DynamicResource FontMono}"
+                                                           FontSize="{DynamicResource FontSizeSmall}"
+                                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                                           HorizontalAlignment="Right"
+                                                           VerticalAlignment="Center"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <!-- ============ EMPTY STATE EXP ============ -->
+                            <StackPanel HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        IsHitTestVisible="False">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsExpTab}" Value="True"/>
+                                                    <Condition Binding="{Binding ExpRows.Count}" Value="0"/>
+                                                    <Condition Binding="{Binding IsLoading}" Value="False"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <Path Data="{DynamicResource IconMedal}"
+                                      Width="56" Height="56"
+                                      Stroke="{StaticResource HomeTextOnDarkMuted}"
+                                      StrokeThickness="1.2"
+                                      Stretch="Uniform"
+                                      HorizontalAlignment="Center"
+                                      Opacity="0.55"/>
+                                <TextBlock Text="Chưa có ai lọt bảng xếp hạng"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="{DynamicResource FontSizeBody}"
+                                           Foreground="{StaticResource HomeTextOnDark}"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,16,0,0"/>
+                                <TextBlock Text="Hãy là người đầu tiên!"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,4,0,0"/>
+                            </StackPanel>
+
+                            <!-- ============ EMPTY STATE THEO BỘ ĐỀ ============ -->
+                            <StackPanel HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        IsHitTestVisible="False">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsSetTab}" Value="True"/>
+                                                    <Condition Binding="{Binding SetRows.Count}" Value="0"/>
+                                                    <Condition Binding="{Binding IsLoading}" Value="False"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <Path Data="{DynamicResource IconMedal}"
+                                      Width="56" Height="56"
+                                      Stroke="{StaticResource HomeTextOnDarkMuted}"
+                                      StrokeThickness="1.2"
+                                      Stretch="Uniform"
+                                      HorizontalAlignment="Center"
+                                      Opacity="0.55"/>
+                                <TextBlock Text="Chưa có ai lọt bảng xếp hạng"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="{DynamicResource FontSizeBody}"
+                                           Foreground="{StaticResource HomeTextOnDark}"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,16,0,0"/>
+                                <TextBlock Text="Thử đổi bộ lọc hoặc chơi một ván mới."
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- =========================================================
+                     ROW 4 — BANNER "HẠNG CỦA BẠN"
+                     ========================================================= -->
+                <StackPanel Grid.Row="4">
+
+                    <Border Style="{DynamicResource ErrorBanner}" Margin="0,0,0,8">
+                        <TextBlock Text="{Binding ErrorMessage}"
+                                   FontFamily="{DynamicResource FontSans}"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   Foreground="{DynamicResource BrushDanger}"
+                                   TextWrapping="Wrap"/>
+                    </Border>
+
+                    <Border Background="{StaticResource HomeGlassFill}"
+                            BorderBrush="#66FF9A3D"
+                            BorderThickness="1"
+                            CornerRadius="14"
+                            Padding="18,14"
+                            Visibility="{Binding HasMyRank,
+                                         Converter={StaticResource BoolToVisibility}}">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#FF9A3D"
+                                              BlurRadius="18"
+                                              ShadowDepth="0"
+                                              Opacity="0.35"/>
+                        </Border.Effect>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Path Grid.Column="0"
+                                  Data="{DynamicResource IconSparkline}"
+                                  Fill="{StaticResource HomeGold}"
+                                  Width="26" Height="26"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,16,0">
+                                <Path.Effect>
+                                    <DropShadowEffect Color="#FBBF24"
+                                                      BlurRadius="12"
+                                                      ShadowDepth="0"
+                                                      Opacity="0.8"/>
+                                </Path.Effect>
+                            </Path>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="HẠNG CỦA BẠN"
+                                           FontFamily="{DynamicResource FontMono}"
+                                           FontSize="{DynamicResource FontSizeCaption}"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource HomeGold}"/>
+                                <TextBlock Text="{Binding MyRankText}"
+                                           FontFamily="{DynamicResource FontSans}"
+                                           FontSize="{DynamicResource FontSizeBody}"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource HomeTextOnDark}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
                 </StackPanel>
             </Grid>
-        </Border>
-
-        <!-- =========================================================
-             HÀNG 4: LỖI + HẠNG CỦA BẠN
-             ========================================================= -->
-        <StackPanel Grid.Row="4" Margin="0,10,0,0">
-            <Border Style="{DynamicResource ErrorBanner}" Margin="0,0,0,8">
-                <TextBlock Text="{Binding ErrorMessage}"
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="{DynamicResource FontSizeSmall}"
-                           Foreground="{DynamicResource BrushDanger}"
-                           TextWrapping="Wrap"/>
-            </Border>
-
-            <Border Background="{DynamicResource BrushSurface}"
-                    BorderBrush="{DynamicResource BrushRule}"
-                    BorderThickness="1"
-                    CornerRadius="6"
-                    Padding="12,8">
-                <TextBlock Text="{Binding MyRankText}"
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="{DynamicResource FontSizeBody}"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource BrushInk}"
-                           TextWrapping="Wrap"/>
-            </Border>
-        </StackPanel>
+        </ScrollViewer>
     </Grid>
 </UserControl>

@@ -9,8 +9,6 @@
 
     <!-- Nen / chu / duong ke -->
     <SolidColorBrush x:Key="BrushBackground"  Color="#EFEBE3"/>
-    <!-- Nen phu cho man Dang ky: cung ho be am, dam hon de phan biet
-         voi man Dang nhap khi chuyen qua lai. -->
     <SolidColorBrush x:Key="BrushBackgroundAlt" Color="#E4DDC8"/>
     <SolidColorBrush x:Key="BrushSurface"     Color="#F8F6F1"/>
     <SolidColorBrush x:Key="BrushSurfaceAlt"  Color="#E6E1D6"/>
@@ -29,10 +27,7 @@
     <SolidColorBrush x:Key="BrushWarningSoft" Color="#F7EAD1"/>
     <SolidColorBrush x:Key="BrushOnAccent"    Color="#FFFFFF"/>
 
-    <!-- =========================================================
-         Legacy aliases - giu nguyen key cu de View chua viet lai
-         van chay duoc trong giai doan chuyen tiep.
-         ========================================================= -->
+    <!-- Legacy aliases -->
     <SolidColorBrush x:Key="CardBg"             Color="#F8F6F1"/>
     <SolidColorBrush x:Key="CardBorder"         Color="#CFC8B8"/>
     <SolidColorBrush x:Key="InputBg"            Color="#F8F6F1"/>
@@ -46,10 +41,9 @@
 
     <!-- =========================================================
          HOME (Player) — bo brush rieng cho trang chu Player.
-         Tien to "Home" de khong dung do brush cu.
+         Dung chung cho ca man Bang xep hang (dong bo tong toi).
          ========================================================= -->
 
-    <!-- Lop nen du phong khi khong nap duoc anh -->
     <LinearGradientBrush x:Key="HomeBackdropFallback"
                          StartPoint="0,0" EndPoint="1,1">
         <GradientStop Color="#0F172A" Offset="0"/>
@@ -57,23 +51,19 @@
         <GradientStop Color="#3B1D5A" Offset="1"/>
     </LinearGradientBrush>
 
-    <!-- Lop phu toi de chu trang noi len tren anh -->
     <LinearGradientBrush x:Key="HomeOverlay"
                          StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="#CC0B1020" Offset="0"/>
         <GradientStop Color="#B3141B3A" Offset="1"/>
     </LinearGradientBrush>
 
-    <!-- Kinh (gia lap): nen + vien trang alpha thap -->
     <SolidColorBrush x:Key="HomeGlassFill"      Color="#1FFFFFFF"/>
     <SolidColorBrush x:Key="HomeGlassBorder"    Color="#33FFFFFF"/>
     <SolidColorBrush x:Key="HomeGlassFillHover" Color="#2EFFFFFF"/>
 
-    <!-- Chu tren nen toi -->
     <SolidColorBrush x:Key="HomeTextOnDark"       Color="#FFFFFF"/>
     <SolidColorBrush x:Key="HomeTextOnDarkMuted"  Color="#C7CCE0"/>
 
-    <!-- Gradient nut Hero -->
     <LinearGradientBrush x:Key="HomeSoloGradient"
                          StartPoint="0,0" EndPoint="1,1">
         <GradientStop Color="#FF9A3D" Offset="0"/>
@@ -86,16 +76,12 @@
         <GradientStop Color="#3B82F6" Offset="1"/>
     </LinearGradientBrush>
 
-    <!-- Mau hang / trang thai -->
     <SolidColorBrush x:Key="HomeGold"       Color="#FBBF24"/>
     <SolidColorBrush x:Key="HomeSilver"     Color="#CBD5E1"/>
     <SolidColorBrush x:Key="HomeBronze"     Color="#D97706"/>
     <SolidColorBrush x:Key="HomeOnlineDot"  Color="#34D399"/>
 
-    <!-- =========================================================
-         HEADER (Player shell) — brush riêng cho thanh header mới.
-         Tien to "Header" de khong dung do brush cu.
-         ========================================================= -->
+    <!-- Header (Player shell) -->
     <LinearGradientBrush x:Key="HeaderBackground"
                          StartPoint="0,0" EndPoint="1,0">
         <GradientStop Color="#0F172A" Offset="0"/>
@@ -106,12 +92,87 @@
     <SolidColorBrush x:Key="HeaderPillFillHover" Color="#33FFFFFF"/>
     <SolidColorBrush x:Key="HeaderIcon"          Color="#FFFFFF"/>
 
-    <!-- =========================================================
-         HEART BADGE — brush cho badge tim ở header Player.
-         ========================================================= -->
+    <!-- Heart badge -->
     <SolidColorBrush x:Key="HeartFill"         Color="#FF4D6D"/>
     <SolidColorBrush x:Key="HeartLow"          Color="#FBBF24"/>
     <SolidColorBrush x:Key="HeartEmpty"        Color="#EF4444"/>
     <SolidColorBrush x:Key="TooltipBackground" Color="#F20F172A"/>
+
+    <!-- =========================================================
+         NEW — LEADERBOARD (tông tối, đồng bộ Home)
+
+         Vì toàn bộ màn BXH giờ đặt trên nền gradient tối
+         (HomeBackdropFallback + HomeOverlay), mọi brush dưới đây
+         đều là bán trong suốt để khi chồng lên nền tối cho ra
+         đúng hiệu ứng "glass" giống Home.
+
+         Đơn vị alpha: 2 ký tự đầu của mã #AARRGGBB.
+         ========================================================= -->
+
+    <!-- Ba huy hiệu hạng 1/2/3 — dùng cho badge tròn + thanh nhấn trái.
+         Đây là brush ĐẶC (không trong suốt) vì badge cần nổi khối. -->
+    <SolidColorBrush x:Key="LbGold"     Color="#D4A017"/>
+    <SolidColorBrush x:Key="LbSilver"   Color="#9AA1B0"/>
+    <SolidColorBrush x:Key="LbBronze"   Color="#B87333"/>
+
+    <!-- Nền header của bảng: tối hơn body 1 chút để tạo tầng -->
+    <SolidColorBrush x:Key="LbGlassHeaderBg" Color="#33000000"/>
+
+    <!-- Đường kẻ giữa hàng: trắng mờ 10% -->
+    <SolidColorBrush x:Key="LbRowDivider"    Color="#1FFFFFFF"/>
+    <!-- Zebra rất nhẹ cho hàng lẻ -->
+    <SolidColorBrush x:Key="LbRowZebra"      Color="#0AFFFFFF"/>
+    <!-- Hover / Selected -->
+    <SolidColorBrush x:Key="LbRowHover"      Color="#1FFFFFFF"/>
+    <SolidColorBrush x:Key="LbRowSelected"   Color="#26FFFFFF"/>
+
+    <!-- Tint cho hàng top 1/2/3 — bán trong suốt để hài hoà nền tối -->
+    <SolidColorBrush x:Key="LbRowGoldBg"     Color="#26FBBF24"/>
+    <SolidColorBrush x:Key="LbRowSilverBg"   Color="#1FCBD5E1"/>
+    <SolidColorBrush x:Key="LbRowBronzeBg"   Color="#26D97706"/>
+    <!-- Hàng của mình — tint accent cam -->
+    <SolidColorBrush x:Key="LbRowMeBg"       Color="#33E8590C"/>
+
+    <!-- Popup ComboBox: nền navy gần đục để chữ nổi rõ -->
+    <SolidColorBrush x:Key="LbPopupBg"       Color="#F01E1B4B"/>
+
+    <!-- Chip trên nền tối — mặc định (không màu) -->
+    <SolidColorBrush x:Key="LbChipBg"        Color="#1FFFFFFF"/>
+    <SolidColorBrush x:Key="LbChipBorder"    Color="#33FFFFFF"/>
+
+    <!-- Chip "Lv X" — cam accent -->
+    <SolidColorBrush x:Key="LbChipLevelBg"     Color="#33FF9A3D"/>
+    <SolidColorBrush x:Key="LbChipLevelBorder" Color="#80FF9A3D"/>
+    <SolidColorBrush x:Key="LbChipLevelText"   Color="#FFB981"/>
+
+    <!-- Chip độ khó -->
+    <SolidColorBrush x:Key="LbChipEasyBg"      Color="#2634D399"/>
+    <SolidColorBrush x:Key="LbChipEasyBorder"  Color="#8034D399"/>
+    <SolidColorBrush x:Key="LbChipEasyText"    Color="#6EE7B7"/>
+
+    <SolidColorBrush x:Key="LbChipMedBg"       Color="#26FBBF24"/>
+    <SolidColorBrush x:Key="LbChipMedBorder"   Color="#80FBBF24"/>
+    <SolidColorBrush x:Key="LbChipMedText"     Color="#FCD34D"/>
+
+    <SolidColorBrush x:Key="LbChipHardBg"      Color="#26F87171"/>
+    <SolidColorBrush x:Key="LbChipHardBorder"  Color="#80F87171"/>
+    <SolidColorBrush x:Key="LbChipHardText"    Color="#FCA5A5"/>
+
+    <!-- Chip hạng (Đồng / Bạc / Vàng) -->
+    <SolidColorBrush x:Key="LbChipGoldBg"      Color="#33FBBF24"/>
+    <SolidColorBrush x:Key="LbChipGoldBorder"  Color="#80FBBF24"/>
+    <SolidColorBrush x:Key="LbChipGoldText"    Color="#FCD34D"/>
+
+    <SolidColorBrush x:Key="LbChipSilverBg"    Color="#33CBD5E1"/>
+    <SolidColorBrush x:Key="LbChipSilverBorder" Color="#80CBD5E1"/>
+    <SolidColorBrush x:Key="LbChipSilverText"  Color="#E2E8F0"/>
+
+    <SolidColorBrush x:Key="LbChipBronzeBg"    Color="#33D97706"/>
+    <SolidColorBrush x:Key="LbChipBronzeBorder" Color="#80D97706"/>
+    <SolidColorBrush x:Key="LbChipBronzeText"  Color="#FBBF9A"/>
+
+    <!-- Avatar trên nền tối -->
+    <SolidColorBrush x:Key="LbAvatarBg"        Color="#26FFFFFF"/>
+    <SolidColorBrush x:Key="LbAvatarBorder"    Color="#33FFFFFF"/>
 
 </ResourceDictionary>
