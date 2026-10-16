@@ -17,6 +17,10 @@ namespace KnapsackChallenge.UI.Features.Player
         public int Weight { get; }
         public int Value { get; }
 
+        // v10: khoá icon — copy từ ItemDto để UI có thể bind ItemIconConverter.
+        // NULL = dùng icon "default".
+        public string? IconKey { get; }
+
         private bool _isSelected;
         public bool IsSelected
         {
@@ -37,6 +41,7 @@ namespace KnapsackChallenge.UI.Features.Player
             Name = item.Name;
             Weight = item.Weight;
             Value = item.Value;
+            IconKey = item.IconKey; // v10
         }
     }
 

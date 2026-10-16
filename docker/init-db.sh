@@ -33,8 +33,8 @@ else
   echo "[init] đã có schema, bỏ qua InitDatabase.sql"
 fi
 
-for v in 2 3 4 5 6 7 8 9; do
-  run_file "$SCRIPTS/UpdateDatabase_v$v.sql"
+for f in $(ls "$SCRIPTS"/UpdateDatabase_v*.sql | sort -V); do
+  run_file "$f"
 done
 
 run_file "/docker/seed-local.sql"

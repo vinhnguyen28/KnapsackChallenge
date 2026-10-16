@@ -62,6 +62,7 @@ namespace KnapsackChallenge.Data.Repositories
         }
 
         // Danh sách vật phẩm trong 1 bộ đề.
+        // v10: đọc thêm IconKey; xử lý DBNull (dữ liệu cũ IconKey = NULL).
         public List<ItemEntity> GetItemsInSet(int setId)
         {
             var list = new List<ItemEntity>();
@@ -69,7 +70,7 @@ namespace KnapsackChallenge.Data.Repositories
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT i.Id, i.Name, i.Weight, i.Value
+                SELECT i.Id, i.Name, i.Weight, i.Value, i.IconKey
                 FROM SetItems si
                 INNER JOIN Items i ON i.Id = si.ItemId
                 WHERE si.SetId = @SetId
@@ -84,6 +85,7 @@ namespace KnapsackChallenge.Data.Repositories
                     Name = reader.IsDBNull(1) ? "" : reader.GetString(1),
                     Weight = reader.GetInt32(2),
                     Value = reader.GetInt32(3),
+                    IconKey = reader.IsDBNull(4) ? null : reader.GetString(4), // v10
                 });
             }
             return list;

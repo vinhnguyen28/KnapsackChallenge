@@ -1,6 +1,6 @@
-﻿using System.Data;
+﻿using KnapsackChallenge.Data.Entities;
 using Microsoft.Data.SqlClient;
-using KnapsackChallenge.Data.Entities;
+using System.Data;
 
 namespace KnapsackChallenge.Data.Repositories
 {
@@ -8,6 +8,8 @@ namespace KnapsackChallenge.Data.Repositories
     {
         private readonly DbConnectionHelper _dbHelper = new DbConnectionHelper();
 
+        // v10: đọc thêm IconKey. Dùng IsDBNull để tương thích ngược:
+        // hàng cũ IconKey = NULL vẫn map ra ItemEntity.IconKey = null.
         public List<ItemEntity> GetAll()
         {
             var list = new List<ItemEntity>();
@@ -16,7 +18,7 @@ namespace KnapsackChallenge.Data.Repositories
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "SELECT Id, Name, Weight, Value FROM Items ORDER BY Id";
+                    command.CommandText = "SELECT Id, Name, Weight, Value, IconKey FROM Items ORDER BY Id";
                     using (var reader = command.ExecuteReader())
                     {
                         while (reader.Read())
@@ -26,7 +28,8 @@ namespace KnapsackChallenge.Data.Repositories
                                 Id = reader.GetInt32(0),
                                 Name = reader.GetString(1),
                                 Weight = reader.GetInt32(2),
-                                Value = reader.GetInt32(3)
+                                Value = reader.GetInt32(3),
+                                IconKey = reader.IsDBNull(4) ? null : reader.GetString(4) // v10
                             });
                         }
                     }
@@ -35,8 +38,9 @@ namespace KnapsackChallenge.Data.Repositories
             return list;
         }
 
-        // Thêm mới, trả về Id vừa được SQL Server sinh ra
-        public int Create(string name, int weight, int value)
+        // Thêm mới, trả về Id vừa được SQL Server sinh ra.
+        // v10: nhận thêm iconKey (null = icon "default").
+        public int Create(string name, int weight, int value, string? iconKey)
         {
             using (var connection = _dbHelper.CreateConnection())
             {
@@ -44,16 +48,20 @@ namespace KnapsackChallenge.Data.Repositories
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText =
-                        "INSERT INTO Items (Name, Weight, Value) OUTPUT INSERTED.Id VALUES (@Name, @Weight, @Value)";
+                        "INSERT INTO Items (Name, Weight, Value, IconKey) " +
+                        "OUTPUT INSERTED.Id VALUES (@Name, @Weight, @Value, @IconKey)";
                     AddParameter(command, "@Name", name);
                     AddParameter(command, "@Weight", weight);
                     AddParameter(command, "@Value", value);
+                    // DBNull.Value khi iconKey null — tránh lỗi tham số null.
+                    AddParameter(command, "@IconKey", (object?)iconKey ?? DBNull.Value);
                     return (int)command.ExecuteScalar()!;
                 }
             }
         }
 
-        public bool Update(int id, string name, int weight, int value)
+        // v10: nhận thêm iconKey. Truyền null để xoá icon (về "default").
+        public bool Update(int id, string name, int weight, int value, string? iconKey)
         {
             using (var connection = _dbHelper.CreateConnection())
             {
@@ -61,11 +69,13 @@ namespace KnapsackChallenge.Data.Repositories
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText =
-                        "UPDATE Items SET Name = @Name, Weight = @Weight, Value = @Value WHERE Id = @Id";
+                        "UPDATE Items SET Name = @Name, Weight = @Weight, Value = @Value, " +
+                        "IconKey = @IconKey WHERE Id = @Id";
                     AddParameter(command, "@Id", id);
                     AddParameter(command, "@Name", name);
                     AddParameter(command, "@Weight", weight);
                     AddParameter(command, "@Value", value);
+                    AddParameter(command, "@IconKey", (object?)iconKey ?? DBNull.Value);
                     return command.ExecuteNonQuery() > 0;
                 }
             }

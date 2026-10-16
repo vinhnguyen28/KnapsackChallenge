@@ -4,442 +4,1488 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:KnapsackChallenge.UI.Features.Player"
+             xmlns:shared="clr-namespace:KnapsackChallenge.UI.Shared"
              mc:Ignorable="d"
-             d:DesignHeight="620" d:DesignWidth="900"
-             Background="{DynamicResource BrushBackground}">
+             d:DesignHeight="700" d:DesignWidth="1200"
+             Background="Transparent">
+
+    <!-- =====================================================================
+         SoloGameView (v10 - thiết kế lại tông TỐI/GLASS).
+
+         Ý TƯỞNG:
+         - Nền 5 lớp giống LeaderboardView/HomePage:
+             Rectangle HomeBackdropFallback
+           → Rectangle ImageBrush home-bg.jpg (UniformToFill)
+           → Rectangle HomeOverlay
+           → Ellipse halo cam (góc trên-trái)
+           → Ellipse halo tím (góc dưới-phải)
+         - Toàn bộ control bên trên dùng HomeGlassFill/HomeGlassBorder/HomeTextOnDark,
+           bo góc lớn, không còn dùng theme SÁNG (BrushBackground/ButtonPrimary cũ).
+         - KHÔNG đổi binding nào so với bản cũ; không chạm ViewModel.
+
+         KHẢ NĂNG TÁCH RA DÙNG CHUNG:
+         - Style `SoloItemCardButton` và `SoloGlassPill`/`SoloPrimaryPill` có thể
+           copy nguyên khối sang Themes/ItemCardStyles.xaml để MultiplayerGameView
+           dùng lại. Hiện để local cho gọn (đúng như ghi chú của bạn).
+
+         NẾU SAU NÀY BẠN ĐỔI TÔNG MÀU:
+         - Cam nhấn: #FF9A3D → #E8590C
+         - Xanh đúng/tối ưu: #34D399
+         - Vàng giá trị: #FBBF24
+         - Đỏ vượt tải: #F87171
+         ===================================================================== -->
 
     <UserControl.Resources>
-        <Style x:Key="CapacityBar" TargetType="ProgressBar">
-            <Setter Property="Height" Value="8"/>
-            <Setter Property="Maximum" Value="100"/>
-            <Setter Property="Foreground" Value="{DynamicResource BrushAccent}"/>
+
+        <!-- Converter IconKey (string?) -> ImageSource (BitmapImage).
+             Converter luôn trả ảnh non-null (fallback "default") nên phía
+             binding KHÔNG cần xử lý null. -->
+        <shared:ItemIconConverter x:Key="ItemIconConverter"/>
+
+        <!-- ============================================================
+             SoloGlassPill — nút pill KÍNH (nền mờ + viền mờ).
+             Dùng cho: "Về trang chủ", "Chọn mức độ khác", "Làm lại",
+             "Chơi lại", "Chọn mức độ khác" (trong panel kết quả).
+             Bo góc 14, hover sáng hơn nhẹ, pressed giảm opacity.
+             ============================================================ -->
+        <Style x:Key="SoloGlassPill" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{StaticResource HomeTextOnDark}"/>
+            <Setter Property="FontFamily" Value="{StaticResource FontSans}"/>
+            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="Background" Value="{StaticResource HomeGlassFill}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource HomeGlassBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="ProgressBar">
-                        <Grid>
-                            <Border Background="{DynamicResource BrushRule}" CornerRadius="2"/>
-                            <Rectangle x:Name="PART_Indicator"
-                                       Fill="{TemplateBinding Foreground}"
-                                       HorizontalAlignment="Left"
-                                       RadiusX="2" RadiusY="2"/>
-                        </Grid>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd"
+                                CornerRadius="14"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background"
+                                        Value="{StaticResource HomeGlassFillHover}"/>
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#66FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- ============================================================
+             SoloPrimaryPill — nút gradient CAM (nút chính).
+             Dùng cho: "Nộp bài", "Chọn mức độ khác" (panel kết quả).
+             Glow cam khi hover; Disabled -> giảm opacity + tắt glow
+             (đúng theo CanExecute của SubmitCommand).
+             ============================================================ -->
+        <Style x:Key="SoloPrimaryPill" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontFamily" Value="{StaticResource FontSans}"/>
+            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="22,12"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border x:Name="bd" CornerRadius="14">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#FF9A3D" Offset="0"/>
+                                        <GradientStop Color="#E8590C" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#FF9A3D"
+                                                      BlurRadius="18"
+                                                      ShadowDepth="0"
+                                                      Opacity="0.5"/>
+                                </Border.Effect>
+                            </Border>
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#FF9A3D"
+                                                          BlurRadius="28"
+                                                          ShadowDepth="0"
+                                                          Opacity="0.85"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.4"/>
+                                <!-- Tắt glow khi nút bị vô hiệu để tránh cảm giác "vẫn bấm được". -->
+                                <Setter TargetName="bd" Property="Effect" Value="{x:Null}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ============================================================
+             SoloItemCardButton — THẺ VẬT PHẨM (trọng tâm màn chơi).
+
+             KÍCH THƯỚC: 168 x 168 (chỉnh tại Width/Height nếu muốn).
+             BỐ CỤC:
+                [icon 64x64]         (row *, canh giữa)
+                [tên vật phẩm]       (row Auto, 1 dòng, ellipsis)
+                [chip KL | chip GT]  (row Auto, 2 chip nhỏ)
+
+             TRẠNG THÁI (thứ tự ưu tiên cuối cùng thắng):
+               Hover       → nền sáng hơn + viền #66FFFFFF + scale 1.03
+               Pressed     → scale 0.97
+               IsSelected  → viền cam 2px + nền cam mờ + glow cam + badge top-right
+               IsOptimal   → viền xanh #34D399 + badge xanh top-left
+                             (IsOptimal đặt SAU IsSelected nên xanh thắng khi cả hai)
+               HasResult   → Opacity 0.85, khoá hover (không scale)
+
+             TÁCH RA DÙNG CHUNG:
+               Copy nguyên khối Style này + các Icon geometry cần thiết vào
+               Themes/ItemCardStyles.xaml nếu MultiplayerGameView muốn dùng lại.
+               Khi đó đổi `xmlns:local` cho phù hợp.
+             ============================================================ -->
+        <Style x:Key="SoloItemCardButton" TargetType="Button">
+            <Setter Property="Width" Value="168"/>
+            <Setter Property="Height" Value="168"/>
+            <Setter Property="Margin" Value="8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{StaticResource HomeTextOnDark}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                </Setter.Value>
+            </Setter>
+
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <!-- Nền card: gradient dọc rất nhạt để có chiều sâu. -->
+                            <Border x:Name="cardBg"
+                                    CornerRadius="18"
+                                    BorderThickness="2"
+                                    BorderBrush="{StaticResource HomeGlassBorder}">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Color="#14FFFFFF" Offset="0"/>
+                                        <GradientStop Color="#0AFFFFFF" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+
+                            <!-- Nội dung: icon + tên + 2 chip. -->
+                            <Grid Margin="14,14,14,12">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Icon vật phẩm 64x64 (dùng converter -> có fallback). -->
+                                <Image Grid.Row="0"
+                                       Source="{Binding IconKey,
+                                                Converter={StaticResource ItemIconConverter}}"
+                                       Width="64" Height="64"
+                                       Stretch="Uniform"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       RenderOptions.BitmapScalingMode="HighQuality">
+                                    <!-- DropShadow rất nhẹ để icon nổi lên khỏi nền kính.
+                                         Nếu perf có vấn đề với 30+ thẻ, xoá khối Effect này. -->
+                                    <Image.Effect>
+                                        <DropShadowEffect Color="Black"
+                                                          BlurRadius="8"
+                                                          ShadowDepth="0"
+                                                          Opacity="0.4"/>
+                                    </Image.Effect>
+                                </Image>
+
+                                <!-- Tên vật phẩm: 1 dòng, ellipsis, tooltip đầy đủ. -->
+                                <TextBlock Grid.Row="1"
+                                           Text="{Binding Name}"
+                                           FontFamily="{StaticResource FontSans}"
+                                           FontSize="{StaticResource FontSizeBody}"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource HomeTextOnDark}"
+                                           TextAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"
+                                           TextWrapping="NoWrap"
+                                           Margin="0,8,0,6"
+                                           ToolTip="{Binding Name}"/>
+
+                                <!-- 2 chip: khối lượng (xanh dương) + giá trị (vàng). -->
+                                <StackPanel Grid.Row="2"
+                                            Orientation="Horizontal"
+                                            HorizontalAlignment="Center">
+
+                                    <!-- Chip khối lượng: IconScale + "{Weight} kg". -->
+                                    <Border CornerRadius="10"
+                                            Padding="8,3"
+                                            BorderThickness="1"
+                                            Margin="0,0,6,0">
+                                        <Border.Background>
+                                            <SolidColorBrush Color="#1A3B82F6"/>
+                                        </Border.Background>
+                                        <Border.BorderBrush>
+                                            <SolidColorBrush Color="#803B82F6"/>
+                                        </Border.BorderBrush>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Path Data="{StaticResource IconScale}"
+                                                  Width="10" Height="10"
+                                                  Stretch="Uniform"
+                                                  Stroke="#93C5FD"
+                                                  StrokeThickness="1.6"
+                                                  VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding Weight, StringFormat={}{0} kg}"
+                                                       FontFamily="{StaticResource FontMono}"
+                                                       FontSize="{StaticResource FontSizeCaption}"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="#93C5FD"
+                                                       VerticalAlignment="Center"
+                                                       Margin="4,0,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Chip giá trị: IconSparkline + "{Value} điểm". -->
+                                    <Border CornerRadius="10"
+                                            Padding="8,3"
+                                            BorderThickness="1">
+                                        <Border.Background>
+                                            <SolidColorBrush Color="#26FBBF24"/>
+                                        </Border.Background>
+                                        <Border.BorderBrush>
+                                            <SolidColorBrush Color="#80FBBF24"/>
+                                        </Border.BorderBrush>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Path Data="{StaticResource IconSparkline}"
+                                                  Width="10" Height="10"
+                                                  Stretch="Uniform"
+                                                  Stroke="#FCD34D"
+                                                  StrokeThickness="1.6"
+                                                  VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding Value, StringFormat={}{0} điểm}"
+                                                       FontFamily="{StaticResource FontMono}"
+                                                       FontSize="{StaticResource FontSizeCaption}"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="#FCD34D"
+                                                       VerticalAlignment="Center"
+                                                       Margin="4,0,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- BADGE ĐÃ CHỌN (top-right): tròn cam + IconCheck trắng.
+                                 Scale-in bằng DataTrigger EnterActions khi IsSelected=True. -->
+                            <Border x:Name="selectedBadge"
+                                    Width="28" Height="28"
+                                    CornerRadius="14"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    Margin="0,8,8,0"
+                                    Background="#FF9A3D"
+                                    Visibility="Collapsed"
+                                    RenderTransformOrigin="0.5,0.5">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#FF9A3D"
+                                                      BlurRadius="12"
+                                                      ShadowDepth="0"
+                                                      Opacity="0.85"/>
+                                </Border.Effect>
+                                <Border.RenderTransform>
+                                    <ScaleTransform x:Name="selectedBadgeScale"
+                                                    ScaleX="0" ScaleY="0"/>
+                                </Border.RenderTransform>
+                                <Path Data="{StaticResource IconCheck}"
+                                      Width="14" Height="14"
+                                      Stretch="Uniform"
+                                      Stroke="White"
+                                      StrokeThickness="2.4"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                            </Border>
+
+                            <!-- BADGE TỐI ƯU (top-left): tròn xanh + IconCrown trắng.
+                                 Chỉ hiện sau khi nộp bài (IsOptimal=True). -->
+                            <Border x:Name="optimalBadge"
+                                    Width="28" Height="28"
+                                    CornerRadius="14"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    Margin="8,8,0,0"
+                                    Background="#34D399"
+                                    Visibility="Collapsed"
+                                    RenderTransformOrigin="0.5,0.5">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#34D399"
+                                                      BlurRadius="12"
+                                                      ShadowDepth="0"
+                                                      Opacity="0.85"/>
+                                </Border.Effect>
+                                <Border.RenderTransform>
+                                    <ScaleTransform x:Name="optimalBadgeScale"
+                                                    ScaleX="1" ScaleY="1"/>
+                                </Border.RenderTransform>
+                                <Path Data="{StaticResource IconCrown}"
+                                      Width="14" Height="14"
+                                      Stretch="Uniform"
+                                      Stroke="White"
+                                      StrokeThickness="1.8"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+
+                        <ControlTemplate.Triggers>
+
+                            <!-- Hover: chỉ khi card CHƯA kết thúc ván (HasResult=False).
+                                 Đổi viền/nền sáng hơn nhẹ. Scale được xử lý ở Style.Triggers. -->
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsMouseOver,
+                                                        RelativeSource={RelativeSource Self}}"
+                                               Value="True"/>
+                                    <Condition Binding="{Binding DataContext.HasResult,
+                                                        RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               Value="False"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter TargetName="cardBg" Property="BorderBrush" Value="#66FFFFFF"/>
+                                <Setter TargetName="cardBg" Property="Background" Value="#1FFFFFFF"/>
+                            </MultiDataTrigger>
+
+                            <!-- ĐÃ CHỌN: viền cam + nền cam mờ + glow cam + badge pop-in. -->
+                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                <Setter TargetName="cardBg" Property="BorderBrush" Value="#FF9A3D"/>
+                                <Setter TargetName="cardBg" Property="Background" Value="#26FF9A3D"/>
+                                <Setter TargetName="cardBg" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#FF9A3D"
+                                                          BlurRadius="20"
+                                                          ShadowDepth="0"
+                                                          Opacity="0.7"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="selectedBadge" Property="Visibility" Value="Visible"/>
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <!-- Badge scale-in từ 0 -> 1 với easing mượt. -->
+                                            <DoubleAnimation
+                                                Storyboard.TargetName="selectedBadgeScale"
+                                                Storyboard.TargetProperty="ScaleX"
+                                                From="0" To="1"
+                                                Duration="0:0:0.22">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase EasingMode="EaseOut" Amplitude="0.6"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation
+                                                Storyboard.TargetName="selectedBadgeScale"
+                                                Storyboard.TargetProperty="ScaleY"
+                                                From="0" To="1"
+                                                Duration="0:0:0.22">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase EasingMode="EaseOut" Amplitude="0.6"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation
+                                                Storyboard.TargetName="selectedBadgeScale"
+                                                Storyboard.TargetProperty="ScaleX"
+                                                To="0" Duration="0:0:0.12"/>
+                                            <DoubleAnimation
+                                                Storyboard.TargetName="selectedBadgeScale"
+                                                Storyboard.TargetProperty="ScaleY"
+                                                To="0" Duration="0:0:0.12"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+
+                            <!-- TỐI ƯU (sau khi nộp): xanh LẤN ÁT cam nếu cùng lúc.
+                                 Đặt SAU trigger IsSelected để thắng. -->
+                            <DataTrigger Binding="{Binding IsOptimal}" Value="True">
+                                <Setter TargetName="cardBg" Property="BorderBrush" Value="#34D399"/>
+                                <Setter TargetName="cardBg" Property="Background" Value="#2634D399"/>
+                                <Setter TargetName="cardBg" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#34D399"
+                                                          BlurRadius="18"
+                                                          ShadowDepth="0"
+                                                          Opacity="0.6"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="optimalBadge" Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+
+                            <!-- Ván đã kết thúc: khoá tương tác (giảm Opacity).
+                                 Không đổi viền để giữ trạng thái đúng/sai rõ ràng. -->
+                            <DataTrigger Binding="{Binding DataContext.HasResult,
+                                                  RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                         Value="True">
+                                <Setter Property="Opacity" Value="0.85"/>
+                                <Setter Property="Cursor" Value="Arrow"/>
+                            </DataTrigger>
+
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+
+            <!-- Hover/Pressed scale đặt ở Style (để target chính Button, không phải phần tử template).
+                 Chỉ bật khi HasResult=False (dùng MultiDataTrigger). -->
             <Style.Triggers>
-                <DataTrigger Binding="{Binding IsOverWeight}" Value="True">
-                    <Setter Property="Foreground" Value="{DynamicResource BrushDanger}"/>
-                </DataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding IsMouseOver,
+                                            RelativeSource={RelativeSource Self}}"
+                                   Value="True"/>
+                        <Condition Binding="{Binding DataContext.HasResult,
+                                            RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                   Value="False"/>
+                    </MultiDataTrigger.Conditions>
+                    <MultiDataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation
+                                    Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                    To="1.03" Duration="0:0:0.12"/>
+                                <DoubleAnimation
+                                    Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                    To="1.03" Duration="0:0:0.12"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </MultiDataTrigger.EnterActions>
+                    <MultiDataTrigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation
+                                    Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                    To="1" Duration="0:0:0.12"/>
+                                <DoubleAnimation
+                                    Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                    To="1" Duration="0:0:0.12"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </MultiDataTrigger.ExitActions>
+                </MultiDataTrigger>
+
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding IsPressed,
+                                            RelativeSource={RelativeSource Self}}"
+                                   Value="True"/>
+                        <Condition Binding="{Binding DataContext.HasResult,
+                                            RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                   Value="False"/>
+                    </MultiDataTrigger.Conditions>
+                    <MultiDataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation
+                                    Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                    To="0.97" Duration="0:0:0.08"/>
+                                <DoubleAnimation
+                                    Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                    To="0.97" Duration="0:0:0.08"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </MultiDataTrigger.EnterActions>
+                    <MultiDataTrigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation
+                                    Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                    To="1" Duration="0:0:0.10"/>
+                                <DoubleAnimation
+                                    Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                    To="1" Duration="0:0:0.10"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </MultiDataTrigger.ExitActions>
+                </MultiDataTrigger>
             </Style.Triggers>
         </Style>
+
+        <!-- ============================================================
+             SoloCapacityBar — ProgressBar bo tròn hoàn toàn.
+             - Nền track: #22FFFFFF
+             - Fill: gradient cam → vàng, glow nhẹ
+             - Khi IsOverWeight=True: fill đổi ĐỎ, glow đỏ
+             Dùng PART_Track + PART_Indicator để ProgressBar tự tính width.
+             ============================================================ -->
+        <Style x:Key="SoloCapacityBar" TargetType="ProgressBar">
+            <Setter Property="Height" Value="12"/>
+            <Setter Property="Minimum" Value="0"/>
+            <Setter Property="Maximum" Value="100"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Grid x:Name="PART_Track">
+                            <Border CornerRadius="6" Background="#22FFFFFF"/>
+                            <Border x:Name="PART_Indicator"
+                                    HorizontalAlignment="Left"
+                                    CornerRadius="6">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#FF9A3D" Offset="0"/>
+                                        <GradientStop Color="#FBBF24" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#FF9A3D"
+                                                      BlurRadius="10"
+                                                      ShadowDepth="0"
+                                                      Opacity="0.55"/>
+                                </Border.Effect>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <!-- Vượt sức chứa: đổi hẳn sang ĐỎ + glow đỏ. -->
+                            <DataTrigger Binding="{Binding IsOverWeight}" Value="True">
+                                <Setter TargetName="PART_Indicator" Property="Background"
+                                        Value="#F87171"/>
+                                <Setter TargetName="PART_Indicator" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#F87171"
+                                                          BlurRadius="12"
+                                                          ShadowDepth="0"
+                                                          Opacity="0.7"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </UserControl.Resources>
 
-    <Grid Margin="20,14,20,20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <!-- =================================================================
+         NỀN 5 LỚP + NỘI DUNG.
+         Grid ngoài không có RowDefinitions -> 1 hàng ngầm định; mọi con
+         chồng lên nhau, con sau vẽ đè con trước.
+         ================================================================= -->
+    <Grid Background="Transparent">
 
-        <!-- =========================================================
-             ROW 0: 2 nút quay lại (bên trái) + Timer (bên phải)
-             ========================================================= -->
-        <Grid Grid.Row="0" Margin="0,0,0,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <!-- (1) Fallback gradient tím đậm — luôn vẽ trước tiên. -->
+        <Rectangle Fill="{StaticResource HomeBackdropFallback}"/>
 
-            <Button Grid.Column="0"
-                    Command="{Binding GoHomeCommand}"
-                    Style="{DynamicResource ButtonGhost}"
-                    Padding="12,8"
-                    Margin="0,0,8,0">
-                <StackPanel Orientation="Horizontal">
-                    <Path Data="{DynamicResource IconArrowLeft}"
-                          Width="14" Height="14"
-                          Stroke="{Binding Foreground,
-                                   RelativeSource={RelativeSource AncestorType=Button}}"
-                          StrokeThickness="1.5"
-                          Stretch="Uniform"
-                          VerticalAlignment="Center"
-                          Margin="0,0,8,0"/>
-                    <TextBlock Text="Về trang chủ" VerticalAlignment="Center"/>
-                </StackPanel>
-            </Button>
+        <!-- (2) Ảnh nền home-bg.jpg phủ kín (nếu thiếu file, WPF bỏ qua layer này). -->
+        <Rectangle>
+            <Rectangle.Fill>
+                <ImageBrush ImageSource="pack://application:,,,/Assets/Backgrounds/home-bg.jpg"
+                            Stretch="UniformToFill"
+                            AlignmentX="Center"
+                            AlignmentY="Center"/>
+            </Rectangle.Fill>
+        </Rectangle>
 
-            <Button Grid.Column="1"
-                    Command="{Binding ChooseAnotherSetCommand}"
-                    Style="{DynamicResource ButtonSecondary}"
-                    Padding="12,8">
-                <StackPanel Orientation="Horizontal">
-                    <Path Data="{DynamicResource IconRefresh}"
-                          Width="14" Height="14"
-                          Stroke="{Binding Foreground,
-                                   RelativeSource={RelativeSource AncestorType=Button}}"
-                          StrokeThickness="1.5"
-                          Stretch="Uniform"
-                          VerticalAlignment="Center"
-                          Margin="0,0,8,0"/>
-                    <TextBlock Text="Chọn mức độ khác" VerticalAlignment="Center"/>
-                </StackPanel>
-            </Button>
+        <!-- (3) Overlay tối để chữ trắng nổi rõ. -->
+        <Rectangle Fill="{StaticResource HomeOverlay}"/>
 
-            <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="{Binding TimerLabel, Mode=OneWay}"
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="{DynamicResource FontSizeCaption}"
-                           Foreground="{DynamicResource BrushInkMuted}"
-                           VerticalAlignment="Center"
-                           Margin="0,0,8,0"/>
-                <TextBlock Text="{Binding TimerText, Mode=OneWay}"
-                           FontFamily="{DynamicResource FontMono}"
-                           FontSize="22"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource BrushInk}"
-                           VerticalAlignment="Center"/>
+        <!-- (4) Halo CAM — góc trên-trái, tràn ra ngoài. -->
+        <Ellipse Width="520" Height="520"
+                 HorizontalAlignment="Left"
+                 VerticalAlignment="Top"
+                 Margin="-160,-200,0,0"
+                 Opacity="0.28"
+                 IsHitTestVisible="False">
+            <Ellipse.Fill>
+                <RadialGradientBrush>
+                    <GradientStop Color="#FF9A3D" Offset="0"/>
+                    <GradientStop Color="#00FF9A3D" Offset="1"/>
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
+
+        <!-- (5) Halo TÍM — góc dưới-phải, tràn ra ngoài. -->
+        <Ellipse Width="620" Height="620"
+                 HorizontalAlignment="Right"
+                 VerticalAlignment="Bottom"
+                 Margin="0,0,-180,-260"
+                 Opacity="0.28"
+                 IsHitTestVisible="False">
+            <Ellipse.Fill>
+                <RadialGradientBrush>
+                    <GradientStop Color="#7C6CFF" Offset="0"/>
+                    <GradientStop Color="#007C6CFF" Offset="1"/>
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
+
+        <!-- =============================================================
+             NỘI DUNG.
+             Margin ngoài cùng 24,18,24,24 theo yêu cầu.
+             ============================================================= -->
+        <Grid Margin="24,18,24,24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <!-- 0: hàng nút đầu -->
+                <RowDefinition Height="Auto"/>
+                <!-- 1: bộ đề + đồng hồ -->
+                <RowDefinition Height="Auto"/>
+                <!-- 2: banners -->
+                <RowDefinition Height="*"/>
+                <!-- 3: lưới vật phẩm -->
+                <RowDefinition Height="Auto"/>
+                <!-- 4: giỏ đồ đã chọn -->
+                <RowDefinition Height="Auto"/>
+                <!-- 5: hành động / kết quả -->
+            </Grid.RowDefinitions>
+
+            <!-- =========================================================
+                 ROW 0: 2 NÚT PILL KÍNH.
+                 - Margin bottom 28: đảm bảo cách xa khối "Bộ đề hiện tại".
+                 - Khoảng cách giữa 2 nút: 12px (Margin phải của nút 1).
+                 ========================================================= -->
+            <StackPanel Grid.Row="0"
+                        Orientation="Horizontal"
+                        Margin="0,0,0,28">
+
+                <Button Command="{Binding GoHomeCommand}"
+                        Style="{StaticResource SoloGlassPill}"
+                        Margin="0,0,12,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{StaticResource IconArrowLeft}"
+                              Width="14" Height="14"
+                              Stretch="Uniform"
+                              Stroke="{Binding Foreground,
+                                       RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.6"
+                              VerticalAlignment="Center"
+                              Margin="0,0,8,0"/>
+                        <TextBlock Text="Về trang chủ" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Command="{Binding ChooseAnotherSetCommand}"
+                        Style="{StaticResource SoloGlassPill}">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{StaticResource IconRefresh}"
+                              Width="14" Height="14"
+                              Stretch="Uniform"
+                              Stroke="{Binding Foreground,
+                                       RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.6"
+                              VerticalAlignment="Center"
+                              Margin="0,0,8,0"/>
+                        <TextBlock Text="Chọn mức độ khác" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
             </StackPanel>
-        </Grid>
 
-        <!-- =========================================================
-             ROW 1: thông tin bộ đề hiện tại
-             ========================================================= -->
-        <StackPanel Grid.Row="1" Margin="0,0,0,10">
-            <TextBlock Text="Bộ đề hiện tại"
-                       FontFamily="{DynamicResource FontSans}"
-                       FontSize="{DynamicResource FontSizeCaption}"
-                       Foreground="{DynamicResource BrushInkMuted}"/>
-            <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                <TextBlock Text="{Binding CurrentSetName, Mode=OneWay}"
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="{DynamicResource FontSizeTitle}"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource BrushInk}"
-                           VerticalAlignment="Center"/>
-                <Border Padding="8,2"
-                        BorderThickness="1"
-                        CornerRadius="2"
-                        Background="Transparent"
-                        Margin="10,0,0,0"
+            <!-- =========================================================
+                 ROW 1: BỘ ĐỀ HIỆN TẠI (trái) + ĐỒNG HỒ (phải).
+                 ========================================================= -->
+            <Grid Grid.Row="1" Margin="0,0,0,18">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Cột trái: nhãn + tên + chip -->
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="Bộ đề hiện tại"
+                               FontFamily="{StaticResource FontSans}"
+                               FontSize="{StaticResource FontSizeCaption}"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource HomeTextOnDarkMuted}"
+                               Margin="0,0,0,6"/>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Tên bộ đề 26pt, có DropShadow đen nhẹ để nổi khỏi halo. -->
+                        <TextBlock Text="{Binding CurrentSetName}"
+                                   FontFamily="{StaticResource FontSans}"
+                                   FontSize="26"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource HomeTextOnDark}"
+                                   TextTrimming="CharacterEllipsis"
+                                   VerticalAlignment="Center">
+                            <TextBlock.Effect>
+                                <DropShadowEffect Color="Black"
+                                                  BlurRadius="10"
+                                                  ShadowDepth="1"
+                                                  Opacity="0.55"/>
+                            </TextBlock.Effect>
+                        </TextBlock>
+
+                        <!--  Chip độ khó: 3 biến thể hiện theo DataTrigger.  -->
+                        <Grid Margin="12,0,0,0" VerticalAlignment="Center">
+
+                            <!-- Easy: "Dễ" + IconLeaf + xanh #34D399 -->
+                            <Border CornerRadius="12"
+                                    Padding="10,4"
+                                    BorderThickness="1"
+                                    Background="#1A34D399"
+                                    BorderBrush="#8034D399">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CurrentDifficulty}" Value="Easy">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="{StaticResource IconLeaf}"
+                                          Width="12" Height="12"
+                                          Stretch="Uniform"
+                                          Stroke="#6EE7B7"
+                                          StrokeThickness="1.6"
+                                          VerticalAlignment="Center"/>
+                                    <TextBlock Text="Dễ"
+                                               FontFamily="{StaticResource FontSans}"
+                                               FontSize="{StaticResource FontSizeSmall}"
+                                               FontWeight="SemiBold"
+                                               Foreground="#6EE7B7"
+                                               VerticalAlignment="Center"
+                                               Margin="6,0,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Medium: "Bình thường" + IconTarget + vàng #FBBF24 -->
+                            <Border CornerRadius="12"
+                                    Padding="10,4"
+                                    BorderThickness="1"
+                                    Background="#1AFBBF24"
+                                    BorderBrush="#80FBBF24">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CurrentDifficulty}" Value="Medium">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="{StaticResource IconTarget}"
+                                          Width="12" Height="12"
+                                          Stretch="Uniform"
+                                          Stroke="#FCD34D"
+                                          StrokeThickness="1.6"
+                                          VerticalAlignment="Center"/>
+                                    <TextBlock Text="Bình thường"
+                                               FontFamily="{StaticResource FontSans}"
+                                               FontSize="{StaticResource FontSizeSmall}"
+                                               FontWeight="SemiBold"
+                                               Foreground="#FCD34D"
+                                               VerticalAlignment="Center"
+                                               Margin="6,0,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Hard: "Khó" + IconFlame + đỏ cam #F87171 -->
+                            <Border CornerRadius="12"
+                                    Padding="10,4"
+                                    BorderThickness="1"
+                                    Background="#1AF87171"
+                                    BorderBrush="#80F87171">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CurrentDifficulty}" Value="Hard">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="{StaticResource IconFlame}"
+                                          Width="12" Height="12"
+                                          Stretch="Uniform"
+                                          Stroke="#FCA5A5"
+                                          StrokeThickness="1.6"
+                                          VerticalAlignment="Center"/>
+                                    <TextBlock Text="Khó"
+                                               FontFamily="{StaticResource FontSans}"
+                                               FontSize="{StaticResource FontSizeSmall}"
+                                               FontWeight="SemiBold"
+                                               Foreground="#FCA5A5"
+                                               VerticalAlignment="Center"
+                                               Margin="6,0,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!--  Chip đỏ "CHẾ ĐỘ TẠM ĐÓNG" khi SoloModeDisabled=True.  -->
+                        <Border CornerRadius="12"
+                                Padding="10,4"
+                                BorderThickness="1"
+                                Background="#1AF87171"
+                                BorderBrush="#80F87171"
+                                Margin="8,0,0,0"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding SoloModeDisabled,
+                                             Converter={StaticResource BoolToVisibility}}">
+                            <TextBlock Text="CHẾ ĐỘ TẠM ĐÓNG"
+                                       FontFamily="{StaticResource FontMono}"
+                                       FontSize="{StaticResource FontSizeCaption}"
+                                       FontWeight="SemiBold"
+                                       Foreground="#FCA5A5"/>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+
+                <!--  Cột phải: pill đồng hồ, căn giữa theo chiều dọc.  -->
+                <!-- Khi IsCountdown=True, viền + số đổi sang CAM để kéo mắt người chơi. -->
+                <Border Grid.Column="1"
+                        CornerRadius="14"
+                        Padding="18,10"
+                        BorderThickness="2"
+                        Background="{StaticResource HomeGlassFill}"
+                        BorderBrush="{StaticResource HomeGlassBorder}"
                         VerticalAlignment="Center"
-                        BorderBrush="{DynamicResource BrushRule}">
-                    <TextBlock Text="{Binding CurrentDifficulty, Mode=OneWay}"
-                               Style="{StaticResource MonoCaptionTextStyle}"
-                               Foreground="{DynamicResource BrushInkMuted}"/>
+                        MinWidth="180">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsCountdown}" Value="True">
+                                    <Setter Property="BorderBrush" Value="#CCFF9A3D"/>
+                                    <Setter Property="Background" Value="#1FFF9A3D"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Path Data="{StaticResource IconClock}"
+                              Width="26" Height="26"
+                              Stretch="Uniform"
+                              Stroke="{StaticResource HomeTextOnDarkMuted}"
+                              StrokeThickness="1.6"
+                              VerticalAlignment="Center"
+                              Margin="0,0,12,0"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding TimerLabel}"
+                                       FontFamily="{StaticResource FontSans}"
+                                       FontSize="{StaticResource FontSizeCaption}"
+                                       Foreground="{StaticResource HomeTextOnDarkMuted}"/>
+                            <TextBlock Text="{Binding TimerText}"
+                                       FontFamily="{StaticResource FontMono}"
+                                       FontSize="36"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground"
+                                                Value="{StaticResource HomeTextOnDark}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsCountdown}" Value="True">
+                                                <Setter Property="Foreground" Value="#FFB981"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </StackPanel>
                 </Border>
-                <Border Padding="8,2"
+            </Grid>
+
+            <!-- =========================================================
+                 ROW 2: BANNERS PlayInfo (xanh) / PlayError (đỏ).
+                 Giữ hành vi cũ: chỉ hiện khi chuỗi không rỗng (nhờ Style
+                 InfoBanner/ErrorBanner cũ không dùng nữa — định nghĩa lại
+                 local bên dưới). MinHeight giữ layout không nhảy.
+                 ========================================================= -->
+            <Grid Grid.Row="2" MinHeight="0" Margin="0,0,0,12">
+
+                <!-- Info banner (IconCheck + xanh #34D399) -->
+                <Border CornerRadius="12"
                         BorderThickness="1"
-                        CornerRadius="2"
-                        Background="Transparent"
-                        Margin="6,0,0,0"
-                        VerticalAlignment="Center"
-                        Visibility="{Binding SoloModeDisabled,
-                                     Converter={StaticResource BoolToVisibility}}"
-                        BorderBrush="{DynamicResource BrushDanger}">
-                    <TextBlock Text="CHẾ ĐỘ TẠM ĐÓNG"
-                               Style="{StaticResource MonoCaptionTextStyle}"
-                               Foreground="{DynamicResource BrushDanger}"/>
-                </Border>
-            </StackPanel>
-        </StackPanel>
-
-        <!-- =========================================================
-             ROW 2: banner thông báo
-             ========================================================= -->
-        <Grid Grid.Row="2" MinHeight="42" Margin="0,0,0,8">
-            <Border Style="{DynamicResource InfoBanner}" Margin="0" VerticalAlignment="Top">
-                <TextBlock Text="{Binding PlayInfo}"
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="{DynamicResource FontSizeSmall}"
-                           Foreground="{DynamicResource BrushSuccess}"
-                           TextWrapping="Wrap"/>
-            </Border>
-            <Border Style="{DynamicResource ErrorBanner}" Margin="0" VerticalAlignment="Top">
-                <TextBlock Text="{Binding PlayError}"
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="{DynamicResource FontSizeSmall}"
-                           Foreground="{DynamicResource BrushDanger}"
-                           TextWrapping="Wrap"/>
-            </Border>
-        </Grid>
-
-        <!-- =========================================================
-             ROW 3: lưới vật phẩm
-             ========================================================= -->
-        <Border Grid.Row="3"
-                Background="{DynamicResource BrushSurface}"
-                BorderBrush="{DynamicResource BrushRule}"
-                BorderThickness="1"
-                CornerRadius="2"
-                Padding="6">
-            <Grid>
-                <ScrollViewer VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled">
-                    <ItemsControl ItemsSource="{Binding GameItems}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Button Margin="4"
-                                        Width="150" Height="96"
-                                        Cursor="Hand"
-                                        Command="{Binding DataContext.ToggleItemCommand,
-                                                  RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                        CommandParameter="{Binding}">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="bd"
-                                                    CornerRadius="2"
-                                                    BorderThickness="1"
-                                                    BorderBrush="{DynamicResource BrushRule}"
-                                                    Background="{DynamicResource BrushSurface}">
-                                                <Grid Margin="10,8">
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="*"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                    </Grid.RowDefinitions>
-
-                                                    <TextBlock Grid.Row="0"
-                                                               Text="{Binding Name}"
-                                                               FontFamily="{DynamicResource FontSans}"
-                                                               FontSize="{DynamicResource FontSizeBody}"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="{DynamicResource BrushInk}"
-                                                               TextTrimming="CharacterEllipsis"/>
-
-                                                    <StackPanel Grid.Row="2">
-                                                        <TextBlock FontFamily="{DynamicResource FontMono}"
-                                                                   FontSize="{DynamicResource FontSizeCaption}"
-                                                                   Foreground="{DynamicResource BrushInkMuted}">
-                                                            <Run Text="KL: "/>
-                                                            <Run Text="{Binding Weight, Mode=OneWay}"/>
-                                                        </TextBlock>
-                                                        <TextBlock FontFamily="{DynamicResource FontMono}"
-                                                                   FontSize="{DynamicResource FontSizeCaption}"
-                                                                   Foreground="{DynamicResource BrushInkMuted}">
-                                                            <Run Text="GT: "/>
-                                                            <Run Text="{Binding Value, Mode=OneWay}"/>
-                                                        </TextBlock>
-                                                    </StackPanel>
-
-                                                    <TextBlock Grid.Row="0"
-                                                               Text="✓"
-                                                               FontFamily="{DynamicResource FontSans}"
-                                                               FontSize="14"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="{DynamicResource BrushSuccess}"
-                                                               HorizontalAlignment="Right"
-                                                               VerticalAlignment="Top"
-                                                               Visibility="Collapsed"
-                                                               x:Name="OptimalMark"/>
-                                                </Grid>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                    <Setter TargetName="bd" Property="BorderBrush"
-                                                            Value="{DynamicResource BrushAccent}"/>
-                                                    <Setter TargetName="bd" Property="Background"
-                                                            Value="{DynamicResource BrushAccentSoft}"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsOptimal}" Value="True">
-                                                    <Setter TargetName="bd" Property="BorderBrush"
-                                                            Value="{DynamicResource BrushSuccess}"/>
-                                                    <Setter TargetName="OptimalMark" Property="Visibility"
-                                                            Value="Visible"/>
-                                                </DataTrigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-
-                <StackPanel HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            IsHitTestVisible="False">
-                    <StackPanel.Style>
-                        <Style TargetType="StackPanel">
+                        Background="#2634D399"
+                        BorderBrush="#8034D399"
+                        Padding="14,10"
+                        VerticalAlignment="Top">
+                    <Border.Style>
+                        <Style TargetType="Border">
                             <Setter Property="Visibility" Value="Collapsed"/>
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding HasGame}" Value="False">
+                                <DataTrigger Binding="{Binding PlayInfo}" Value="">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding PlayInfo}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{StaticResource IconCheck}"
+                              Width="16" Height="16"
+                              Stretch="Uniform"
+                              Stroke="#34D399"
+                              StrokeThickness="2.2"
+                              VerticalAlignment="Center"
+                              Margin="0,0,10,0"/>
+                        <TextBlock Text="{Binding PlayInfo}"
+                                   FontFamily="{StaticResource FontSans}"
+                                   FontSize="{StaticResource FontSizeSmall}"
+                                   Foreground="#6EE7B7"
+                                   TextWrapping="Wrap"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Error banner (IconWarning + đỏ #F87171) -->
+                <Border CornerRadius="12"
+                        BorderThickness="1"
+                        Background="#26F87171"
+                        BorderBrush="#80F87171"
+                        Padding="14,10"
+                        VerticalAlignment="Top">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding PlayError}" Value="">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding PlayError}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{StaticResource IconWarning}"
+                              Width="16" Height="16"
+                              Stretch="Uniform"
+                              Stroke="#F87171"
+                              StrokeThickness="2.0"
+                              VerticalAlignment="Center"
+                              Margin="0,0,10,0"/>
+                        <TextBlock Text="{Binding PlayError}"
+                                   FontFamily="{StaticResource FontSans}"
+                                   FontSize="{StaticResource FontSizeSmall}"
+                                   Foreground="#FCA5A5"
+                                   TextWrapping="Wrap"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- =========================================================
+                 ROW 3: KHUNG LƯỚI VẬT PHẨM (glass, bo 18, đổ bóng).
+                 ========================================================= -->
+            <Border Grid.Row="3"
+                    CornerRadius="18"
+                    Background="{StaticResource HomeGlassFill}"
+                    BorderBrush="{StaticResource HomeGlassBorder}"
+                    BorderThickness="1"
+                    Padding="8"
+                    Margin="0,0,0,16">
+                <Border.Effect>
+                    <DropShadowEffect Color="Black"
+                                      BlurRadius="20"
+                                      ShadowDepth="4"
+                                      Opacity="0.35"/>
+                </Border.Effect>
+
+                <Grid>
+                    <!-- ScrollViewer: chỉ cuộn dọc, thanh cuộn mảnh (style gốc của Controls.xaml). -->
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  Padding="4,4,4,0">
+                        <!-- HorizontalAlignment=Center: ItemsControl co lại theo nội dung
+                             rồi được căn giữa -> thẻ ở hàng cuối cùng cũng được căn giữa
+                             khi số thẻ không đủ lấp đầy hàng. -->
+                        <ItemsControl ItemsSource="{Binding GameItems}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Top">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Style="{StaticResource SoloItemCardButton}"
+                                            Command="{Binding DataContext.ToggleItemCommand,
+                                                      RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <!-- Empty state: HasGame=False (chưa nạp xong bộ đề). -->
+                    <StackPanel HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                IsHitTestVisible="False">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasGame}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <Path Data="{StaticResource IconBackpack}"
+                              Width="56" Height="56"
+                              Stretch="Uniform"
+                              Stroke="{StaticResource HomeTextOnDarkMuted}"
+                              StrokeThickness="1.4"
+                              HorizontalAlignment="Center"
+                              Opacity="0.5"/>
+                        <TextBlock Text="Đang tải bộ đề..."
+                                   FontFamily="{StaticResource FontSans}"
+                                   FontSize="{StaticResource FontSizeSmall}"
+                                   Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                   Margin="0,14,0,0"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- =========================================================
+                 ROW 4: GIỎ ĐỒ ĐÃ CHỌN.
+                 3 ô số liệu + ProgressBar + chip cảnh báo vượt tải.
+                 ========================================================= -->
+            <Border Grid.Row="4"
+                    CornerRadius="16"
+                    Background="{StaticResource HomeGlassFill}"
+                    BorderBrush="{StaticResource HomeGlassBorder}"
+                    BorderThickness="1"
+                    Padding="18,14"
+                    Margin="0,0,0,16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!--  3 ô số liệu  -->
+                    <Grid Grid.Row="0" Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- (a) Khối lượng: xanh dương -->
+                        <StackPanel Grid.Column="0"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Center">
+                            <Border Width="40" Height="40" CornerRadius="20">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#60A5FA" Offset="0"/>
+                                        <GradientStop Color="#2563EB" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Path Data="{StaticResource IconScale}"
+                                      Width="18" Height="18"
+                                      Stretch="Uniform"
+                                      Stroke="White"
+                                      StrokeThickness="1.6"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center" Margin="10,0,0,0">
+                                <TextBlock FontFamily="{StaticResource FontMono}"
+                                           FontSize="22"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource HomeTextOnDark}">
+                                    <Run Text="{Binding TotalSelectedWeight, Mode=OneWay}"/>
+                                    <Run Text=" / "/>
+                                    <Run Text="{Binding MaxWeight, Mode=OneWay}"/>
+                                </TextBlock>
+                                <TextBlock Text="KHỐI LƯỢNG"
+                                           FontFamily="{StaticResource FontSans}"
+                                           FontSize="{StaticResource FontSizeCaption}"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                           Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- (b) Giá trị: vàng -->
+                        <StackPanel Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Center">
+                            <Border Width="40" Height="40" CornerRadius="20">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#FCD34D" Offset="0"/>
+                                        <GradientStop Color="#D97706" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Path Data="{StaticResource IconSparkline}"
+                                      Width="18" Height="18"
+                                      Stretch="Uniform"
+                                      Stroke="White"
+                                      StrokeThickness="1.6"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center" Margin="10,0,0,0">
+                                <TextBlock Text="{Binding TotalSelectedValue}"
+                                           FontFamily="{StaticResource FontMono}"
+                                           FontSize="22"
+                                           FontWeight="SemiBold"
+                                           Foreground="#FCD34D"/>
+                                <TextBlock Text="GIÁ TRỊ"
+                                           FontFamily="{StaticResource FontSans}"
+                                           FontSize="{StaticResource FontSizeCaption}"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                           Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- (c) Vật phẩm: cam -->
+                        <StackPanel Grid.Column="2"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Center">
+                            <Border Width="40" Height="40" CornerRadius="20">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#FF9A3D" Offset="0"/>
+                                        <GradientStop Color="#E8590C" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Path Data="{StaticResource IconBackpack}"
+                                      Width="18" Height="18"
+                                      Stretch="Uniform"
+                                      Stroke="White"
+                                      StrokeThickness="1.6"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center" Margin="10,0,0,0">
+                                <TextBlock Text="{Binding SelectedCount}"
+                                           FontFamily="{StaticResource FontMono}"
+                                           FontSize="22"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource HomeTextOnDark}"/>
+                                <TextBlock Text="VẬT PHẨM"
+                                           FontFamily="{StaticResource FontSans}"
+                                           FontSize="{StaticResource FontSizeCaption}"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                           Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <!--  Progress bar + chip cảnh báo  -->
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- ToolTip = CapacityText (giữ nguyên chuỗi cũ). -->
+                        <ProgressBar Grid.Column="0"
+                                     Style="{StaticResource SoloCapacityBar}"
+                                     Value="{Binding CapacityPercent, Mode=OneWay}"
+                                     VerticalAlignment="Center"
+                                     ToolTip="{Binding CapacityText}"/>
+
+                        <!-- Chip "Vượt sức chứa!": chỉ hiện khi IsOverWeight=True,
+                             rung nhẹ một lần khi xuất hiện (EnterActions). -->
+                        <Border x:Name="overChip"
+                                Grid.Column="1"
+                                CornerRadius="10"
+                                Padding="10,4"
+                                BorderThickness="1"
+                                Background="#26F87171"
+                                BorderBrush="#80F87171"
+                                Margin="12,0,0,0"
+                                RenderTransformOrigin="0.5,0.5"
+                                VerticalAlignment="Center">
+                            <Border.RenderTransform>
+                                <RotateTransform Angle="0"/>
+                            </Border.RenderTransform>
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsOverWeight}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimationUsingKeyFrames
+                                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                            Duration="0:0:0.45">
+                                                            <LinearDoubleKeyFrame Value="0"  KeyTime="0:0:0"/>
+                                                            <LinearDoubleKeyFrame Value="-5" KeyTime="0:0:0.08"/>
+                                                            <LinearDoubleKeyFrame Value="5"  KeyTime="0:0:0.16"/>
+                                                            <LinearDoubleKeyFrame Value="-3" KeyTime="0:0:0.24"/>
+                                                            <LinearDoubleKeyFrame Value="3"  KeyTime="0:0:0.32"/>
+                                                            <LinearDoubleKeyFrame Value="0"  KeyTime="0:0:0.45"/>
+                                                        </DoubleAnimationUsingKeyFrames>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource IconWarning}"
+                                      Width="12" Height="12"
+                                      Stretch="Uniform"
+                                      Stroke="#FCA5A5"
+                                      StrokeThickness="1.8"
+                                      VerticalAlignment="Center"/>
+                                <TextBlock Text="Vượt sức chứa!"
+                                           FontFamily="{StaticResource FontSans}"
+                                           FontSize="{StaticResource FontSizeCaption}"
+                                           FontWeight="SemiBold"
+                                           Foreground="#FCA5A5"
+                                           VerticalAlignment="Center"
+                                           Margin="6,0,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- =========================================================
+                 ROW 5: HÀNH ĐỘNG (khi HasNoResult) HOẶC PANEL KẾT QUẢ
+                 (khi HasResult). Hai khối chồng lên nhau, mỗi khối tự ẩn/hiện.
+                 ========================================================= -->
+            <Grid Grid.Row="5" MinHeight="72">
+
+                <!--  Khối 1: hành động khi chưa nộp  -->
+                <Grid>
+                    <Grid.Style>
+                        <Style TargetType="Grid">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasResult}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center">
+                        <Button Command="{Binding ResetCommand}"
+                                Style="{StaticResource SoloGlassPill}"
+                                Padding="22,12"
+                                Margin="0,0,12,0"
+                                Content="Làm lại"/>
+                        <Button Command="{Binding SubmitCommand}"
+                                Style="{StaticResource SoloPrimaryPill}"
+                                Content="Nộp bài"/>
+                    </StackPanel>
+                </Grid>
+
+                <!--  Khối 2: panel kết quả  -->
+                <Border CornerRadius="18"
+                        Background="{StaticResource HomeGlassFill}"
+                        BorderBrush="{StaticResource HomeGlassBorder}"
+                        BorderThickness="1"
+                        Padding="20,16">
+                    <Border.Effect>
+                        <DropShadowEffect Color="Black"
+                                          BlurRadius="24"
+                                          ShadowDepth="4"
+                                          Opacity="0.35"/>
+                    </Border.Effect>
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasResult}" Value="True">
                                     <Setter Property="Visibility" Value="Visible"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </StackPanel.Style>
-                    <Path Data="{DynamicResource IconBackpack}"
-                          Width="44" Height="44"
-                          Stroke="{DynamicResource BrushInkMuted}"
-                          StrokeThickness="1.2"
-                          Stretch="Uniform"
-                          HorizontalAlignment="Center"
-                          Opacity="0.5"/>
-                    <TextBlock Text="Đang tải bộ đề..."
-                               FontFamily="{DynamicResource FontSans}"
-                               FontSize="{DynamicResource FontSizeSmall}"
-                               Foreground="{DynamicResource BrushInkMuted}"
-                               Margin="0,10,0,0"/>
-                </StackPanel>
+                    </Border.Style>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Star + nhãn -->
+                        <StackPanel Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    Margin="0,0,20,0">
+                            <TextBlock Text="{Binding Result.StarText, Mode=OneWay}"
+                                       FontFamily="{StaticResource FontSans}"
+                                       FontSize="32"
+                                       FontWeight="SemiBold"
+                                       Foreground="#FBBF24"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="Xếp hạng"
+                                       FontFamily="{StaticResource FontSans}"
+                                       FontSize="{StaticResource FontSizeCaption}"
+                                       Foreground="{StaticResource HomeTextOnDarkMuted}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,2,0,0"/>
+                        </StackPanel>
+
+                        <!-- Chip điểm + chip phần trăm + dòng phụ -->
+                        <StackPanel Grid.Column="1"
+                                    VerticalAlignment="Center">
+                            <WrapPanel>
+                                <!-- Chip điểm -->
+                                <Border CornerRadius="12"
+                                        Padding="12,6"
+                                        BorderThickness="1"
+                                        Background="#26FF9A3D"
+                                        BorderBrush="#80FF9A3D"
+                                        Margin="0,0,8,6">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Điểm"
+                                                   FontFamily="{StaticResource FontSans}"
+                                                   FontSize="{StaticResource FontSizeCaption}"
+                                                   Foreground="#FFB981"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock FontFamily="{StaticResource FontMono}"
+                                                   FontSize="{StaticResource FontSizeBody}"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="White"
+                                                   VerticalAlignment="Center"
+                                                   Margin="6,0,0,0">
+                                            <Run Text="{Binding Result.Score, Mode=OneWay}"/>
+                                            <Run Text="/"/>
+                                            <Run Text="{Binding Result.OptimalValue, Mode=OneWay}"/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Chip % tối ưu -->
+                                <Border CornerRadius="12"
+                                        Padding="12,6"
+                                        BorderThickness="1"
+                                        Background="#1A34D399"
+                                        BorderBrush="#8034D399"
+                                        Margin="0,0,8,6">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Tối ưu"
+                                                   FontFamily="{StaticResource FontSans}"
+                                                   FontSize="{StaticResource FontSizeCaption}"
+                                                   Foreground="#6EE7B7"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock FontFamily="{StaticResource FontMono}"
+                                                   FontSize="{StaticResource FontSizeBody}"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#34D399"
+                                                   VerticalAlignment="Center"
+                                                   Margin="6,0,0,0"
+                                                   Text="{Binding Result.OptimalPercent,
+                                                          Mode=OneWay,
+                                                          StringFormat={}{0:0.0}%}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Chip khối lượng -->
+                                <Border CornerRadius="12"
+                                        Padding="12,6"
+                                        BorderThickness="1"
+                                        Background="#1A3B82F6"
+                                        BorderBrush="#803B82F6"
+                                        Margin="0,0,0,6">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="KL"
+                                                   FontFamily="{StaticResource FontSans}"
+                                                   FontSize="{StaticResource FontSizeCaption}"
+                                                   Foreground="#93C5FD"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock FontFamily="{StaticResource FontMono}"
+                                                   FontSize="{StaticResource FontSizeBody}"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#93C5FD"
+                                                   VerticalAlignment="Center"
+                                                   Margin="6,0,0,0">
+                                            <Run Text="{Binding Result.TotalWeight, Mode=OneWay}"/>
+                                            <Run Text="/"/>
+                                            <Run Text="{Binding Result.MaxWeight, Mode=OneWay}"/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+                            </WrapPanel>
+
+                            <!-- Dòng phụ: EXP + Level up (chỉ hiện khi > 0 / leveled). -->
+                            <TextBlock Text="{Binding Result.ExpGainText, Mode=OneWay}"
+                                       FontFamily="{StaticResource FontMono}"
+                                       FontSize="{StaticResource FontSizeSmall}"
+                                       FontWeight="SemiBold"
+                                       Foreground="#34D399"
+                                       Margin="0,2,0,0"/>
+                            <TextBlock Text="{Binding Result.LevelUpText, Mode=OneWay}"
+                                       FontFamily="{StaticResource FontMono}"
+                                       FontSize="{StaticResource FontSizeSmall}"
+                                       FontWeight="SemiBold"
+                                       Foreground="#FF9A3D"
+                                       Margin="0,2,0,0"/>
+                        </StackPanel>
+
+                        <!-- 2 nút -->
+                        <StackPanel Grid.Column="2"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center"
+                                    Margin="16,0,0,0">
+                            <Button Command="{Binding PlayAgainCommand}"
+                                    Style="{StaticResource SoloGlassPill}"
+                                    Padding="20,11"
+                                    Margin="0,0,10,0"
+                                    Content="Chơi lại"/>
+                            <Button Command="{Binding ChooseAnotherSetCommand}"
+                                    Style="{StaticResource SoloPrimaryPill}"
+                                    Padding="20,11"
+                                    Content="Chọn mức độ khác"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
             </Grid>
-        </Border>
 
-        <!-- =========================================================
-             ROW 4: thanh sức chứa
-             ========================================================= -->
-        <Grid Grid.Row="4" Margin="0,12,0,0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-
-            <ProgressBar Grid.Row="0"
-                         Style="{StaticResource CapacityBar}"
-                         Value="{Binding CapacityPercent, Mode=OneWay}"/>
-
-            <Grid Grid.Row="1" Margin="0,6,0,0">
-                <TextBlock Text="{Binding CapacityText, Mode=OneWay}"
-                           FontFamily="{DynamicResource FontMono}"
-                           FontSize="{DynamicResource FontSizeSmall}"
-                           Foreground="{DynamicResource BrushInk}"/>
-                <TextBlock Text="Vượt sức chứa!"
-                           FontFamily="{DynamicResource FontMono}"
-                           FontSize="{DynamicResource FontSizeSmall}"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource BrushDanger}"
-                           HorizontalAlignment="Right"
-                           Visibility="{Binding IsOverWeight,
-                                        Converter={StaticResource BoolToVisibility}}"/>
-            </Grid>
-        </Grid>
-
-        <!-- =========================================================
-             ROW 5: hành động / kết quả
-             ========================================================= -->
-        <Grid Grid.Row="5" Margin="0,14,0,0" MinHeight="68">
-            <Grid x:Name="PlayActions">
-                <Grid.Style>
-                    <Style TargetType="Grid">
-                        <Setter Property="Visibility" Value="Visible"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding HasResult}" Value="True">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Grid.Style>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Command="{Binding ResetCommand}"
-                            Style="{DynamicResource ButtonSecondary}"
-                            Padding="16,10"
-                            Margin="0,0,8,0"
-                            Content="Làm lại"/>
-                    <Button Command="{Binding SubmitCommand}"
-                            Style="{DynamicResource ButtonPrimary}"
-                            Padding="20,10"
-                            Content="Nộp bài"/>
-                </StackPanel>
-            </Grid>
-
-            <Border x:Name="ResultPanel"
-                    Background="{DynamicResource BrushSurface}"
-                    BorderBrush="{DynamicResource BrushRule}"
-                    BorderThickness="1"
-                    CornerRadius="2"
-                    Padding="16,12">
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding HasResult}" Value="True">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="16"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Result.StarText, Mode=OneWay}"
-                                   FontFamily="{DynamicResource FontSans}"
-                                   FontSize="26"
-                                   Foreground="{DynamicResource BrushAccent}"
-                                   HorizontalAlignment="Center"/>
-                        <TextBlock Text="Xếp hạng"
-                                   FontFamily="{DynamicResource FontSans}"
-                                   FontSize="{DynamicResource FontSizeCaption}"
-                                   Foreground="{DynamicResource BrushInkMuted}"
-                                   HorizontalAlignment="Center"/>
-                    </StackPanel>
-
-                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                        <TextBlock FontFamily="{DynamicResource FontMono}"
-                                   FontSize="{DynamicResource FontSizeBody}"
-                                   Foreground="{DynamicResource BrushInk}">
-                            <Run Text="Điểm của bạn: "/>
-                            <Run Text="{Binding Result.Score, Mode=OneWay}" FontWeight="SemiBold"/>
-                            <Run Text=" / Tối ưu: "/>
-                            <Run Text="{Binding Result.OptimalValue, Mode=OneWay}"/>
-                            <Run Text=" ("/>
-                            <Run Text="{Binding Result.OptimalPercent, StringFormat={}{0:0.0}, Mode=OneWay}"/>
-                            <Run Text="%)"/>
-                        </TextBlock>
-                        <TextBlock FontFamily="{DynamicResource FontMono}"
-                                   FontSize="{DynamicResource FontSizeSmall}"
-                                   Foreground="{DynamicResource BrushInkMuted}"
-                                   Margin="0,4,0,0">
-                            <Run Text="Khối lượng: "/>
-                            <Run Text="{Binding Result.TotalWeight, Mode=OneWay}"/>
-                            <Run Text=" / "/>
-                            <Run Text="{Binding Result.MaxWeight, Mode=OneWay}"/>
-                        </TextBlock>
-
-                        <TextBlock Text="{Binding Result.ExpGainText, Mode=OneWay}"
-                                  FontFamily="{DynamicResource FontMono}"
-                                  FontSize="{DynamicResource FontSizeSmall}"
-                                  FontWeight="SemiBold"
-                                  Foreground="{DynamicResource BrushSuccess}"
-                                   Margin="0,4,0,0"/>
-                        
-                        <TextBlock Text="{Binding Result.LevelUpText, Mode=OneWay}"
-                            FontFamily="{DynamicResource FontMono}"
-                            FontSize="{DynamicResource FontSizeSmall}"
-                            FontWeight="SemiBold"
-                            Foreground="{DynamicResource BrushAccent}"
-                            Margin="0,2,0,0"/>
-                    </StackPanel>
-
-                    <StackPanel Grid.Column="3" Orientation="Horizontal"
-                                VerticalAlignment="Center">
-                        <Button Command="{Binding PlayAgainCommand}"
-                                Style="{DynamicResource ButtonSecondary}"
-                                Padding="14,9"
-                                Margin="0,0,8,0"
-                                Content="Chơi lại"/>
-                        <Button Command="{Binding ChooseAnotherSetCommand}"
-                                Style="{DynamicResource ButtonPrimary}"
-                                Padding="14,9"
-                                Content="Chọn mức độ khác"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
         </Grid>
     </Grid>
 </UserControl>

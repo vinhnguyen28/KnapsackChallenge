@@ -3,6 +3,7 @@
    - Tài khoản: admin / Admin@123  và  player1 / Player@123
    - 12 vật phẩm + 3 bộ đề (Easy / Medium / Hard), chỉ nạp khi bảng Items còn trống
    - Bật chế độ Multiplayer (chỉ lúc nạp dữ liệu lần đầu)
+   - v10: kèm IconKey cho từng vật phẩm mẫu.
    ============================================================= */
 SET NOCOUNT ON;
 GO
@@ -19,19 +20,22 @@ GO
 
 IF NOT EXISTS (SELECT 1 FROM Items)
 BEGIN
-    INSERT INTO Items (Name, Weight, Value) VALUES
-        (N'Đèn pin',        2,  3),
-        (N'Lều nhỏ',        9, 12),
-        (N'Bình nước',      4,  5),
-        (N'Dao đa năng',    1,  4),
-        (N'Thức ăn khô',    5,  9),
-        (N'Túi ngủ',        7, 10),
-        (N'Bản đồ',         1,  2),
-        (N'Bếp gas mini',   6,  8),
-        (N'Áo mưa',         2,  4),
-        (N'Dây thừng',      4,  6),
-        (N'La bàn',         1,  3),
-        (N'Bộ sơ cứu',      3,  7);
+    /* v10: thêm cột IconKey. Các key này khớp ItemIconCatalog.cs ở UI.
+       Key NULL cũng chạy được (fallback icon "default"), nhưng nạp sẵn
+       để màn Admin + Solo trông trực quan ngay từ lần seed đầu. */
+    INSERT INTO Items (Name, Weight, Value, IconKey) VALUES
+        (N'Đèn pin',        2,  3, N'flashlight'),
+        (N'Lều nhỏ',        9, 12, N'tent'),
+        (N'Bình nước',      4,  5, N'water_bottle'),
+        (N'Dao đa năng',    1,  4, N'multi_tool'),
+        (N'Thức ăn khô',    5,  9, N'dried_food'),
+        (N'Túi ngủ',        7, 10, N'sleeping_bag'),
+        (N'Bản đồ',         1,  2, N'map'),
+        (N'Bếp gas mini',   6,  8, N'camping_stove'),
+        (N'Áo mưa',         2,  4, N'raincoat'),
+        (N'Dây thừng',      4,  6, N'rope'),
+        (N'La bàn',         1,  3, N'compass'),
+        (N'Bộ sơ cứu',      3,  7, N'first_aid_kit');
 
     INSERT INTO KnapsackSets (SetName, MaxWeight, Difficulty) VALUES
         (N'Dã ngoại cơ bản', 8,  N'Easy'),

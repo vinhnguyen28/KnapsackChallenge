@@ -22,12 +22,14 @@ namespace KnapsackChallenge.Server.Services.Rooms
             var items = _gameRepo.GetItemsInSet(setId);
             if (items.Count == 0) return null;
 
+            // v10: map thêm IconKey để client render icon trong phòng Multiplayer.
             var itemDtos = items.Select(i => new ItemDto
             {
                 Id = i.Id,
                 Name = i.Name,
                 Weight = i.Weight,
                 Value = i.Value,
+                IconKey = i.IconKey, // v10
             }).ToList();
 
             return new SetInfo(set.Id, set.SetName, set.Difficulty, set.MaxWeight, itemDtos);

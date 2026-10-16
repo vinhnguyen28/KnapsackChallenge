@@ -74,12 +74,14 @@ namespace KnapsackChallenge.Core.Services.Player
                 Difficulty = set.Difficulty,
                 MaxWeight = set.MaxWeight,
                 TimeLimitSeconds = mode.TimeLimitSeconds,
+                // v10: truyền thêm IconKey để UI Solo render icon vật phẩm.
                 Items = items.Select(i => new ItemDto
                 {
                     Id = i.Id,
                     Name = i.Name,
                     Weight = i.Weight,
                     Value = i.Value,
+                    IconKey = i.IconKey, // v10
                 }).ToList(),
             };
 

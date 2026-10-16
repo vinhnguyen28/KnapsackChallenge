@@ -14,27 +14,30 @@ namespace KnapsackChallenge.Core.Services.Admin
 
         public List<ItemEntity> GetAll() => _itemRepository.GetAll();
 
-        public (bool Success, string Message) Add(string name, int weight, int value)
+        // v10: iconKey đi thẳng xuống repo, không validate ở Core vì:
+        // - Nếu key sai/không tồn tại, phía UI (ItemIconConverter) tự fallback "default".
+        // - Tránh việc Core phải biết danh mục icon của UI.
+        public (bool Success, string Message) Add(string name, int weight, int value, string? iconKey = null)
         {
             name = (name ?? "").Trim();
             var error = Validate(name, weight, value);
 
             if (error != null)
-            { 
+            {
                 return (false, error);
             }
 
-            _itemRepository.Create(name, weight, value);
+            _itemRepository.Create(name, weight, value, iconKey);
 
             return (true, "Đã thêm vật phẩm mới!");
         }
 
-        public (bool Success, string Message) Update(int id, string name, int weight, int value)
+        public (bool Success, string Message) Update(int id, string name, int weight, int value, string? iconKey = null)
         {
             var error = Validate(name, weight, value);
             if (error != null) return (false, error);
 
-            return _itemRepository.Update(id, name, weight, value)
+            return _itemRepository.Update(id, name, weight, value, iconKey)
                 ? (true, "Đã cập nhật vật phẩm!")
                 : (false, "Không tìm thấy vật phẩm (có thể đã bị xóa).");
         }
@@ -49,22 +52,21 @@ namespace KnapsackChallenge.Core.Services.Admin
         // Nghiệp vụ kiểm tra dữ liệu nằm ở Core, không nằm ở UI
         private static string? Validate(string name, int weight, int value)
         {
-
-            if (name.Length == 0 || name.Length > 100) 
+            if (name.Length == 0 || name.Length > 100)
             {
                 return "Tên vật phẩm phải từ 1 đến 100 ký tự!";
             }
 
-            if (weight <= 0) 
+            if (weight <= 0)
             {
                 return "Khối lượng phải lớn hơn 0!";
             }
 
-            if (value <= 0) 
+            if (value <= 0)
             {
                 return "Giá trị phải lớn hơn 0!";
             }
-          
+
             return null;
         }
     }

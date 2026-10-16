@@ -47,10 +47,12 @@
 
 	<ItemGroup>
 	  <Folder Include="Assets\Backgrounds\" />
+	  <Folder Include="Assets\ItemIcons\" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<Resource Include="Assets\Backgrounds\*.jpg" />
+	   <Resource Include="Assets\ItemIcons\*.png" />
 	</ItemGroup>
 	
 </Project>

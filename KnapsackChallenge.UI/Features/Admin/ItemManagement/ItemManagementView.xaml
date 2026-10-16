@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:shared="clr-namespace:KnapsackChallenge.UI.Shared"
              mc:Ignorable="d"
              d:DesignHeight="680" d:DesignWidth="1200"
              Background="{DynamicResource BrushBackground}">
@@ -10,6 +11,10 @@
     <!-- DataContext (ItemManagementViewModel) do MainAdminViewModel.CurrentPage cung cap. -->
 
     <UserControl.Resources>
+
+        <!-- v10: converter IconKey -> ImageSource. Đặt local để không phải
+             đụng App.xaml. One-way, thread-safe, luôn trả non-null. -->
+        <shared:ItemIconConverter x:Key="ItemIconConverter"/>
 
         <!-- Row style cho bang vat pham. Ke thua GridRow (da co vach Accent khi selected). -->
         <Style x:Key="ItemRow" TargetType="DataGridRow"
@@ -68,6 +73,19 @@
                               RowStyle="{StaticResource ItemRow}"
                               CellStyle="{DynamicResource GridCell}">
                         <DataGrid.Columns>
+
+                            <!-- v10: cột icon nhỏ 28x28 ở đầu bảng. -->
+                            <DataGridTemplateColumn Header="" Width="40">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Image Source="{Binding IconKey, Converter={StaticResource ItemIconConverter}}"
+                                               Width="28" Height="28"
+                                               Stretch="Uniform"
+                                               VerticalAlignment="Center"
+                                               RenderOptions.BitmapScalingMode="HighQuality"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
 
                             <!-- ID: mono, can phai -->
                             <DataGridTextColumn Header="ID"
@@ -184,6 +202,173 @@
                                  Text="{Binding ValueText, UpdateSourceTrigger=PropertyChanged}"/>
                     </StackPanel>
                 </Grid>
+
+                <!-- =========================================================
+                     v10: KHU VUC CHON BIEU TUONG
+                     - O xem truoc 48x48 (dung ItemIconConverter).
+                     - Nut "Chon bieu tuong" mo Popup (StaysOpen=False).
+                     - Nut "x" nho xoa icon (ve "default").
+                     - Popup: o tim kiem + ItemsControl long nhau (Category -> WrapPanel 56x56).
+                     - Icon dang chon co vien Accent + nen AccentSoft.
+                     ========================================================= -->
+                <TextBlock Text="Biểu tượng"
+                           Style="{DynamicResource FieldLabel}"
+                           Margin="0,12,0,6"/>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Preview 48x48 (khong bao gio trong/lo) -->
+                    <Border Grid.Column="0"
+                            Width="48" Height="48"
+                            BorderBrush="{DynamicResource BrushRule}"
+                            BorderThickness="1"
+                            CornerRadius="2"
+                            Background="{DynamicResource BrushBackground}">
+                        <Image Source="{Binding SelectedIconKey, Converter={StaticResource ItemIconConverter}}"
+                               Width="42" Height="42"
+                               Stretch="Uniform"
+                               RenderOptions.BitmapScalingMode="HighQuality"/>
+                    </Border>
+
+                    <!-- Nut xoa icon (nho) -->
+                    <Button Grid.Column="1"
+                            Command="{Binding ClearIconCommand}"
+                            Style="{DynamicResource ButtonGhost}"
+                            Padding="6,4"
+                            Margin="4,0,0,0"
+                            VerticalAlignment="Top"
+                            ToolTip="Xoá biểu tượng (dùng mặc định)">
+                        <Path Data="{DynamicResource IconClose}"
+                              Width="10" Height="10"
+                              Stroke="{Binding Foreground,
+                                       RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.8"
+                              Stretch="Uniform"/>
+                    </Button>
+
+                    <!-- Nut mo popup -->
+                    <Button x:Name="IconPickerButton"
+                            Grid.Column="2"
+                            Command="{Binding OpenIconPickerCommand}"
+                            Style="{DynamicResource ButtonSecondary}"
+                            Margin="8,0,0,0"
+                            Padding="12,8"
+                            VerticalAlignment="Stretch"
+                            Content="Chọn biểu tượng"/>
+                </Grid>
+
+                <!-- Popup chon icon: StaysOpen=False de click ra ngoai tu dong dong.
+                     PlacementTarget tro toi nut vua bam. Nen theo theme SANG hien co. -->
+                <Popup IsOpen="{Binding IsIconPickerOpen, Mode=TwoWay}"
+                       StaysOpen="False"
+                       Placement="Bottom"
+                       PlacementTarget="{Binding ElementName=IconPickerButton}"
+                       VerticalOffset="4"
+                       AllowsTransparency="True"
+                       PopupAnimation="Fade">
+                    <Border Background="{DynamicResource BrushSurface}"
+                            BorderBrush="{DynamicResource BrushRule}"
+                            BorderThickness="1"
+                            CornerRadius="4"
+                            Padding="10"
+                            Width="360"
+                            MaxHeight="440"
+                            Margin="0,4,0,0">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="12"
+                                              ShadowDepth="2"
+                                              Opacity="0.18"
+                                              Color="Black"/>
+                        </Border.Effect>
+
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- O tim kiem -->
+                            <TextBox Grid.Row="0"
+                                     Style="{DynamicResource DarkTextBox}"
+                                     Tag="Tìm icon theo tên..."
+                                     Text="{Binding IconSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Margin="0,0,0,8"/>
+
+                            <!-- Danh sach nhom icon -->
+                            <ScrollViewer Grid.Row="1"
+                                          VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding FilteredIcons}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="0,0,0,8">
+                                                <!-- Ten nhom -->
+                                                <TextBlock Text="{Binding Category}"
+                                                           FontFamily="{DynamicResource FontSans}"
+                                                           FontSize="{DynamicResource FontSizeCaption}"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource BrushInkMuted}"
+                                                           Margin="2,0,0,4"/>
+
+                                                <!-- WrapPanel cac o 56x56 -->
+                                                <ItemsControl ItemsSource="{Binding Icons}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Button Width="56" Height="56"
+                                                                    Margin="2"
+                                                                    Cursor="Hand"
+                                                                    ToolTip="{Binding DisplayName}"
+                                                                    Command="{Binding PickCommand}">
+                                                                <Button.Template>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border x:Name="bd"
+                                                                                BorderBrush="Transparent"
+                                                                                BorderThickness="2"
+                                                                                CornerRadius="4"
+                                                                                Background="{DynamicResource BrushBackground}">
+                                                                            <Image Source="{Binding Key,
+                                                                                            Converter={StaticResource ItemIconConverter}}"
+                                                                                   Width="44" Height="44"
+                                                                                   Stretch="Uniform"
+                                                                                   RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <!-- Icon dang chon: vien Accent + nen mem -->
+                                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                                <Setter TargetName="bd" Property="BorderBrush"
+                                                                                        Value="{DynamicResource BrushAccent}"/>
+                                                                                <Setter TargetName="bd" Property="Background"
+                                                                                        Value="{DynamicResource BrushAccentSoft}"/>
+                                                                            </DataTrigger>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="bd" Property="BorderBrush"
+                                                                                        Value="{DynamicResource BrushInkMuted}"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Button.Template>
+                                                            </Button>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Popup>
 
                 <!-- =========================================================
                      KHU VUC THONG BAO - CHIEU CAO CO DINH (54px)
