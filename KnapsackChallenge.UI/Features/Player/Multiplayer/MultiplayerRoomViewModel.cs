@@ -46,7 +46,7 @@ namespace KnapsackChallenge.UI.Features.Player
         private readonly ISoloGameService _soloService;
 
         private MultiplayerConnectionService? _connection;
-        private bool _disposed;
+        //private bool _disposed;
         private bool _suppressSetChange;
         private RoomStateDto _state;
 
@@ -220,7 +220,7 @@ namespace KnapsackChallenge.UI.Features.Player
 
         public void OnNavigatedFrom()
         {
-            _disposed = true;
+            //_disposed = true;
             Unsubscribe();
         }
 

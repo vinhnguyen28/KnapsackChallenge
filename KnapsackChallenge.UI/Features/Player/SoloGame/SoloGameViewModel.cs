@@ -109,10 +109,37 @@ namespace KnapsackChallenge.UI.Features.Player
             _playTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _playTimer.Tick += OnPlayTick;
 
-            ResetCommand = new RelayCommand<object>(_ => ExecuteReset(), _ => HasGame);
+            // =========================================================
+            // v11: ResetCommand = nút "Làm lại" (trước khi nộp).
+            // ---------------------------------------------------------
+            // KHÔNG shuffle. Lý do:
+            //   - Người chơi đang trong lúc suy nghĩ, chỉ muốn bỏ chọn
+            //     các item đã chọn để thử tổ hợp khác.
+            //   - Nếu xáo trộn bố cục lúc này, người chơi sẽ mất định
+            //     hướng "item X đang ở vị trí nào" vừa ghi nhớ được.
+            //   - Hành vi xáo trộn để "chơi ván mới" dành riêng cho
+            //     nút "Chơi lại" (sau khi nộp) — xem PlayAgainCommand.
+            // =========================================================
+            ResetCommand = new RelayCommand<object>(
+                _ => ExecuteReset(shuffleItems: false),
+                _ => HasGame);
+
             SubmitCommand = new RelayCommand<object>(_ => ExecuteSubmit(), _ => CanSubmit);
             ToggleItemCommand = new RelayCommand<SelectableItem>(ToggleItem);
-            PlayAgainCommand = new RelayCommand<object>(_ => ExecuteReset());
+
+            // =========================================================
+            // v11: PlayAgainCommand = nút "Chơi lại" (sau khi nộp).
+            // ---------------------------------------------------------
+            // CÓ shuffle. Lý do:
+            //   - Người chơi đã nộp xong, đã xem panel kết quả và các
+            //     highlight "tối ưu" trên lưới.
+            //   - Bấm "Chơi lại" = muốn chơi lại CÙNG bộ đề với một
+            //     "ván tinh thần" mới. Xáo trộn thứ tự giúp không bị
+            //     học thuộc bố cục đáp án tối ưu từ ván trước.
+            // =========================================================
+            PlayAgainCommand = new RelayCommand<object>(
+                _ => ExecuteReset(shuffleItems: true));
+
             ChooseAnotherSetCommand = new RelayCommand<object>(_ => ExecuteChooseAnotherSet());
             GoHomeCommand = new RelayCommand<object>(_ => ExecuteGoHome());
 
@@ -258,6 +285,13 @@ namespace KnapsackChallenge.UI.Features.Player
 
                 try
                 {
+                    // NOTE: Server-side StartGame (v11) đã tự shuffle items
+                    // trước khi trả về SoloGameDataDto — client không cần
+                    // làm gì thêm. Đây là điểm khác biệt với "Chơi lại":
+                    //   - StartGame: ván mới hoàn toàn, tiêu 1 tim, có
+                    //     session mới trong DB, shuffle từ server.
+                    //   - PlayAgain: chơi lại cùng ván đã nộp, không tiêu
+                    //     tim, không tạo session mới, shuffle ở client.
                     var tuple = await System.Threading.Tasks.Task.Run(
                         () => _soloService.StartGame(_user.Id, setId));
                     ok = tuple.Success;
@@ -317,15 +351,61 @@ namespace KnapsackChallenge.UI.Features.Player
             NotifyGameChanged();
         }
 
-        private void ExecuteReset()
+        // =========================================================
+        // v11: ExecuteReset có tham số shuffleItems.
+        // ---------------------------------------------------------
+        // - shuffleItems = false  → gọi từ "Làm lại" (trước khi nộp).
+        // - shuffleItems = true   → gọi từ "Chơi lại" (sau khi nộp).
+        //
+        // TẠI SAO PHẢI SHUFFLE Ở CLIENT CHO "CHƠI LẠI" (khác với
+        // StartGame shuffle ở server):
+        //   - "Chơi lại" không gọi lại server: không tiêu tim, không
+        //     tạo session mới, không sinh SoloGameDataDto mới. Client
+        //     tự reset state tại chỗ.
+        //   - Vì vậy nếu muốn items đổi thứ tự thì phải làm ngay tại
+        //     đây, trên ObservableCollection GameItems.
+        //
+        // AN TOÀN NGHIỆP VỤ:
+        //   - Chỉ đổi thứ tự phần tử trong ObservableCollection, KHÔNG
+        //     tạo SelectableItem mới → mọi binding, CommandParameter,
+        //     state IsSelected/IsOptimal cũ vẫn trỏ đúng instance.
+        //   - Submit lần sau dựa trên Id (selectedIds = items.Where
+        //     (IsSelected).Select(Id)) → server nhận đúng tập Id bất
+        //     kể thứ tự hiển thị.
+        //   - Sau Clear + Add lại, ObservableCollection phát Reset + N
+        //     Add event; WPF chỉ re-render một frame → không nháy.
+        //
+        // TẠI SAO KHÔNG SHUFFLE NGAY TRONG VÒNG LẶP RESET STATE:
+        //   - Tránh xáo trộn giữa lúc đang lặp reset từng item — dễ
+        //     gây nhầm lẫn logic. Tách 2 bước cho rõ ràng, dễ đọc.
+        // =========================================================
+        private void ExecuteReset(bool shuffleItems)
         {
             if (GameItems.Count == 0) return;
 
+            // ----- Bước 1: reset trạng thái từng item -----
             foreach (var it in GameItems)
             {
                 it.IsSelected = false;
                 it.IsOptimal = false;
             }
+
+            // ----- Bước 2: xáo trộn thứ tự nếu được yêu cầu -----
+            if (shuffleItems)
+            {
+                // Fisher-Yates kiểu LINQ: N ở đây < 100 nên chi phí
+                // O(N log N) hoàn toàn chấp nhận được. Random.Shared
+                // là thread-safe (từ .NET 6+).
+                var shuffled = GameItems
+                    .OrderBy(_ => Random.Shared.Next())
+                    .ToList();
+
+                GameItems.Clear();
+                foreach (var it in shuffled)
+                    GameItems.Add(it);
+            }
+
+            // ----- Bước 3: reset state của ván -----
             Result = null;
             PlayInfo = "";
             PlayError = "";

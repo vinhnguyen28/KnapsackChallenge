@@ -10,21 +10,49 @@ namespace KnapsackChallenge.UI.Services.Remote
     // - KHÔNG nuốt ApiException/ServerUnavailableException — để caller quyết định.
     public sealed class RemoteGameModeService : IGameModeService
     {
+        // =========================================================
+        // v12: CACHE — modes gần như không đổi (Admin sửa vài lần/năm).
+        // ---------------------------------------------------------
+        // HomePageViewModel.LoadModeStatusAsync gọi GetAll() mỗi lần
+        // vào Home -> nếu không cache sẽ khựng ~200-500ms mỗi lần.
+        // Cache 10 phút đủ an toàn vì Admin hiếm khi đổi.
+        //
+        // TTL dài hơn sets (10 phút vs 5 phút) vì modes thay đổi ít
+        // hơn sets rất nhiều.
+        // =========================================================
+        private static List<GameModeEntity>? _cachedModes;
+        private static DateTime _cacheExpiryUtc = DateTime.MinValue;
+        private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(10);
+        private static readonly object _cacheLock = new();
+
         public List<GameModeEntity> GetAll()
         {
-            var list = ApiClient.Get<List<PlayableModeDto>>("api/modes");
-            if (list == null) return new List<GameModeEntity>();
-
-            return list.Select(dto => new GameModeEntity
+            // Cache hit -> trả bản copy (caller có thể mutate).
+            lock (_cacheLock)
             {
-                ModeKey = dto.ModeKey,
-                // Server không trả DisplayName — dùng ModeKey làm nhãn hiển thị.
-                DisplayName = dto.ModeKey,
-                IsEnabled = dto.IsEnabled,
-                TimeLimitSeconds = dto.TimeLimitSeconds,
-                MaxPlayers = dto.MaxPlayers,
-                // MaxHearts/HeartRefillMinutes/UpdatedAt/UpdatedBy để mặc định.
-            }).ToList();
+                if (_cachedModes != null && DateTime.UtcNow < _cacheExpiryUtc)
+                    return CloneModes(_cachedModes);
+            }
+
+            var list = ApiClient.Get<List<PlayableModeDto>>("api/modes");
+            var modes = list == null
+                ? new List<GameModeEntity>()
+                : list.Select(dto => new GameModeEntity
+                {
+                    ModeKey = dto.ModeKey,
+                    DisplayName = dto.ModeKey,
+                    IsEnabled = dto.IsEnabled,
+                    TimeLimitSeconds = dto.TimeLimitSeconds,
+                    MaxPlayers = dto.MaxPlayers,
+                }).ToList();
+
+            lock (_cacheLock)
+            {
+                _cachedModes = modes;
+                _cacheExpiryUtc = DateTime.UtcNow.Add(CacheTtl);
+            }
+
+            return CloneModes(modes);
         }
 
         public GameModeEntity? GetByKey(string modeKey)
@@ -46,5 +74,46 @@ namespace KnapsackChallenge.UI.Services.Remote
                                                      UserEntity currentAdmin)
             => throw new NotSupportedException(
                 "Cập nhật chế độ chơi chưa hỗ trợ qua API (chỉ Admin, sẽ làm ở bước sau).");
+
+        // =========================================================
+        // Cache invalidation
+        // =========================================================
+
+        public static void InvalidateCache()
+        {
+            lock (_cacheLock)
+            {
+                _cachedModes = null;
+                _cacheExpiryUtc = DateTime.MinValue;
+            }
+        }
+
+        // =========================================================
+        // Helpers
+        // =========================================================
+
+        // Trả bản copy sâu — tránh caller (HomePageViewModel) mutate
+        // trực tiếp entity trong cache (dù hiện tại chưa mutate, phòng
+        // ngừa tương lai).
+        private static List<GameModeEntity> CloneModes(List<GameModeEntity> source)
+        {
+            var copy = new List<GameModeEntity>(source.Count);
+            foreach (var m in source)
+            {
+                copy.Add(new GameModeEntity
+                {
+                    ModeKey = m.ModeKey,
+                    DisplayName = m.DisplayName,
+                    IsEnabled = m.IsEnabled,
+                    TimeLimitSeconds = m.TimeLimitSeconds,
+                    MaxPlayers = m.MaxPlayers,
+                    MaxHearts = m.MaxHearts,
+                    HeartRefillMinutes = m.HeartRefillMinutes,
+                    UpdatedAt = m.UpdatedAt,
+                    UpdatedBy = m.UpdatedBy,
+                });
+            }
+            return copy;
+        }
     }
 }

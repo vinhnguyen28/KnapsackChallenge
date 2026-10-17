@@ -67,6 +67,44 @@ namespace KnapsackChallenge.Core.Services.Player
                         heartStatus);
             }
 
+            // =========================================================
+            // v11: SHUFFLE — XÁO TRỘN THỨ TỰ VẬT PHẨM MỖI VÁN.
+            // ---------------------------------------------------------
+            // BỐI CẢNH:
+            //   Trước đây `items` được lấy từ GameRepository.GetItemsInSet
+            //   với câu SQL `ORDER BY i.Id` -> mỗi lần vào ván cùng một bộ
+            //   đề, vật phẩm luôn hiển thị theo đúng thứ tự Id tăng dần.
+            //   Người chơi dễ "học thuộc" vị trí item trên lưới.
+            //
+            // GIẢI PHÁP:
+            //   - Dùng OrderBy(_ => Random.Shared.Next()) để Fisher-Yates
+            //     kiểu LINQ (đủ tốt cho N < 100 item, không cần shuffle
+            //     thủ công).
+            //   - Chỉ shuffle ở LỚP HIỂN THỊ (DTO trả về client), KHÔNG
+            //     đụng GameRepository.GetItemsInSet để:
+            //       + Các caller khác (nếu có) vẫn nhận thứ tự ổn định
+            //         theo Id.
+            //       + Tránh làm sai logic nào đang ngầm phụ thuộc thứ tự.
+            //
+            // AN TOÀN NGHIỆP VỤ:
+            //   - SoloGameService.Submit chấm điểm dựa trên ItemId
+            //     (itemDict.ContainsKey(id) + cộng dồn theo id), KHÔNG
+            //     phụ thuộc thứ tự item trong danh sách.
+            //   - KnapsackSolver.Solve nhận List<(Id, Weight, Value)>
+            //     và trả OptimalValue — thuật toán DP 0/1 cho kết quả
+            //     tối ưu KHÔNG phụ thuộc thứ tự đầu vào. OptimalItemIds
+            //     có thể là một nghiệm tối ưu KHÁC với lần trước, nhưng
+            //     OptimalValue (giá trị tối ưu) luôn giống nhau.
+            //   - UI (SoloGameViewModel) bind ItemsSource trực tiếp vào
+            //     GameItems -> chỉ cần danh sách mới là lưới tự đổi thứ tự.
+            //
+            // LƯU Ý:
+            //   - Random.Shared là thread-safe (từ .NET 6+), dùng an toàn
+            //     ở mọi nơi kể cả khi nhiều request StartGame song song.
+            //   - Với N rất lớn (~1000+), OrderBy(random) sẽ O(N log N)
+            //     với chi phí sinh N số ngẫu nhiên — chấp nhận được.
+            //     Nếu cần tối ưu hơn, có thể thay bằng Fisher-Yates thủ công.
+            // =========================================================
             var data = new SoloGameDataDto
             {
                 SetId = set.Id,
@@ -74,15 +112,20 @@ namespace KnapsackChallenge.Core.Services.Player
                 Difficulty = set.Difficulty,
                 MaxWeight = set.MaxWeight,
                 TimeLimitSeconds = mode.TimeLimitSeconds,
+
                 // v10: truyền thêm IconKey để UI Solo render icon vật phẩm.
-                Items = items.Select(i => new ItemDto
-                {
-                    Id = i.Id,
-                    Name = i.Name,
-                    Weight = i.Weight,
-                    Value = i.Value,
-                    IconKey = i.IconKey, // v10
-                }).ToList(),
+                // v11: SHUFFLE trước khi select sang ItemDto.
+                Items = items
+                    .OrderBy(_ => Random.Shared.Next())
+                    .Select(i => new ItemDto
+                    {
+                        Id = i.Id,
+                        Name = i.Name,
+                        Weight = i.Weight,
+                        Value = i.Value,
+                        IconKey = i.IconKey, // v10
+                    })
+                    .ToList(),
             };
 
             return (true, "", data, heartStatus);
@@ -111,6 +154,9 @@ namespace KnapsackChallenge.Core.Services.Player
             var items = _gameRepository.GetItemsInSet(setId);
             if (items.Count == 0) return (false, "Bộ đề không có vật phẩm.", null);
 
+            // NOTE: Submit KHÔNG cần shuffle. Chấm điểm dựa trên ItemId
+            // (dictionary lookup) nên thứ tự items ở đây không ảnh hưởng
+            // đến totalValue/totalWeight/optimalValue.
             var itemDict = items.ToDictionary(i => i.Id);
             var distinct = selectedItemIds?.Distinct().ToList() ?? new List<int>();
 
