@@ -10,12 +10,14 @@
                 <ResourceDictionary Source="Themes/Icons.xaml"/>
                 <ResourceDictionary Source="Themes/Controls.xaml"/>
                 <ResourceDictionary Source="Themes/Layout.xaml"/>
+                
                 <!-- NEW: style riêng cho màn Bảng xếp hạng.
                      Đặt SAU Layout để mọi resource phụ thuộc
                      (Colors / Typography / Icons) đã có sẵn; đồng thời
                      KHÔNG ghi đè bất kỳ key nào đang dùng chung vì
                      toàn bộ key trong file này đều có tiền tố "Lb". -->
                 <ResourceDictionary Source="Themes/LeaderboardStyles.xaml"/>
+                
                 <!-- NEW (GĐ1): style tối dùng chung cho Multiplayer + Dialog.
                      Toàn bộ key đều có tiền tố "Dk" nên KHÔNG ghi đè
                      style cũ của Admin/Auth/Lobby phiên bản sáng.
@@ -23,6 +25,14 @@
                      tham chiếu (Colors / Typography / Icons và các brush
                      Home*/Lb*/Diff*) đã được merge ở trên. -->
                 <ResourceDictionary Source="Themes/DarkGlass.xaml"/>
+
+                <!-- [THÊM] Style + FontFamily dùng riêng cho màn Đăng nhập / Đăng ký.
+                     Đặt SAU DarkGlass.xaml để có thể dùng StaticResource các key
+                     Home*/Brush*/Icon* đã được DarkGlass (và các file trước) nạp.
+                     Toàn bộ key trong file này đều có tiền tố "Auth" nên KHÔNG
+                     ghi đè bất kỳ key nào đang dùng chung. -->
+                <ResourceDictionary Source="Themes/AuthStyles.xaml"/>
+                
             </ResourceDictionary.MergedDictionaries>
 
             <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>

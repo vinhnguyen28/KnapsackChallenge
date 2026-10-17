@@ -1,0 +1,337 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Colors.xaml"/>
+        <ResourceDictionary Source="Typography.xaml"/>
+        <ResourceDictionary Source="Icons.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
+    <FontFamily x:Key="AuthFontSans">Segoe UI</FontFamily>
+    <FontFamily x:Key="AuthFontSansSemiBold">Segoe UI</FontFamily>
+    <FontFamily x:Key="AuthFontMono">Consolas</FontFamily>
+    <FontFamily x:Key="AuthFontMonoSemiBold">Consolas</FontFamily>
+
+    <Geometry x:Key="AuthIconLock">M5,8 L5,6 C5,4.3 6.3,3 8,3 C9.7,3 11,4.3 11,6 L11,8 M3.5,8 L12.5,8 L12.5,14 L3.5,14 Z M8,10.5 L8,12</Geometry>
+    <Geometry x:Key="AuthIconEye">M2,8 C4,4.5 6,3 8,3 C10,3 12,4.5 14,8 C12,11.5 10,13 8,13 C6,13 4,11.5 2,8 Z M8,6 A2,2 0 1,1 8,10 A2,2 0 1,1 8,6 Z</Geometry>
+    <Geometry x:Key="AuthIconEyeOff">M2,8 C4,4.5 6,3 8,3 C10,3 12,4.5 14,8 C12,11.5 10,13 8,13 C6,13 4,11.5 2,8 Z M8,6 A2,2 0 1,1 8,10 A2,2 0 1,1 8,6 Z M3,3 L13,13</Geometry>
+
+    <Style x:Key="AuthWordmark" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AuthFontMonoSemiBold}"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="FontSize" Value="32"/>
+        <Setter Property="Foreground" Value="{StaticResource HomeTextOnDark}"/>
+    </Style>
+    <Style x:Key="AuthBrandSubline" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AuthFontMono}"/>
+        <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}"/>
+        <Setter Property="Foreground" Value="{StaticResource HomeTextOnDarkMuted}"/>
+        <Setter Property="Margin" Value="0,2,0,0"/>
+    </Style>
+    <Style x:Key="AuthBrandTagline" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AuthFontSans}"/>
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+        <Setter Property="Foreground" Value="{StaticResource HomeTextOnDarkMuted}"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style x:Key="AuthFeatureItem" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AuthFontSans}"/>
+        <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}"/>
+        <Setter Property="Foreground" Value="{StaticResource HomeTextOnDarkMuted}"/>
+        <Setter Property="Margin" Value="0,0,0,6"/>
+    </Style>
+
+    <Style x:Key="AuthCard" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource HomeGlassFill}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource HomeGlassBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="16"/>
+        <Setter Property="Padding" Value="32"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="Black" BlurRadius="32" ShadowDepth="0" Opacity="0.45"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="AuthTitle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AuthFontSansSemiBold}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="FontSize" Value="22"/>
+        <Setter Property="Foreground" Value="{StaticResource HomeTextOnDark}"/>
+    </Style>
+    <Style x:Key="AuthSubtitle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AuthFontSans}"/>
+        <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}"/>
+        <Setter Property="Foreground" Value="{StaticResource HomeTextOnDarkMuted}"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Margin" Value="0,4,0,0"/>
+    </Style>
+    <Style x:Key="AuthFieldLabel" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AuthFontSansSemiBold}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}"/>
+        <Setter Property="Foreground" Value="{StaticResource HomeTextOnDarkMuted}"/>
+        <Setter Property="Margin" Value="2,0,0,6"/>
+    </Style>
+    <Style x:Key="AuthFieldHint" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AuthFontSans}"/>
+        <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
+        <Setter Property="Foreground" Value="{StaticResource HomeTextOnDarkMuted}"/>
+        <Setter Property="Margin" Value="2,4,0,0"/>
+    </Style>
+
+    <!-- [SỬA] Template input cơ bản: Không nhét Grid, không nhét Icon vào để tránh lỗi tính toán khoảng cách -->
+    <Style x:Key="AuthTextBoxUser" TargetType="TextBox">
+        <Setter Property="FontFamily" Value="{StaticResource AuthFontSans}"/>
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="CaretBrush" Value="White"/>
+        <Setter Property="SelectionBrush" Value="{StaticResource HomeGold}"/>
+        <Setter Property="Height" Value="44"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Background" Value="{StaticResource HomeGlassFill}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource HomeGlassBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border x:Name="bd" Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="10">
+                        <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bd" Property="BorderBrush" Value="#66FFFFFF"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource HomeGold}"/>
+                            <Setter TargetName="bd" Property="BorderThickness" Value="1.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="AuthTextBoxLock" TargetType="TextBox" BasedOn="{StaticResource AuthTextBoxUser}"/>
+
+    <Style x:Key="AuthPasswordBoxLock" TargetType="PasswordBox">
+        <Setter Property="FontFamily" Value="{StaticResource AuthFontSans}"/>
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="CaretBrush" Value="White"/>
+        <Setter Property="SelectionBrush" Value="{StaticResource HomeGold}"/>
+        <Setter Property="Height" Value="44"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Background" Value="{StaticResource HomeGlassFill}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource HomeGlassBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="PasswordBox">
+                    <Border x:Name="bd" Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="10">
+                        <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bd" Property="BorderBrush" Value="#66FFFFFF"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource HomeGold}"/>
+                            <Setter TargetName="bd" Property="BorderThickness" Value="1.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="AuthPasswordToggleButton" TargetType="ToggleButton">
+        <Setter Property="Width" Value="32"/>
+        <Setter Property="Height" Value="32"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="bd" CornerRadius="8" Background="{TemplateBinding Background}">
+                        <Grid>
+                            <Path x:Name="eye" Data="{StaticResource AuthIconEye}" Stroke="{StaticResource HomeTextOnDarkMuted}"
+                                  StrokeThickness="1.5" Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Path x:Name="eyeOff" Data="{StaticResource AuthIconEyeOff}" Stroke="{StaticResource HomeTextOnDarkMuted}"
+                                  StrokeThickness="1.5" Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="#1FFFFFFF"/>
+                            <Setter TargetName="eye" Property="Stroke" Value="White"/>
+                            <Setter TargetName="eyeOff" Property="Stroke" Value="White"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="eye" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="eyeOff" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="AuthPrimaryButton" TargetType="Button">
+        <Setter Property="FontFamily" Value="{StaticResource AuthFontSansSemiBold}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="FontSize" Value="{StaticResource FontSizeHeading}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Padding" Value="20,12"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Background" Value="{StaticResource HomeSoloGradient}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1" ScaleY="1"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <Border x:Name="bd" CornerRadius="12" Background="{TemplateBinding Background}">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#FF9A3D" BlurRadius="18" ShadowDepth="0" Opacity="0.5"/>
+                            </Border.Effect>
+                        </Border>
+                        <Border x:Name="overlay" CornerRadius="12" Background="#1FFFFFFF" Opacity="0" IsHitTestVisible="False"/>
+                        <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="overlay" Property="Opacity" Value="1"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5"/>
+                            <Setter TargetName="bd" Property="Effect" Value="{x:Null}"/>
+                            <Setter TargetName="overlay" Property="Opacity" Value="0"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsMouseOver" Value="True"/>
+                    <Condition Property="IsEnabled" Value="True"/>
+                </MultiTrigger.Conditions>
+                <MultiTrigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.02" Duration="0:0:0.15"/>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.02" Duration="0:0:0.15"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </MultiTrigger.EnterActions>
+                <MultiTrigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.15"/>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.15"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </MultiTrigger.ExitActions>
+            </MultiTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="AuthLinkButton" TargetType="Button">
+        <Setter Property="FontFamily" Value="{StaticResource AuthFontSansSemiBold}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}"/>
+        <Setter Property="Foreground" Value="{StaticResource HomeGold}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Padding" Value="10,8"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="bd" CornerRadius="8" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="#1FFFFFFF"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="AuthBannerInfo" TargetType="Border">
+        <Setter Property="Background" Value="#2634D399"/>
+        <Setter Property="BorderBrush" Value="#8034D399"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="Padding" Value="14,11"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+    </Style>
+    <Style x:Key="AuthBannerError" TargetType="Border">
+        <Setter Property="Background" Value="#26F87171"/>
+        <Setter Property="BorderBrush" Value="#80F87171"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="Padding" Value="14,11"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+    </Style>
+
+    <Style x:Key="AuthCheckBox" TargetType="CheckBox">
+        <Setter Property="FontFamily" Value="{StaticResource AuthFontSans}"/>
+        <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}"/>
+        <Setter Property="Foreground" Value="{StaticResource HomeTextOnDarkMuted}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <StackPanel Orientation="Horizontal">
+                        <Border x:Name="box" Width="16" Height="16" CornerRadius="4"
+                                BorderBrush="{StaticResource HomeGlassBorder}" BorderThickness="1"
+                                Background="{StaticResource HomeGlassFill}" VerticalAlignment="Center" Margin="0,0,8,0">
+                            <Path x:Name="tick" Data="{StaticResource IconCheck}" Stroke="{StaticResource HomeTextOnDark}"
+                                  StrokeThickness="2" Stretch="Uniform" Margin="3" Visibility="Collapsed"/>
+                        </Border>
+                        <ContentPresenter VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="box" Property="Background" Value="{StaticResource HomeSoloGradient}"/>
+                            <Setter TargetName="box" Property="BorderBrush" Value="{StaticResource HomeGold}"/>
+                            <Setter TargetName="tick" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="box" Property="BorderBrush" Value="#66FFFFFF"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

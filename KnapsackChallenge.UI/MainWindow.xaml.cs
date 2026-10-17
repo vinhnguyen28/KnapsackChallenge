@@ -8,7 +8,6 @@ namespace KnapsackChallenge.UI
 {
     public partial class MainWindow : Window
     {
-        // Số pixel chừa lại so với WorkArea để cửa sổ không dính sát taskbar/viền.
         private const double WorkAreaPadding = 20.0;
 
         public MainWindow()
@@ -53,12 +52,12 @@ namespace KnapsackChallenge.UI
                     break;
 
                 default: // Login / Register / null
-                    desiredW = 900; desiredH = 620;
-                    desiredMinW = 760; desiredMinH = 540;
+                    // [SỬA] Tăng chiều cao lên 720 để chứa đủ form Đăng ký, không cần thanh cuộn
+                    desiredW = 960; desiredH = 720;
+                    desiredMinW = 860; desiredMinH = 640;
                     break;
             }
 
-            // Clamp cả kích thước mong muốn lẫn Min theo WorkArea.
             if (desiredW > maxW) desiredW = maxW;
             if (desiredH > maxH) desiredH = maxH;
             if (desiredMinW > maxW) desiredMinW = maxW;
@@ -67,14 +66,12 @@ namespace KnapsackChallenge.UI
             MinWidth = desiredMinW;
             MinHeight = desiredMinH;
 
-            // Maximized: chỉ cập nhật Min, KHÔNG đổi Width/Height (để OS quản lý).
             if (WindowState != WindowState.Maximized)
             {
                 Width = desiredW;
                 Height = desiredH;
             }
 
-            // Căn giữa lại trong WorkArea.
             double targetW = WindowState == WindowState.Maximized ? ActualWidth : desiredW;
             double targetH = WindowState == WindowState.Maximized ? ActualHeight : desiredH;
 

@@ -3,155 +3,165 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="900">
+             mc:Ignorable="d" d:DesignHeight="720" d:DesignWidth="960">
+    <Grid>
+        <Rectangle x:Name="BackgroundLayer" Fill="{StaticResource HomeBackdropFallback}"/>
+        <Rectangle Fill="{StaticResource HomeOverlay}"/>
 
-    <!-- =========================================================
-         Bo cuc 2 cot kieu "Cargo Manifest":
-           - Cot trai: brand panel (wordmark mono + illustration + mo ta)
-           - Cot phai: form dang nhap tren nen Surface, vien Rule ben trai
-         DataContext (LoginViewModel) do MainWindow.xaml gan.
-         ========================================================= -->
-    <Grid Background="{DynamicResource BrushBackground}">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="440"/>
-        </Grid.ColumnDefinitions>
+        <Grid x:Name="LayoutRoot">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="BrandCol" Width="*"/>
+                <ColumnDefinition x:Name="FormCol" Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-        <!-- =========================================================
-             COT TRAI - BRAND
-             ========================================================= -->
-        <StackPanel Grid.Column="0"
-                    VerticalAlignment="Center"
-                    HorizontalAlignment="Left"
-                    Margin="72,0,40,0">
-
-            <!-- Minh hoa vector: balo, stroke manh, KHONG to mau -->
-            <Path Data="{DynamicResource IllustrationKnapsack}"
-                  Stroke="{DynamicResource BrushInkMuted}"
-                  StrokeThickness="2"
-                  Fill="Transparent"
-                  Stretch="Uniform"
-                  Width="150" Height="150"
-                  HorizontalAlignment="Left"
-                  Margin="0,0,0,32"/>
-
-            <!-- Wordmark: font mono, mang tinh "stamp"/"manifest" -->
-            <TextBlock Text="KNAPSACK"
-                       FontFamily="{DynamicResource FontMono}"
-                       FontSize="32"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource BrushInk}"/>
-
-            <TextBlock Text="CHALLENGE"
-                       FontFamily="{DynamicResource FontMono}"
-                       FontSize="12"
-                       FontWeight="Regular"
-                       Foreground="{DynamicResource BrushInkMuted}"
-                       Margin="0,2,0,0"/>
-
-            <!-- Rule ngang ngan -->
-            <Rectangle Height="1" Width="64"
-                       Fill="{DynamicResource BrushRule}"
-                       HorizontalAlignment="Left"
-                       Margin="0,24,0,24"/>
-
-            <TextBlock Text="Bai toan ba lo kinh dien. Chon to hop vat pham toi uu trong gioi han khoi luong."
-                       FontFamily="{DynamicResource FontSans}"
-                       FontSize="14"
-                       Foreground="{DynamicResource BrushInkMuted}"
-                       TextWrapping="Wrap"
-                       MaxWidth="380"
-                       HorizontalAlignment="Left"/>
-        </StackPanel>
-
-        <!-- =========================================================
-             COT PHAI - FORM DANG NHAP
-             ========================================================= -->
-        <Border Grid.Column="1"
-                Background="{DynamicResource BrushSurface}"
-                BorderBrush="{DynamicResource BrushRule}"
-                BorderThickness="1,0,0,0">
-            <StackPanel VerticalAlignment="Center" Margin="44,0">
-
-                <TextBlock Text="ĐĂNG NHẬP"
-                           FontFamily="{DynamicResource FontSans}"
-                           FontSize="22"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource BrushInk}"/>
-
-                <Rectangle Height="1"
-                           Fill="{DynamicResource BrushRule}"
-                           Margin="0,14,0,24"/>
-
-                <!-- O nhap tai khoan - Binding giu nguyen -->
-                <TextBlock Text="Account : "
-                           Style="{DynamicResource FieldLabel}"/>
-                
-                <TextBox Style="{DynamicResource DarkTextBox}"
-                         Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"/>
-
-                <!-- O mat khau - x:Name=txtPassword BAT BUOC giu vi
-                     CommandParameter cua LoginCommand tham chieu qua
-                     ElementName=txtPassword (PasswordBox khong Binding duoc) -->
-                
-                <TextBlock Text="Password :"
-                           Style="{DynamicResource FieldLabel}"
-                           Margin="0,16,0,6"/>
-                
-                <PasswordBox x:Name="txtPassword"
-                             Style="{DynamicResource InputPasswordBox}"/>
-
-                <!-- =========================================================
-                     KHU VUC THONG BAO - CHIEU CAO CO DINH
-
-                     Ly do: neu de banner tu an/hien tu nhien (Collapsed),
-                     nut "Dang nhap" ben duoi se bi day xuong moi khi co loi
-                     -> layout giat. Giai phap: boc 2 banner vao cung 1 Grid,
-                     dat MinHeight co dinh = 54px (du cho 2 dong text 12px
-                     + padding). Khi banner trong, Grid van giu 54px ->
-                     nut khong bao gio bi day.
-
-                     Hai banner chong len nhau trong cung o Grid, nhung
-                     LoginViewModel dam bao chi 1 trong 2 co noi dung tai
-                     mot thoi diem (ExecuteLogin luon reset InfoMessage = ""
-                     truoc khi set ErrorMessage).
-                     ========================================================= -->
-                <Grid MinHeight="54" Margin="0,18,0,0">
-                    <Border Style="{DynamicResource InfoBanner}"
-                            Margin="0"
-                            VerticalAlignment="Top">
-                        <TextBlock Text="{Binding InfoMessage}"
-                                   FontFamily="{DynamicResource FontSans}"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource BrushSuccess}"
-                                   TextWrapping="Wrap"/>
-                    </Border>
-
-                    <Border Style="{DynamicResource ErrorBanner}"
-                            Margin="0"
-                            VerticalAlignment="Top">
-                        <TextBlock Text="{Binding ErrorMessage}"
-                                   FontFamily="{DynamicResource FontSans}"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource BrushDanger}"
-                                   TextWrapping="Wrap"/>
-                    </Border>
-                </Grid>
-
-                <!-- Hanh dong chinh - Accent duy nhat tren man nay -->
-                <Button Content="Đăng Nhập"
-                        Command="{Binding LoginCommand}"
-                        CommandParameter="{Binding ElementName=txtPassword}"
-                        Style="{DynamicResource ButtonPrimary}"
-                        Margin="0,8,0,0" Click="Button_Click_1"/>
-
-                <!-- Chuyen sang Dang ky -->
-                <Button Content="Chưa có tài khoản ? Đăng Ký"
-                        Command="{Binding RegisterCommand}"
-                        Style="{DynamicResource ButtonGhost}"
-                        Margin="0,8,0,0"/>
+            <StackPanel x:Name="BrandPanel" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="64,0,32,0" MaxWidth="480">
+                <Path Data="{DynamicResource IllustrationKnapsack}" Stroke="{StaticResource HomeTextOnDarkMuted}" StrokeThickness="2"
+                      Fill="Transparent" Stretch="Uniform" Width="140" Height="140" HorizontalAlignment="Left" Margin="0,0,0,28"/>
+                <TextBlock Text="KNAPSACK" Style="{StaticResource AuthWordmark}"/>
+                <TextBlock Text="CHALLENGE" Style="{StaticResource AuthBrandSubline}"/>
+                <Rectangle Height="1" Width="64" Fill="{StaticResource HomeGlassBorder}" HorizontalAlignment="Left" Margin="0,22,0,20"/>
+                <TextBlock Text="Bài toán ba lô kinh điển. Chọn tổ hợp vật phẩm tối ưu trong giới hạn khối lượng." Style="{StaticResource AuthBrandTagline}" MaxWidth="380" Margin="0,0,0,22"/>
+                <StackPanel>
+                    <TextBlock Text="•   Giải đề ba lô theo độ khó" Style="{StaticResource AuthFeatureItem}"/>
+                    <TextBlock Text="•   Đấu phòng nhiều người chơi" Style="{StaticResource AuthFeatureItem}"/>
+                    <TextBlock Text="•   Bảng xếp hạng &amp; thành tích" Style="{StaticResource AuthFeatureItem}"/>
+                </StackPanel>
             </StackPanel>
-        </Border>
+
+            <Border x:Name="FormCard" Grid.Column="1" Style="{StaticResource AuthCard}" Width="440" Margin="0,24,32,24" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                <Border.RenderTransform>
+                    <TranslateTransform x:Name="FormTranslate"/>
+                </Border.RenderTransform>
+
+                <StackPanel>
+                    <TextBlock Text="ĐĂNG NHẬP" Style="{StaticResource AuthTitle}"/>
+                    <TextBlock Text="Chào mừng trở lại! Đăng nhập để tiếp tục." Style="{StaticResource AuthSubtitle}" Margin="0,6,0,0"/>
+                    <Rectangle Height="1" Fill="{StaticResource HomeGlassBorder}" Margin="0,16,0,22"/>
+
+                    <!-- FIELD: TÀI KHOẢN -->
+                    <TextBlock Text="Tài khoản" Style="{StaticResource AuthFieldLabel}"/>
+                    <Grid Margin="0,0,0,14">
+                        <!-- [SỬA] Thêm Padding để chữ không đè Icon -->
+                        <TextBox x:Name="txtUsername" Style="{StaticResource AuthTextBoxUser}" Padding="18,0,14,0" Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" TextChanged="Username_TextChanged"/>
+                        <Path Data="{StaticResource IconUserCircle}" Stroke="{StaticResource HomeTextOnDarkMuted}" StrokeThickness="1.4" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="14,0,0,0" IsHitTestVisible="False"/>
+                        <!-- [SỬA] Đưa Placeholder ra ngoài Grid, margin 40 để thẳng hàng với chữ gõ -->
+                        <TextBlock x:Name="UsernamePlaceholder" Text="Nhập tài khoản của bạn" Foreground="{StaticResource HomeTextOnDarkMuted}" Opacity="0.6" VerticalAlignment="Center" Margin="40,0,0,0" IsHitTestVisible="False"/>
+                    </Grid>
+
+                    <!-- FIELD: MẬT KHẨU -->
+                    <Grid Margin="2,0,0,6">
+                        <TextBlock Text="Mật khẩu" Style="{StaticResource AuthFieldLabel}" Margin="0"/>
+                        <TextBlock x:Name="CapsLockWarning" Text="Caps Lock đang bật" FontFamily="{StaticResource AuthFontSans}"
+                                   FontSize="{StaticResource FontSizeCaption}" FontWeight="SemiBold" Foreground="#FCD34D"
+                                   HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Collapsed"/>
+                    </Grid>
+
+                    <Grid>
+                        <!-- [SỬA] Padding="40,0,40,0" để né cả icon trái và nút mắt phải -->
+                        <PasswordBox x:Name="txtPassword" Style="{StaticResource AuthPasswordBoxLock}" Padding="18,0,40,0"
+                                     PasswordChanged="PasswordChanged" GotKeyboardFocus="Password_GotKeyboardFocus"
+                                     LostKeyboardFocus="Password_LostKeyboardFocus" PreviewKeyDown="Password_PreviewKeyDown" PreviewKeyUp="Password_PreviewKeyUp"/>
+
+                        <TextBox x:Name="txtPasswordVisible" Style="{StaticResource AuthTextBoxLock}" Padding="18,0,40,0" Visibility="Collapsed"
+                                 TextChanged="PasswordVisible_TextChanged" GotKeyboardFocus="Password_GotKeyboardFocus"
+                                 LostKeyboardFocus="Password_LostKeyboardFocus" PreviewKeyDown="Password_PreviewKeyDown" PreviewKeyUp="Password_PreviewKeyUp"/>
+
+                        <Path Data="{StaticResource AuthIconLock}" Stroke="{StaticResource HomeTextOnDarkMuted}" StrokeThickness="1.4" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="14,0,0,0" IsHitTestVisible="False"/>
+
+                        <TextBlock x:Name="PasswordPlaceholder" Text="" Foreground="{StaticResource HomeTextOnDarkMuted}" Opacity="0.6" VerticalAlignment="Center" Margin="40,0,0,0" IsHitTestVisible="False"/>
+
+                        <ToggleButton x:Name="btnPasswordToggle" Style="{StaticResource AuthPasswordToggleButton}"
+                                      HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0"
+                                      Checked="PasswordToggle_Checked" Unchecked="PasswordToggle_Unchecked" ToolTip="Hiện / ẩn mật khẩu"/>
+                    </Grid>
+
+                    <CheckBox Content="Ghi nhớ tài khoản" IsChecked="{Binding IsRememberMe, Mode=TwoWay}" Style="{StaticResource AuthCheckBox}"
+                              HorizontalAlignment="Left" Margin="2,12,0,0"/>
+
+                    <Grid Height="54" Margin="0,12,0,0">
+                        <Border x:Name="InfoBanner">
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource AuthBannerInfo}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding InfoMessage}" Value="">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding InfoMessage}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Path Data="{StaticResource IconCheck}" Width="14" Height="14" Stroke="#34D399" StrokeThickness="2.2" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="{Binding InfoMessage}" FontFamily="{StaticResource AuthFontSans}" FontSize="{StaticResource FontSizeSmall}" Foreground="#6EE7B7" TextWrapping="Wrap" VerticalAlignment="Center" MaxWidth="320"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="ErrorBanner">
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource AuthBannerError}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ErrorMessage}" Value="">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding ErrorMessage}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Path Data="{StaticResource IconWarning}" Width="14" Height="14" Stroke="#F87171" StrokeThickness="2.0" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="{Binding ErrorMessage}" FontFamily="{StaticResource AuthFontSans}" FontSize="{StaticResource FontSizeSmall}" Foreground="#FCA5A5" TextWrapping="Wrap" VerticalAlignment="Center" MaxWidth="320"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <Button Command="{Binding LoginCommand}" CommandParameter="{Binding ElementName=txtPassword}" Style="{StaticResource AuthPrimaryButton}" IsDefault="True" Margin="0,8,0,0">
+                        <Grid>
+                            <TextBlock Text="Đăng nhập" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <Path x:Name="BtnLoginSpinner" Data="M 8,0 A 8,8 0 1 1 7.99,0" Stroke="White" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Width="16" Height="16" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                <Path.Style>
+                                    <Style TargetType="Path">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Path.Style>
+                                <Path.RenderTransform>
+                                    <RotateTransform x:Name="SpinnerRotate" Angle="0"/>
+                                </Path.RenderTransform>
+                                <Path.Triggers>
+                                    <EventTrigger RoutedEvent="Loaded">
+                                        <BeginStoryboard>
+                                            <Storyboard RepeatBehavior="Forever">
+                                                <DoubleAnimation Storyboard.TargetName="SpinnerRotate" Storyboard.TargetProperty="Angle" From="0" To="360" Duration="0:0:0.8"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </EventTrigger>
+                                </Path.Triggers>
+                            </Path>
+                        </Grid>
+                    </Button>
+
+                    <Button Content="Chưa có tài khoản? Đăng ký" Command="{Binding RegisterCommand}" Style="{StaticResource AuthLinkButton}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>
